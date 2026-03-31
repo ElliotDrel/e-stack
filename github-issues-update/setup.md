@@ -82,26 +82,40 @@ For recently closed issues, ask if any should be added to "Closed / Resolved" fo
 of a single issue. The agent's prompt must include the OWNER, REPO, NUMBER, and ROLE, plus:
 
 > You are reviewing GitHub issue OWNER/REPO#NUMBER for initial tracker setup.
+> The user's role is ROLE.
 > Fetch ALL of the following in parallel, then return a structured summary.
 >
 > **Data to fetch (all in parallel):**
 > 1. Full metadata: `gh api repos/OWNER/REPO/issues/NUMBER --jq '{state: .state, labels: [.labels[].name], comments: .comments, updated: .updated_at, created: .created_at}'`
-> 2. Issue body: `gh api repos/OWNER/REPO/issues/NUMBER --jq '.body'`
-> 3. Last 5 comments: `gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '.[-5:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body[0:500]}'`
+> 2. Issue body (FULL — do not truncate): `gh api repos/OWNER/REPO/issues/NUMBER --jq '.body'`
+> 3. Comments (FULL — do not truncate): `gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '.[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body}'`
+> 4. **Search for duplicates/related** (for authored issues only — skip if ROLE is not "author"):
+>    Run 2-3 keyword searches based on the issue title and key terms from the body:
+>    `gh api "search/issues?q=repo:OWNER/REPO+is:open+KEYWORD1+KEYWORD2&per_page=10" --jq '.items[] | "#\(.number) — \(.title) [\(.created_at | split("T")[0])] @\(.user.login)"'`
+>    Exclude the issue itself. Use different keyword variations to catch different phrasings.
 >
 > **Analyze and return:**
+>
+> IMPORTANT — Extract specifics, don't paraphrase. For authored issues especially, pull
+> exact technical data from the body and comments: error codes, memory addresses, stack
+> traces, test counts, file counts, competing approaches, version numbers, config values,
+> and any other concrete data points. Quote or reproduce them — don't summarize "3 crash
+> instances documented" when you can list the actual addresses/sizes.
+>
 > - **Title:** (from metadata)
 > - **Role:** ROLE
 > - **State:** Open/Closed
 > - **Labels:** comma-separated list
 > - **Filed:** date (if role is author)
 > - **Comment count:** N
-> - **Status summary:** 2-3 sentence summary of where the issue stands
+> - **Status summary:** 2-3 sentence summary of where the issue stands. Include specific technical details, not generic descriptions.
+> - **Key technical data:** (for authored issues) List concrete data points from the issue body and comments — error codes, addresses, sizes, test counts, config values, file lists, etc. This section should contain the raw facts someone would need to discuss this issue knowledgeably.
 > - **Last commenter:** who commented last, and when
 > - **Waiting on:** who the issue is waiting on (maintainer response? user action? etc.)
 > - **Cross-references:** any other issue numbers mentioned in the body or comments
+> - **Duplicates/related found:** (if searched) list with #number, title, author, and why related. "None found" if none. "Skipped — not authored" if role is not author.
 > - **What to check:** recommended signals to watch for on future check-ins
-> - **Key context:** anything notable (workarounds mentioned, upstream links, severity signals)
+> - **Key context:** anything notable (workarounds mentioned, upstream links, severity signals, competing PRs)
 
 Wait for all agents to complete and collect their results.
 

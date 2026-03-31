@@ -14,15 +14,24 @@ gh api repos/OWNER/REPO/issues/NUMBER --jq '{state: .state, labels: [.labels[].n
 
 ## Issue Comments
 
-Last 3 comments with author, date, truncated body:
+Last 3 comments with author, date, full body:
 ```bash
-gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '.[-3:] | .[] | "[\(.created_at | split("T")[0])] @\(.user.login): \(.body[0:300])"'
+gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '.[-3:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body}'
 ```
 
-Full comments (for drafting — verify claims before posting):
+All comments (for drafting — verify claims before posting):
 ```bash
 gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '.[] | {author: .user.login, date: .created_at, body: .body}'
 ```
+
+Comments since a date:
+```bash
+gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '[.[] | select(.created_at > "DATE")] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body}'
+```
+
+**Truncation rules:** Never truncate comments on the primary issue being reviewed — technical
+details (addresses, error codes, test counts) get lost. For secondary fetches (known
+duplicates, upstream), `[0:1500]` is acceptable to manage context size.
 
 ## Issue Body
 

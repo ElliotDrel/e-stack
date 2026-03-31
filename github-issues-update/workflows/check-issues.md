@@ -33,20 +33,22 @@ Agent prompt template:
 > 1. Current metadata:
 >    `gh api repos/OWNER/REPO/issues/NUMBER --jq '{state: .state, labels: [.labels[].name], comments: .comments, updated: .updated_at, created: .created_at}'`
 >
-> 2. Last 5 comments (with full context):
->    `gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '.[-5:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body[0:500]}'`
+> 2. Comments since last check (FULL — do not truncate):
+>    `gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '[.[] | select(.created_at > "LAST_CHECK_DATE")] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body}'`
+>    If no new comments, also fetch last 2 for context:
+>    `gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '.[-2:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body}'`
 >
-> 3. Issue body (for context):
->    `gh api repos/OWNER/REPO/issues/NUMBER --jq '{title: .title, body: .body[0:1000], author: .user.login}'`
+> 3. Issue body (FULL — do not truncate):
+>    `gh api repos/OWNER/REPO/issues/NUMBER --jq '{title: .title, body: .body, author: .user.login}'`
 >
 > 4. **Known duplicates/related** (if any — these are the issue numbers: KNOWN_DUPES):
 >    For each, fetch state and last 2 comments:
 >    `gh api repos/DUPE_OWNER/DUPE_REPO/issues/DUPE_NUMBER --jq '{state: .state, updated: .updated_at}'`
->    `gh api repos/DUPE_OWNER/DUPE_REPO/issues/DUPE_NUMBER/comments --jq '.[-2:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body[0:300]}'`
+>    `gh api repos/DUPE_OWNER/DUPE_REPO/issues/DUPE_NUMBER/comments --jq '.[-2:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body[0:1500]}'`
 >
 > 5. **Upstream issue** (if any — UPSTREAM_OWNER/UPSTREAM_REPO#UPSTREAM_NUMBER):
 >    `gh api repos/UPSTREAM_OWNER/UPSTREAM_REPO/issues/UPSTREAM_NUMBER --jq '{state: .state, labels: [.labels[].name], updated: .updated_at}'`
->    `gh api repos/UPSTREAM_OWNER/UPSTREAM_REPO/issues/UPSTREAM_NUMBER/comments --jq '.[-2:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body[0:300]}'`
+>    `gh api repos/UPSTREAM_OWNER/UPSTREAM_REPO/issues/UPSTREAM_NUMBER/comments --jq '.[-2:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body[0:1500]}'`
 >
 > 6. **Search for NEW duplicates/related** (SKIP if --skip-dupes is active):
 >    Run 2-3 keyword searches based on the issue title and topic:
@@ -56,8 +58,15 @@ Agent prompt template:
 >
 > **Step 2 — Analyze:**
 >
+> IMPORTANT — Extract specifics, don't paraphrase. Pull exact technical data from the
+> body and comments: error codes, memory addresses, stack traces, test counts, file
+> counts, competing approaches/PRs, version numbers, config values, semantic details
+> (e.g., what a PR changes and why it supersedes another). Quote or reproduce concrete
+> data — don't write "3 crash instances documented" when you can list the actual
+> addresses/sizes. Don't write "supersedes #X" without capturing WHY.
+>
 > Compare fetched data against the last check date (LAST_CHECK_DATE):
-> - New comments since last check? Summarize who said what.
+> - New comments since last check? Report who said what WITH specifics — what did they propose, what data did they share, what did they ask?
 > - Label changes? State changes (open → closed or vice versa)?
 > - Any comments from repo maintainers or Anthropic employees? (Highest priority signals.)
 > - Any new activity on known duplicates/related?
@@ -70,7 +79,7 @@ Agent prompt template:
 > ## OWNER/REPO#NUMBER — TITLE
 > - **State:** Open/Closed [changed since last check? yes/no]
 > - **Labels:** [current labels]
-> - **Activity since LAST_CHECK_DATE:** [summary of new comments — who said what, highlight maintainer/Anthropic responses. Say "No new activity" if none.]
+> - **Activity since LAST_CHECK_DATE:** [who said what WITH specifics — technical details, proposals, data shared, questions asked. Highlight maintainer/Anthropic responses. Say "No new activity" if none.]
 > - **Known duplicates/related — updates:** [any new activity on previously identified dupes. "None" if no dupes or no activity.]
 > - **New duplicates/related found:** [list new ones with #number, @author, title, date, and why related. "None found" if none or skipped.]
 > - **Upstream status:** [current state if upstream exists. "N/A" if no upstream.]
