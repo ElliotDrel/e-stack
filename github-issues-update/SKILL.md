@@ -41,7 +41,7 @@ References:
 ## Phase 0: Router
 
 1. Determine the skill directory path from this file's location.
-2. Read the tracker file at `$HOME/.claude/github-tracker.md`.
+2. Read the tracker file at `$HOME/Documents/github-tracker.md`.
 3. **If the file does not exist or is empty:**
    - Tell the user: "No tracker file found. Let's set one up."
    - Read `setup.md` from the skill directory.

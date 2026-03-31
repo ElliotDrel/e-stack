@@ -112,7 +112,7 @@ Wait for all agents to complete and collect their results.
 3. For each selected issue, create an entry under "Active Issues" following the schema in `references/tracker-schema.md`. Use the per-issue agent results to populate all fields.
 4. Add any selected closed issues to "Closed / Resolved".
 5. Show the complete tracker content to the user for confirmation.
-6. After confirmation, write to: `$HOME/.claude/github-tracker.md`
+6. After confirmation, write to: `$HOME/Documents/github-tracker.md`
 
 Tell the user:
 > Tracker created. Running first check-in now.
