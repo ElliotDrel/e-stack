@@ -3,70 +3,122 @@
 Main workflow for `/github-issues-update`. Executed when tracker file exists.
 Read `references/gh-cli-patterns.md` and `references/tracker-schema.md` before starting.
 
----
-
-## Phase 1: Gather Data
-
-Run as many of these as possible in parallel using separate Bash tool calls.
-Maximize parallelism — steps 1a-1f have no dependencies on each other.
-
-### 1a. Check all active issues for updates
-
-For EACH issue in the "Active Issues" section of the tracker, fetch in parallel:
-
-- **Metadata:** `gh api repos/OWNER/REPO/issues/NUMBER` — extract state, labels, comment count, updated_at
-- **Recent comments:** `gh api repos/OWNER/REPO/issues/NUMBER/comments` — last 3 comments with author, date, and body (truncate to 300 chars)
-
-Compare against the tracker's recorded state:
-- New comments since last "Status as of" date?
-- Label changes?
-- State changes (open → closed, or vice versa)?
-- Any comments from repo maintainers or Anthropic employees? (These are highest priority signals.)
-
-### 1b. Check previously identified duplicates/related issues
-
-For each issue listed under "Duplicates found," "Adjacent issues found," or "Related" in the tracker:
-- Fetch current state and last 2 comments
-- Note any new activity — especially responses to comments we posted
-
-### 1c. Search for NEW duplicates and related issues
-
-**Skip this step if `--skip-dupes` flag is active.**
-
-For each active issue, search for recently created issues overlapping its topic:
-- Use `gh api search/issues` with 2-3 keyword variations from the issue title/topic
-- Filter to `created:>LAST_CHECK_DATE` (extract from "Status as of" dates in tracker)
-- Exclude issues already in the tracker (check issue numbers against all tracked + known duplicates)
-- Use multiple search queries per issue to catch different phrasings
-
-### 1d. Search for recent activity involving the user
-
-```bash
-gh api "search/issues?q=involves:USERNAME+updated:>LAST_CHECK_DATE+is:open" \
-  --jq '.items[] | "#\(.number) \(.repository_url | split("/") | .[-2:] | join("/")) — \(.title) [updated: \(.updated_at)]"'
-```
-
-Flag any issues not already in the tracker — these are candidates for adding.
-
-### 1e. Check closed issues for unexpected reopens
-
-For each issue in "Closed / Resolved":
-- Quick state check via `gh api repos/OWNER/REPO/issues/NUMBER --jq '.state'`
-- Flag if reopened
-
-### 1f. Check upstream issues
-
-For any issues with an "Upstream" field:
-- Fetch current state, labels, and recent comments
-- Note if upstream was fixed/closed (may affect our downstream issue)
+Uses one subagent per tracked issue for thorough, parallel reviews.
 
 ---
 
-## Phase 2: Analyze and Report
+## Phase 1: Gather Data (Subagents)
 
-Present a structured report in chat. Order issues by activity level (most active first).
+Before spawning agents, parse the tracker file to extract:
+- All active issues (owner, repo, number, title, role, last check date, known duplicates/related)
+- All closed issues (owner, repo, number)
+- All upstream issues (owner, repo, number)
+- The GitHub USERNAME from the file header
+- The `--skip-dupes` and `--dry-run` flags from arguments
 
-**For issues WITH new activity, use this format:**
+### 1a. One subagent per active issue
+
+**Spawn one Agent per active issue**, all in parallel. Each agent performs a thorough
+review of a single issue. Include in the agent prompt: OWNER, REPO, NUMBER, TITLE, ROLE,
+LAST_CHECK_DATE, USERNAME, known duplicate/related issue numbers, upstream issue (if any),
+and whether `--skip-dupes` is active.
+
+Agent prompt template:
+
+> You are doing a thorough review of GitHub issue OWNER/REPO#NUMBER ("TITLE").
+> The user's role is ROLE. Last checked: LAST_CHECK_DATE. GitHub username: USERNAME.
+>
+> **Step 1 — Fetch data (run all in parallel):**
+>
+> 1. Current metadata:
+>    `gh api repos/OWNER/REPO/issues/NUMBER --jq '{state: .state, labels: [.labels[].name], comments: .comments, updated: .updated_at, created: .created_at}'`
+>
+> 2. Last 5 comments (with full context):
+>    `gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '.[-5:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body[0:500]}'`
+>
+> 3. Issue body (for context):
+>    `gh api repos/OWNER/REPO/issues/NUMBER --jq '{title: .title, body: .body[0:1000], author: .user.login}'`
+>
+> 4. **Known duplicates/related** (if any — these are the issue numbers: KNOWN_DUPES):
+>    For each, fetch state and last 2 comments:
+>    `gh api repos/DUPE_OWNER/DUPE_REPO/issues/DUPE_NUMBER --jq '{state: .state, updated: .updated_at}'`
+>    `gh api repos/DUPE_OWNER/DUPE_REPO/issues/DUPE_NUMBER/comments --jq '.[-2:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body[0:300]}'`
+>
+> 5. **Upstream issue** (if any — UPSTREAM_OWNER/UPSTREAM_REPO#UPSTREAM_NUMBER):
+>    `gh api repos/UPSTREAM_OWNER/UPSTREAM_REPO/issues/UPSTREAM_NUMBER --jq '{state: .state, labels: [.labels[].name], updated: .updated_at}'`
+>    `gh api repos/UPSTREAM_OWNER/UPSTREAM_REPO/issues/UPSTREAM_NUMBER/comments --jq '.[-2:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body[0:300]}'`
+>
+> 6. **Search for NEW duplicates/related** (SKIP if --skip-dupes is active):
+>    Run 2-3 keyword searches based on the issue title and topic:
+>    `gh api "search/issues?q=repo:OWNER/REPO+is:open+created:>LAST_CHECK_DATE+KEYWORD1+KEYWORD2&per_page=10" --jq '.items[] | "#\(.number) — \(.title) [\(.created_at | split("T")[0])] @\(.user.login)"'`
+>    Use different keyword variations to catch different phrasings.
+>    Exclude these already-known issue numbers: [list of all tracked + known dupe numbers].
+>
+> **Step 2 — Analyze:**
+>
+> Compare fetched data against the last check date (LAST_CHECK_DATE):
+> - New comments since last check? Summarize who said what.
+> - Label changes? State changes (open → closed or vice versa)?
+> - Any comments from repo maintainers or Anthropic employees? (Highest priority signals.)
+> - Any new activity on known duplicates/related?
+> - Any new duplicate/related issues found?
+> - Upstream status changes?
+>
+> **Step 3 — Return structured report:**
+>
+> ```
+> ## OWNER/REPO#NUMBER — TITLE
+> - **State:** Open/Closed [changed since last check? yes/no]
+> - **Labels:** [current labels]
+> - **Activity since LAST_CHECK_DATE:** [summary of new comments — who said what, highlight maintainer/Anthropic responses. Say "No new activity" if none.]
+> - **Known duplicates/related — updates:** [any new activity on previously identified dupes. "None" if no dupes or no activity.]
+> - **New duplicates/related found:** [list new ones with #number, @author, title, date, and why related. "None found" if none or skipped.]
+> - **Upstream status:** [current state if upstream exists. "N/A" if no upstream.]
+> - **Suggested next steps:** [immediate actions — respond to question, comment on new duplicate, follow up, etc. "None" if nothing to do.]
+> - **Future:** [things to monitor, low-priority items]
+> - **Has activity:** true/false [for sorting purposes]
+> ```
+
+### 1b. General check subagent
+
+**Spawn one additional Agent** (in parallel with the per-issue agents) for general checks
+that aren't issue-specific. Include USERNAME and LAST_CHECK_DATE (use the oldest "Status as of"
+date from the tracker).
+
+Agent prompt:
+
+> Run these general GitHub checks for user USERNAME. Last check date: LAST_CHECK_DATE.
+>
+> **Fetch in parallel:**
+>
+> 1. Recent activity involving the user (issues not already in the tracker):
+>    `gh api "search/issues?q=involves:USERNAME+updated:>LAST_CHECK_DATE+is:open" --jq '.items[] | "#\(.number) \(.repository_url | split(\\"/\\") | .[-2:] | join(\\"/\\")) — \(.title) [updated: \(.updated_at)]"'`
+>    Filter out these already-tracked issue numbers: [ALL_TRACKED_NUMBERS].
+>
+> 2. Check closed issues for reopens (run each in parallel):
+>    For each of these closed issues: [CLOSED_ISSUE_LIST]
+>    `gh api repos/OWNER/REPO/issues/NUMBER --jq '.state'`
+>    Flag any that are no longer "closed".
+>
+> **Return:**
+> - **New issues not in tracker:** list with #number, title, repo, and recommendation (track/ignore)
+> - **Reopened issues:** any closed issues that were reopened (or "None")
+
+### 1c. Collect results
+
+Wait for ALL agents to complete. You now have:
+- One structured report per active issue
+- One general check report
+
+---
+
+## Phase 2: Compile and Present Report
+
+Using the collected subagent results, present a unified report to the user.
+
+**Order:** Issues with activity first (sorted by most active), then issues with no activity.
+
+**For issues WITH new activity (has_activity: true), show the full report from the agent:**
 
 ```
 ### owner/repo#NUMBER — Title
@@ -79,7 +131,7 @@ Present a structured report in chat. Order issues by activity level (most active
 - **Future:** [things to monitor, low-priority actions]
 ```
 
-**For issues with NO new activity**, group them in a brief summary:
+**For issues with NO new activity**, group them briefly:
 
 ```
 ### No Activity
@@ -87,11 +139,11 @@ Present a structured report in chat. Order issues by activity level (most active
 - owner/repo#NUMBER — Title (last activity: DATE)
 ```
 
-**After all active issues, add these sections:**
+**After all active issues, add these sections from the general check agent:**
 
 ```
 ### New Issues Not in Tracker
-[Issues found in 1d not already tracked. For each: #number, title, repo, role, recommendation (track/ignore)]
+[Issues found not already tracked. For each: #number, title, repo, role, recommendation (track/ignore)]
 
 ### Closed Issues Status
 [Confirm all closed issues still closed. Flag any surprises.]

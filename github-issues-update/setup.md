@@ -3,6 +3,8 @@
 Run this workflow when no tracker file exists. Creates a tracker from scratch by
 discovering all open issues the user is involved in.
 
+Uses subagents to parallelize discovery and per-issue deep dives.
+
 ## Prerequisites
 
 Verify `gh` CLI is authenticated before proceeding:
@@ -19,37 +21,40 @@ gh api users/USERNAME --jq '.login'
 ```
 If invalid, ask again. Do not guess.
 
-## Phase 2: Discover Active Issues
+## Phase 2: Discover Active Issues (Subagent)
 
-Run ALL of these searches in parallel:
+**Spawn a single Agent** (general-purpose) to run all discovery searches in parallel and return
+a consolidated list. The agent's prompt must include the USERNAME and these instructions:
 
-### 2a. Issues authored by the user
-```bash
-gh api "search/issues?q=author:USERNAME+is:open&per_page=100&sort=updated" \
-  --jq '.items[] | "#\(.number) \(.repository_url | split("/") | .[-2:] | join("/")) — \(.title) [role: author] [updated: \(.updated_at | split("T")[0])]"'
-```
+> You are discovering all open GitHub issues involving a user. Run ALL of the following
+> searches in parallel using separate Bash calls, then combine results into a single
+> deduplicated list. For each issue, include: number, owner/repo, title, role, updated date.
+>
+> **Searches to run (all in parallel):**
+>
+> 1. Issues authored:
+>    `gh api "search/issues?q=author:USERNAME+is:open&per_page=100&sort=updated" --jq '.items[] | "#\(.number) \(.repository_url | split("/") | .[-2:] | join("/")) — \(.title) [role: author] [updated: \(.updated_at | split("T")[0])]"'`
+>
+> 2. Issues commented on (excluding authored):
+>    `gh api "search/issues?q=commenter:USERNAME+is:open+-author:USERNAME&per_page=100&sort=updated" --jq '.items[] | "#\(.number) \(.repository_url | split("/") | .[-2:] | join("/")) — \(.title) [role: commenter] [updated: \(.updated_at | split("T")[0])]"'`
+>
+> 3. Issues mentioned in (excluding authored/commented):
+>    `gh api "search/issues?q=mentions:USERNAME+is:open+-author:USERNAME+-commenter:USERNAME&per_page=100&sort=updated" --jq '.items[] | "#\(.number) \(.repository_url | split("/") | .[-2:] | join("/")) — \(.title) [role: mentioned] [updated: \(.updated_at | split("T")[0])]"'`
+>
+> 4. Open PRs authored:
+>    `gh api "search/issues?q=author:USERNAME+is:open+type:pr&per_page=100&sort=updated" --jq '.items[] | "#\(.number) \(.repository_url | split("/") | .[-2:] | join("/")) — \(.title) [role: PR author] [updated: \(.updated_at | split("T")[0])]"'`
+>
+> 5. Recently closed issues (last 30 days):
+>    `gh api "search/issues?q=involves:USERNAME+is:closed+closed:>THIRTY_DAYS_AGO&per_page=50&sort=updated" --jq '.items[] | "#\(.number) \(.repository_url | split("/") | .[-2:] | join("/")) — \(.title) [closed: \(.closed_at | split("T")[0])]"'`
+>    (Calculate the date 30 days ago using: `python3 -c "import datetime; print((datetime.datetime.now()-datetime.timedelta(days=30)).strftime('%Y-%m-%d'))"`)
+>
+> **Return format:** Two sections — "Open Issues" and "Recently Closed" — each grouped by repo.
+> Deduplicate across searches (same issue may appear in multiple results). Preserve the role
+> from whichever search found it first (priority: author > PR author > commenter > mentioned).
 
-### 2b. Issues the user has commented on (excluding authored)
-```bash
-gh api "search/issues?q=commenter:USERNAME+is:open+-author:USERNAME&per_page=100&sort=updated" \
-  --jq '.items[] | "#\(.number) \(.repository_url | split("/") | .[-2:] | join("/")) — \(.title) [role: commenter] [updated: \(.updated_at | split("T")[0])]"'
-```
+## Phase 3: Present Findings and Select
 
-### 2c. Issues where the user is mentioned (excluding authored/commented)
-```bash
-gh api "search/issues?q=mentions:USERNAME+is:open+-author:USERNAME+-commenter:USERNAME&per_page=100&sort=updated" \
-  --jq '.items[] | "#\(.number) \(.repository_url | split("/") | .[-2:] | join("/")) — \(.title) [role: mentioned] [updated: \(.updated_at | split("T")[0])]"'
-```
-
-### 2d. Open PRs authored by the user
-```bash
-gh api "search/issues?q=author:USERNAME+is:open+type:pr&per_page=100&sort=updated" \
-  --jq '.items[] | "#\(.number) \(.repository_url | split("/") | .[-2:] | join("/")) — \(.title) [role: PR author] [updated: \(.updated_at | split("T")[0])]"'
-```
-
-## Phase 3: Present Findings
-
-Show all discovered issues grouped by repo:
+Show all discovered issues grouped by repo using the agent's output:
 
 ```
 Found N open issues involving @USERNAME:
@@ -69,33 +74,42 @@ Then ask via AskUserQuestion:
 
 If "Let me pick," ask the user to list issue numbers.
 
-## Phase 4: Gather Details on Selected Issues
+For recently closed issues, ask if any should be added to "Closed / Resolved" for historical tracking.
 
-For each selected issue, fetch in parallel:
-- Full metadata: `gh api repos/OWNER/REPO/issues/NUMBER` (state, labels, comments count, created_at)
-- Last 3 comments: `gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '.[-3:]'`
+## Phase 4: Deep Dive on Selected Issues (One Subagent per Issue)
 
-From this, determine for each issue:
-- Role (author/commenter/mentioned)
-- Current status summary
-- Who commented last (are we waiting for a response?)
-- Any cross-references to other issues in the comments
+**Spawn one Agent per selected issue**, all in parallel. Each agent does a thorough review
+of a single issue. The agent's prompt must include the OWNER, REPO, NUMBER, and ROLE, plus:
 
-## Phase 5: Check Recently Closed Issues
+> You are reviewing GitHub issue OWNER/REPO#NUMBER for initial tracker setup.
+> Fetch ALL of the following in parallel, then return a structured summary.
+>
+> **Data to fetch (all in parallel):**
+> 1. Full metadata: `gh api repos/OWNER/REPO/issues/NUMBER --jq '{state: .state, labels: [.labels[].name], comments: .comments, updated: .updated_at, created: .created_at}'`
+> 2. Issue body: `gh api repos/OWNER/REPO/issues/NUMBER --jq '.body'`
+> 3. Last 5 comments: `gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '.[-5:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body[0:500]}'`
+>
+> **Analyze and return:**
+> - **Title:** (from metadata)
+> - **Role:** ROLE
+> - **State:** Open/Closed
+> - **Labels:** comma-separated list
+> - **Filed:** date (if role is author)
+> - **Comment count:** N
+> - **Status summary:** 2-3 sentence summary of where the issue stands
+> - **Last commenter:** who commented last, and when
+> - **Waiting on:** who the issue is waiting on (maintainer response? user action? etc.)
+> - **Cross-references:** any other issue numbers mentioned in the body or comments
+> - **What to check:** recommended signals to watch for on future check-ins
+> - **Key context:** anything notable (workarounds mentioned, upstream links, severity signals)
 
-Search for recently closed issues involving the user:
-```bash
-gh api "search/issues?q=involves:USERNAME+is:closed+closed:>$(python3 -c "import datetime; print((datetime.datetime.now()-datetime.timedelta(days=30)).strftime('%Y-%m-%d'))")&per_page=50&sort=updated" \
-  --jq '.items[] | "#\(.number) \(.repository_url | split("/") | .[-2:] | join("/")) — \(.title) [closed: \(.closed_at | split("T")[0])]"'
-```
+Wait for all agents to complete and collect their results.
 
-Ask if any should be added to "Closed / Resolved" for historical tracking.
-
-## Phase 6: Build the Tracker
+## Phase 5: Build the Tracker
 
 1. Read `tracker-template.md` from the skill directory.
 2. Replace `USERNAME_HERE` with the actual GitHub username.
-3. For each selected issue, create an entry under "Active Issues" following the schema in `references/tracker-schema.md`.
+3. For each selected issue, create an entry under "Active Issues" following the schema in `references/tracker-schema.md`. Use the per-issue agent results to populate all fields.
 4. Add any selected closed issues to "Closed / Resolved".
 5. Show the complete tracker content to the user for confirmation.
 6. After confirmation, write to: `$HOME/.claude/github-tracker.md`
