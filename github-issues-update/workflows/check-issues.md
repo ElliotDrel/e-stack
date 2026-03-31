@@ -114,43 +114,15 @@ Wait for ALL agents to complete. You now have:
 
 ## Phase 2: Compile and Present Report
 
-Using the collected subagent results, present a unified report to the user.
+Read `references/overview-template.md` from the skill directory. Use it as the formatting
+template for the report. Fill in every section from the collected subagent results:
 
-**Order:** Issues with activity first (sorted by most active), then issues with no activity.
+- **Issues with activity** (has_activity: true) get full detail blocks, ordered most active first.
+- **Issues with no activity** go in the summary table.
+- **New issues, closed status, upstream status** come from the general check agent.
+- **Summary** section at the bottom tallies action items and highlights what needs attention.
 
-**For issues WITH new activity (has_activity: true), show the full report from the agent:**
-
-```
-### owner/repo#NUMBER — Title
-- **Status:** [Open/Closed] [state changes since last check]
-- **Labels:** [current labels]
-- **Activity since last check:** [new comments summary — who said what, highlight maintainer/Anthropic responses]
-- **Known duplicates — updates:** [any new activity on previously identified dupes]
-- **New duplicates/related found:** [new ones: #number — @author, "title" (date), why related]
-- **Next steps (now):** [immediate actions — comment on duplicate, respond to question, etc.]
-- **Future:** [things to monitor, low-priority actions]
-```
-
-**For issues with NO new activity**, group them briefly:
-
-```
-### No Activity
-- owner/repo#NUMBER — Title (last activity: DATE)
-- owner/repo#NUMBER — Title (last activity: DATE)
-```
-
-**After all active issues, add these sections from the general check agent:**
-
-```
-### New Issues Not in Tracker
-[Issues found not already tracked. For each: #number, title, repo, role, recommendation (track/ignore)]
-
-### Closed Issues Status
-[Confirm all closed issues still closed. Flag any surprises.]
-
-### Upstream Status
-[Status of any upstream dependencies. Flag if fixed upstream but not downstream.]
-```
+Omit any section that has no data (e.g., skip "Upstream Status" if no upstream issues exist).
 
 ---
 

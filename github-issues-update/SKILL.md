@@ -32,6 +32,7 @@ Workflows:
 References:
 - references/tracker-schema.md — Tracker file format and field definitions
 - references/gh-cli-patterns.md — gh CLI command templates for all API calls
+- references/overview-template.md — Report format template for check-in output
 - tracker-template.md — Blank tracker template for new setup
 </execution_context>
 
