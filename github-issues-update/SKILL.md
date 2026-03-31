@@ -45,7 +45,7 @@ References:
    - Tell the user: "No tracker file found. Let's set one up."
    - Read `setup.md` from the skill directory.
    - Follow setup instructions end-to-end to create the tracker.
-   - STOP after setup. User runs `/github-issues-update` again for first check-in.
+   - After setup completes, proceed to step 4 to run the first check-in automatically.
 4. **If the file exists and has content:**
    - Extract the GitHub username from the file header.
    - Parse `$ARGUMENTS` for flags:

@@ -115,4 +115,7 @@ Wait for all agents to complete and collect their results.
 6. After confirmation, write to: `$HOME/.claude/github-tracker.md`
 
 Tell the user:
-> Tracker created. Run `/github-issues-update` anytime to check for updates.
+> Tracker created. Running first check-in now.
+
+Setup is complete. Return control to the router (SKILL.md Phase 0, step 4) which will
+proceed into the check-in workflow automatically.
