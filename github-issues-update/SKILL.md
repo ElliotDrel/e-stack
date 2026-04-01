@@ -2,9 +2,9 @@
 name: github-issues-update
 description: >
   GitHub issue tracker management. Run with no args for daily check-in (checks all
-  active issues for updates, finds duplicates, identifies next steps). Run with `save`
+  active issues for updates, finds duplicates, identifies next steps). Run with `--save`
   to add issues from the current conversation to the tracker.
-argument-hint: "[save] [--dry-run] [--skip-dupes]"
+argument-hint: "[--save]"
 allowed-tools:
   - Read
   - Write
@@ -44,7 +44,7 @@ References:
 
 1. Determine the skill directory path from this file's location.
 2. Parse `$ARGUMENTS` for the mode:
-   - If arguments contain `save` → **Save mode**
+   - If arguments contain `--save` → **Save mode**
    - Otherwise → **Check-in mode** (default)
 
 ### Save mode
@@ -64,9 +64,6 @@ References:
    - After setup completes, proceed to step 3 to run the first check-in automatically.
 3. **If the file exists and has content:**
    - Extract the GitHub username from the file header.
-   - Parse `$ARGUMENTS` for flags:
-     - `--dry-run` — run Phases 1-2 only, skip posting and tracker updates
-     - `--skip-dupes` — skip duplicate/related issue search (faster check-in)
    - Read `workflows/check-issues.md` from the skill directory.
    - Read `references/gh-cli-patterns.md` and `references/tracker-schema.md` from the skill directory.
    - Execute the check-in workflow.

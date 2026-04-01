@@ -14,14 +14,12 @@ Before spawning agents, parse the tracker file to extract:
 - All closed issues (owner, repo, number)
 - All upstream issues (owner, repo, number)
 - The GitHub USERNAME from the file header
-- The `--skip-dupes` and `--dry-run` flags from arguments
 
 ### 1a. One subagent per active issue
 
 **Spawn one Agent per active issue**, all in parallel. Each agent performs a thorough
 review of a single issue. Include in the agent prompt: OWNER, REPO, NUMBER, TITLE, ROLE,
-LAST_CHECK_DATE, USERNAME, known duplicate/related issue numbers, upstream issue (if any),
-and whether `--skip-dupes` is active.
+LAST_CHECK_DATE, USERNAME, known duplicate/related issue numbers, and upstream issue (if any).
 
 Agent prompt template:
 
@@ -50,7 +48,7 @@ Agent prompt template:
 >    `gh api repos/UPSTREAM_OWNER/UPSTREAM_REPO/issues/UPSTREAM_NUMBER --jq '{state: .state, labels: [.labels[].name], updated: .updated_at}'`
 >    `gh api repos/UPSTREAM_OWNER/UPSTREAM_REPO/issues/UPSTREAM_NUMBER/comments --jq '.[-2:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body[0:1500]}'`
 >
-> 6. **Search for NEW duplicates/related** (SKIP if --skip-dupes is active):
+> 6. **Search for NEW duplicates/related:**
 >    Run 2-3 keyword searches based on the issue title and topic:
 >    `gh api "search/issues?q=repo:OWNER/REPO+is:open+created:>LAST_CHECK_DATE+KEYWORD1+KEYWORD2&per_page=10" --jq '.items[] | "#\(.number) — \(.title) [\(.created_at | split("T")[0])] @\(.user.login)"'`
 >    Use different keyword variations to catch different phrasings.
@@ -136,8 +134,6 @@ Omit any section that has no data (e.g., skip "Upstream Status" if no upstream i
 ---
 
 ## Phase 3: Confirm and Execute
-
-**If `--dry-run` flag is active, STOP here.** Tell the user: "Dry run complete. No actions taken."
 
 **If there are "Next steps (now)" items:**
 
