@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-04-03T12:13:48.669Z",
+  "phase": "quick",
+  "phase_name": "260402-mkl-revise-github-issues-update-skill-with-g",
+  "phase_dir": ".planning/quick/260402-mkl-revise-github-issues-update-skill-with-g",
+  "plan": 1,
+  "task": 0,
+  "total_tasks": 6,
+  "status": "paused",
+  "completed_tasks": [],
+  "remaining_tasks": [
+    {"id": 1, "name": "Define standardized result file format", "status": "not_started"},
+    {"id": 2, "name": "Add startup, fetch-issues, build-tracker commands to tracker-tools.cjs", "status": "not_started"},
+    {"id": 3, "name": "Revise SKILL.md router to use startup command", "status": "not_started"},
+    {"id": 4, "name": "Revise check-issues.md workflow", "status": "not_started"},
+    {"id": 5, "name": "Revise setup.md workflow", "status": "not_started"},
+    {"id": 6, "name": "Revise save-issues.md to use startup data", "status": "not_started"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [],
+  "decisions": [
+    {"decision": "Full data layer script (parse, compile, update, validate)", "rationale": "Offload all deterministic work to Node script, agent only orchestrates", "phase": "quick"},
+    {"decision": "Temp dir with auto-cleanup for subagent results", "rationale": "Results on disk, not in context memory — prevents forgetting the overview", "phase": "quick"},
+    {"decision": "Full XML rewrite for all workflows", "rationale": "Named steps with acceptance criteria and enforcement language", "phase": "quick"},
+    {"decision": "All workflows get revised (check-in, save, setup)", "rationale": "Consistency across the skill", "phase": "quick"},
+    {"decision": "Core 5 + 3 new script commands", "rationale": "startup, fetch-issues, build-tracker added to existing parse-tracker, compile-report, update-tracker, init-temp, validate", "phase": "quick"},
+    {"decision": "overview-template.md logic moved into compile-report", "rationale": "Split duty: script compiles report, agent refs stay for tracker-schema and gh-cli-patterns", "phase": "quick"},
+    {"decision": "Single startup command replaces 3 separate init calls", "rationale": "Auth + username + tracker parse + discovery all in one call", "phase": "quick"},
+    {"decision": "fetch-issues does all gh API calls in script", "rationale": "Deterministic, parallel, no LLM needed for API fetching", "phase": "quick"},
+    {"decision": "Batched analysis agents (~5 issues each)", "rationale": "Reduces 32 agents to ~7, each with pre-fetched data", "phase": "quick"},
+    {"decision": "GOOD vs BAD quality examples in agent prompts", "rationale": "v3 tracker comparison showed shallow output — concrete examples prevent generic language", "phase": "quick"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Execute the 6-task plan in 260402-mkl-PLAN.md. Spawn gsd-executor with the plan. All tasks are not_started.",
+  "context_notes": "Initial implementation was done earlier in this session (script + workflow rewrite, committed as ee11a8c). Then extensive testing produced 3 rounds of feedback. All feedback was captured in the plan update (d840034). The plan is ready to execute — user verified it and said 'go' but we paused before spawning the executor. The prior implementation (ee11a8c) will be overwritten by the plan execution since all the same files are being revised."
+}
