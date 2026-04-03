@@ -21,6 +21,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { exec, execSync } = require('child_process');
 
 // ─── CLI Router ─────────────────────────────────────────────────────────────
 
@@ -60,18 +61,14 @@ function parseFlags(args) {
 
 const flags = parseFlags(rawArgs);
 
-try {
-  const result = commands[command](flags);
-  if (result instanceof Promise) {
-    result.catch(err => {
-      console.error(`Error in ${command}: ${err.message}`);
-      process.exit(1);
-    });
+(async () => {
+  try {
+    await commands[command](flags);
+  } catch (err) {
+    console.error(`Error in ${command}: ${err.message}`);
+    process.exit(1);
   }
-} catch (err) {
-  console.error(`Error in ${command}: ${err.message}`);
-  process.exit(1);
-}
+})();
 
 // ─── Frontmatter Parser ────────────────────────────────────────────────────
 
@@ -703,9 +700,6 @@ function cmdValidate(flags) {
 
 // ─── Async Helper ──────────────────────────────────────────────────────────
 
-const { exec } = require('child_process');
-const { execSync } = require('child_process');
-
 function execAsync(cmd) {
   return new Promise((resolve, reject) => {
     exec(cmd, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
@@ -763,29 +757,23 @@ async function cmdStartup(flags) {
     }
   }
 
-  // Step 2: Parse tracker
-  if (!fs.existsSync(trackerPath)) {
-    console.log(JSON.stringify({
-      script_ok: true, auth: true, username, tracker_exists: false,
-    }));
-    return;
-  }
-
-  const content = fs.readFileSync(trackerPath, 'utf8');
-  if (!content.trim()) {
-    console.log(JSON.stringify({
-      script_ok: true, auth: true, username, tracker_exists: false,
-    }));
-    return;
-  }
-
-  const parsed = parseTrackerFile(content);
-
-  // Default null last_check_date to 30 days ago
+  // Step 2: Parse tracker (or set empty defaults if no tracker)
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
     .toISOString().split('T')[0];
-  for (const issue of parsed.active_issues) {
-    if (!issue.last_check_date) issue.last_check_date = thirtyDaysAgo;
+
+  let trackerExists = false;
+  let parsed = { username: null, active_issues: [], closed_issues: [], raw: '' };
+
+  if (fs.existsSync(trackerPath)) {
+    const content = fs.readFileSync(trackerPath, 'utf8');
+    if (content.trim()) {
+      trackerExists = true;
+      parsed = parseTrackerFile(content);
+      // Default null last_check_date to 30 days ago
+      for (const issue of parsed.active_issues) {
+        if (!issue.last_check_date) issue.last_check_date = thirtyDaysAgo;
+      }
+    }
   }
 
   const oldestCheckDate = parsed.active_issues
@@ -798,7 +786,7 @@ async function cmdStartup(flags) {
     ...parsed.closed_issues.map(i => `${i.owner}/${i.repo}#${i.number}`),
   ];
 
-  // Step 3: Run two gh api search queries in parallel
+  // Step 3: Run two gh api search queries in parallel (always, even without tracker)
   const searchDate = oldestCheckDate;
   const openQuery = `search/issues?q=involves:${username}+is:open+updated:>${searchDate}&per_page=100`;
   const closedQuery = `search/issues?q=involves:${username}+is:closed+closed:>${thirtyDaysAgo}&per_page=50`;
@@ -862,7 +850,7 @@ async function cmdStartup(flags) {
     script_ok: true,
     auth: true,
     username,
-    tracker_exists: true,
+    tracker_exists: trackerExists,
     tracker_path: trackerPath,
     tracker_data: {
       username: parsed.username,
@@ -902,29 +890,26 @@ async function cmdFetchIssues(flags) {
   const allTasks = [];
   const taskMap = []; // Maps task index to { issueIdx, type }
 
+  // Fetch raw JSON from gh api (no --jq — process in Node to avoid Windows quoting issues)
+  function ghFetch(endpoint) {
+    return execAsync(`gh api ${endpoint}`)
+      .then(raw => JSON.parse(raw || '{}'))
+      .catch(e => ({ _error: e.message }));
+  }
+
   for (let i = 0; i < issues.length; i++) {
     const iss = issues[i];
     const { owner, repo, number, last_check_date, known_dupes, upstream } = iss;
+    const issueEndpoint = `repos/${owner}/${repo}/issues/${number}`;
 
-    // Metadata
-    allTasks.push(() => execAsync(
-      `gh api repos/${owner}/${repo}/issues/${number} --jq '{state: .state, labels: [.labels[].name], comments: .comments, updated: .updated_at, created: .created_at, html_url: .html_url}'`
-    ).catch(e => ({ _error: e.message })));
-    taskMap.push({ issueIdx: i, type: 'metadata' });
+    // Issue data (single call — extract metadata + body + author in Node)
+    allTasks.push(() => ghFetch(issueEndpoint));
+    taskMap.push({ issueIdx: i, type: 'issue' });
 
-    // Body
-    allTasks.push(() => execAsync(
-      `gh api repos/${owner}/${repo}/issues/${number} --jq '{title: .title, body: .body, author: .user.login}'`
-    ).catch(e => ({ _error: e.message })));
-    taskMap.push({ issueIdx: i, type: 'body' });
-
-    // Comments
-    const commentJq = last_check_date
-      ? `'[.[] | select(.created_at > "${last_check_date}")] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body}'`
-      : `'.[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body}'`;
-    allTasks.push(() => execAsync(
-      `gh api repos/${owner}/${repo}/issues/${number}/comments --jq ${commentJq}`
-    ).catch(e => ({ _error: e.message })));
+    // Comments (all of them — filter by date in Node)
+    allTasks.push(() => execAsync(`gh api ${issueEndpoint}/comments --paginate`)
+      .then(raw => JSON.parse(raw || '[]'))
+      .catch(e => ({ _error: e.message })));
     taskMap.push({ issueIdx: i, type: 'comments' });
 
     // Known dupe state checks
@@ -935,9 +920,7 @@ async function cmdFetchIssues(flags) {
         const dOwner = dupeMatch[1] || owner;
         const dRepo = dupeMatch[2] || repo;
         const dNumber = dupeMatch[3];
-        allTasks.push(() => execAsync(
-          `gh api repos/${dOwner}/${dRepo}/issues/${dNumber} --jq '{state: .state, updated: .updated_at}'`
-        ).catch(e => ({ _error: e.message })));
+        allTasks.push(() => ghFetch(`repos/${dOwner}/${dRepo}/issues/${dNumber}`));
         taskMap.push({ issueIdx: i, type: 'dupe', dupeKey: `${dOwner}/${dRepo}#${dNumber}` });
       }
     }
@@ -946,9 +929,7 @@ async function cmdFetchIssues(flags) {
     if (upstream) {
       const uMatch = String(upstream).match(/([^/]+)\/([^#]+)#(\d+)/);
       if (uMatch) {
-        allTasks.push(() => execAsync(
-          `gh api repos/${uMatch[1]}/${uMatch[2]}/issues/${uMatch[3]} --jq '{state: .state, labels: [.labels[].name], updated: .updated_at}'`
-        ).catch(e => ({ _error: e.message })));
+        allTasks.push(() => ghFetch(`repos/${uMatch[1]}/${uMatch[2]}/issues/${uMatch[3]}`));
         taskMap.push({ issueIdx: i, type: 'upstream' });
       }
     }
@@ -957,7 +938,7 @@ async function cmdFetchIssues(flags) {
   // Run all tasks with batching (max 15 concurrent)
   const results = await batchRun(allTasks, 15);
 
-  // Organize results by issue
+  // Organize results by issue — process raw API responses in Node
   const issueData = issues.map(() => ({
     metadata: null,
     body: null,
@@ -970,29 +951,71 @@ async function cmdFetchIssues(flags) {
 
   for (let t = 0; t < results.length; t++) {
     const { issueIdx, type, dupeKey } = taskMap[t];
-    let raw = results[t];
-
-    // Parse string results as JSON where possible
-    if (typeof raw === 'string') {
-      try { raw = JSON.parse(raw); } catch (_) { /* keep as string */ }
-    }
+    const raw = results[t];
 
     switch (type) {
-      case 'metadata':
-        issueData[issueIdx].metadata = raw;
+      case 'issue': {
+        // Extract metadata and body from the single issue response
+        if (raw && !raw._error) {
+          issueData[issueIdx].metadata = {
+            state: raw.state,
+            labels: (raw.labels || []).map(l => l.name),
+            comments: raw.comments,
+            updated: raw.updated_at,
+            created: raw.created_at,
+            html_url: raw.html_url,
+          };
+          issueData[issueIdx].body = {
+            title: raw.title,
+            body: raw.body,
+            author: raw.user ? raw.user.login : null,
+          };
+        } else {
+          issueData[issueIdx].metadata = raw;
+          issueData[issueIdx].body = raw;
+        }
         break;
-      case 'body':
-        issueData[issueIdx].body = raw;
+      }
+      case 'comments': {
+        // Filter comments by last_check_date in Node
+        const iss = issues[issueIdx];
+        if (Array.isArray(raw)) {
+          const filtered = iss.last_check_date
+            ? raw.filter(c => c.created_at > iss.last_check_date)
+            : raw;
+          issueData[issueIdx].comments = filtered.map(c => ({
+            author: c.user ? c.user.login : null,
+            date: c.created_at ? c.created_at.split('T')[0] : null,
+            body: c.body,
+          }));
+        } else {
+          issueData[issueIdx].comments = raw;
+        }
         break;
-      case 'comments':
-        issueData[issueIdx].comments = raw;
+      }
+      case 'dupe': {
+        if (raw && !raw._error) {
+          issueData[issueIdx].dupe_states[dupeKey] = {
+            state: raw.state,
+            updated: raw.updated_at,
+          };
+        } else {
+          issueData[issueIdx].dupe_states[dupeKey] = raw;
+        }
         break;
-      case 'dupe':
-        issueData[issueIdx].dupe_states[dupeKey] = raw;
+      }
+      case 'upstream': {
+        if (raw && !raw._error) {
+          issueData[issueIdx].upstream_state = {
+            state: raw.state,
+            labels: (raw.labels || []).map(l => l.name),
+            updated: raw.updated_at,
+          };
+        } else {
+          issueData[issueIdx].upstream_state = raw;
+        }
         break;
-      case 'upstream':
-        issueData[issueIdx].upstream_state = raw;
-        break;
+      }
     }
   }
 

@@ -184,7 +184,9 @@ Also include `new_issues` and `reopened_issues` from `$STARTUP` in the report:
 
 These are sourced directly from the startup command output.
 
-**Show the FULL report output to the user.** Do not summarize, truncate, or paraphrase.
+**Show the FULL report output to the user as text in your response.** Do not summarize,
+truncate, or paraphrase. The user cannot see bash command output — they can only see
+text you write in your response. You MUST copy the full report content into your message.
 
 **acceptance_criteria:** Report shown to user containing "GitHub Issues Check-In" header.
 `$TEMP_DIR/_compiled-report.md` exists. New issues and reopened issues surfaced.

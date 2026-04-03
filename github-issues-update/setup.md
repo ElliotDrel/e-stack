@@ -207,10 +207,14 @@ Instead of routing back to check-in workflow, run compile-report directly:
 node "$SKILL_DIR/bin/tracker-tools.cjs" compile-report --temp-dir "$TEMP_DIR" --date "$(date +%Y-%m-%d)"
 ```
 
-Show the report to the user. This gives them an immediate overview without running a
-full check-in cycle (which would re-fetch everything that was just fetched).
+**Show the FULL report output to the user as text in your response.** Do not summarize,
+truncate, or paraphrase. The user cannot see bash command output — they can only see
+text you write in your response. You MUST copy the full report content into your message.
 
-**acceptance_criteria:** Report shown to user with initial overview of all tracked issues.
+This gives them an immediate overview without running a full check-in cycle
+(which would re-fetch everything that was just fetched).
+
+**acceptance_criteria:** Full report text shown in assistant response (not just in bash output). User can read the complete report without expanding anything.
 
 </step>
 
