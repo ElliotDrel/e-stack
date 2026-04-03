@@ -2,21 +2,22 @@
 
 Main workflow for `/github-issues-update`. Executed when tracker file exists.
 
-**Prerequisites loaded by router:** `$TRACKER_DATA` (parsed JSON from `parse-tracker`),
+**Prerequisites loaded by router:** `$STARTUP` (JSON from `startup` command containing
+auth, username, tracker_data, new_issues, reopened_issues, recently_closed),
 `$SKILL_DIR` (skill directory path), `$TRACKER_PATH` (tracker file path).
 
 Read `references/gh-cli-patterns.md` and `references/tracker-schema.md` before starting.
 
-Uses one subagent per tracked issue for thorough, parallel reviews. Results are written
-to a temp directory on disk — NOT held in context memory.
+Uses `fetch-issues` for parallel API data fetching, batched analysis agents (~5 issues
+per agent), cross-issue synthesis, verification agent, and a completion checklist.
 
 ---
 
-<step name="init_temp" priority="first">
+<step name="init_and_fetch" priority="first">
 
-## Step 1: Initialize Temp Directory
+## Step 1: Initialize and Prepare Fetch
 
-Create the temp directory for subagent results:
+Create the temp directory for results:
 
 ```bash
 TEMP_DIR=$(node "$SKILL_DIR/bin/tracker-tools.cjs" init-temp)
@@ -25,211 +26,141 @@ echo "Temp dir: $TEMP_DIR"
 
 Store `$TEMP_DIR` for all subsequent steps.
 
-Extract from `$TRACKER_DATA`:
+Extract from `$STARTUP`:
 - `username` — GitHub username
-- `active_issues` — array of active issue objects
-- `closed_issues` — array of closed issue objects
-- `all_tracked_numbers` — list of all tracked issue keys (owner/repo#N)
-- `oldest_check_date` — earliest "Status as of" date across all issues
+- `tracker_data.active_issues` — array of active issue objects (last_check_dates already defaulted)
+- `tracker_data.all_tracked_numbers` — list of all tracked issue keys (owner/repo#N)
+- `new_issues` — open issues involving user NOT in tracker
+- `reopened_issues` — closed issues that are now open
+- `recently_closed` — recently closed issues involving user
 
-**acceptance_criteria:** `$TEMP_DIR` exists and is writable. `$TRACKER_DATA` has `username` and at least one issue.
+Write the issues JSON file for `fetch-issues`:
+Build a JSON array of all active issues with fields: `owner`, `repo`, `number`, `title`,
+`role`, `last_check_date`, `known_dupes` (from duplicates + adjacent fields), `upstream`.
+Write to `$TEMP_DIR/issues-to-fetch.json`.
+
+**acceptance_criteria:** `$TEMP_DIR` exists and `issues-to-fetch.json` written with all active issues.
 
 </step>
 
-<step name="spawn_agents">
+<step name="fetch_data">
 
-## Step 2: Gather Data (Subagents)
+## Step 2: Fetch Issue Data via Script
 
-### 2a. One subagent per active issue
+Run the `fetch-issues` command to fetch all API data in parallel:
 
-**Spawn one Agent per active issue**, all in parallel. Each agent performs a thorough
-review of a single issue AND writes its result to a file in `$TEMP_DIR`.
+```bash
+node "$SKILL_DIR/bin/tracker-tools.cjs" fetch-issues --temp-dir "$TEMP_DIR" --issues "$TEMP_DIR/issues-to-fetch.json"
+```
 
-**CRITICAL:** Each agent's prompt MUST include the instruction to write results to a
-specific file path. The agent MUST write the file — this is not optional.
+This replaces ALL per-agent gh api calls. The script handles parallelism (max 15 concurrent),
+writes one `raw-OWNER-REPO-NUMBER.json` file per issue containing metadata, body, comments,
+dupe states, upstream state, cross_references, and urls.
 
-For each active issue in `$TRACKER_DATA.active_issues`, include in the agent prompt:
-OWNER, REPO, NUMBER, TITLE, ROLE, LAST_CHECK_DATE, USERNAME, known duplicate/related
-issue numbers, and upstream issue (if any).
+Verify the fetch output: check that `fetched` count matches expected and `errors` is empty.
 
-Agent prompt template:
+**acceptance_criteria:** Raw data files exist in `$TEMP_DIR` for all active issues.
 
-> You are doing a thorough review of GitHub issue OWNER/REPO#NUMBER ("TITLE").
-> The user's role is ROLE. Last checked: LAST_CHECK_DATE. GitHub username: USERNAME.
->
-> **Step 1 — Fetch data (run all in parallel):**
->
-> 1. Current metadata:
->    `gh api repos/OWNER/REPO/issues/NUMBER --jq '{state: .state, labels: [.labels[].name], comments: .comments, updated: .updated_at, created: .created_at}'`
->
-> 2. Comments since last check (FULL — do not truncate):
->    `gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '[.[] | select(.created_at > "LAST_CHECK_DATE")] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body}'`
->    If no new comments, also fetch last 2 for context:
->    `gh api repos/OWNER/REPO/issues/NUMBER/comments --jq '.[-2:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body}'`
->
-> 3. Issue body (FULL — do not truncate):
->    `gh api repos/OWNER/REPO/issues/NUMBER --jq '{title: .title, body: .body, author: .user.login}'`
->
-> 4. **Known duplicates/related** (if any — these are the issue numbers: KNOWN_DUPES):
->    For each, fetch state and last 2 comments:
->    `gh api repos/DUPE_OWNER/DUPE_REPO/issues/DUPE_NUMBER --jq '{state: .state, updated: .updated_at}'`
->    `gh api repos/DUPE_OWNER/DUPE_REPO/issues/DUPE_NUMBER/comments --jq '.[-2:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body[0:1500]}'`
->
-> 5. **Upstream issue** (if any — UPSTREAM_OWNER/UPSTREAM_REPO#UPSTREAM_NUMBER):
->    `gh api repos/UPSTREAM_OWNER/UPSTREAM_REPO/issues/UPSTREAM_NUMBER --jq '{state: .state, labels: [.labels[].name], updated: .updated_at}'`
->    `gh api repos/UPSTREAM_OWNER/UPSTREAM_REPO/issues/UPSTREAM_NUMBER/comments --jq '.[-2:] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body[0:1500]}'`
->
-> 6. **Search for NEW duplicates/related:**
->    Run 2-3 keyword searches based on the issue title and topic:
->    `gh api "search/issues?q=repo:OWNER/REPO+is:open+created:>LAST_CHECK_DATE+KEYWORD1+KEYWORD2&per_page=10" --jq '.items[] | "#\(.number) — \(.title) [\(.created_at | split("T")[0])] @\(.user.login)"'`
->    Use different keyword variations to catch different phrasings.
->    Exclude these already-known issue numbers: [list of all tracked + known dupe numbers].
->
-> **Step 2 — Analyze:**
->
-> IMPORTANT — Extract specifics, don't paraphrase. Pull exact technical data from the
-> body and comments: error codes, memory addresses, stack traces, test counts, file
-> counts, competing approaches/PRs, version numbers, config values, semantic details
-> (e.g., what a PR changes and why it supersedes another). Quote or reproduce concrete
-> data — don't write "3 crash instances documented" when you can list the actual
-> addresses/sizes. Don't write "supersedes #X" without capturing WHY.
->
-> Compare fetched data against the last check date (LAST_CHECK_DATE):
-> - New comments since last check? Report who said what WITH specifics.
-> - Label changes? State changes (open → closed or vice versa)?
-> - Any comments from repo maintainers or Anthropic employees? (Highest priority signals.)
-> - Any new activity on known duplicates/related?
-> - Any new duplicate/related issues found?
-> - Upstream status changes?
->
-> **Step 3 — MANDATORY: Write result file to disk.**
->
-> You MUST write your analysis to this exact file path:
-> `TEMP_DIR/issue-OWNER-REPO-NUMBER.md`
->
-> Use this exact format:
->
-> ```markdown
-> ---
-> type: issue
-> owner: OWNER
-> repo: REPO
-> number: NUMBER
-> title: "TITLE"
-> state: open_or_closed
-> state_changed: true_or_false
-> labels: label1, label2
-> has_activity: true_or_false
-> role: ROLE
-> last_check_date: LAST_CHECK_DATE
-> last_commenter: "@username"
-> last_comment_date: YYYY-MM-DD
-> comment_count: N
-> ---
->
-> ## Activity
-> - @username (YYYY-MM-DD): What they said WITH specifics.
-> [Or: "No new activity since LAST_CHECK_DATE."]
->
-> ## Duplicates & Related
-> ### Known — updates
-> [Activity on known dupes, or "No changes."]
->
-> ### New finds
-> [New dupes found, or "None found."]
->
-> ## Upstream
-> [Upstream status, or "N/A"]
->
-> ## Next Steps
-> - [ ] Action description (target: owner/repo#NUMBER)
-> [Or: "None — no action needed."]
->
-> ## Watch For
-> - Signal to watch for
->
-> ## Tracker Updates
-> status_summary: Open/Closed. Labels: ... . Summary. N comments total.
-> what_to_check: Updated signal to watch for.
-> [Optional: new_duplicate: #NUMBER — @author, "Title" (date). Why related.]
-> ```
->
-> **DO NOT skip writing the file. This is the primary output of your work.**
-> After writing, confirm: "Result written to TEMP_DIR/issue-OWNER-REPO-NUMBER.md"
+</step>
 
-### 2b. General check subagent
+<step name="batched_analysis">
 
-**Spawn one additional Agent** (in parallel with the per-issue agents) for general checks.
-Include USERNAME, oldest_check_date, all_tracked_numbers, and closed_issues.
+## Step 3: Batched Analysis Agents
+
+Group active issues into batches of ~5 issues each.
+
+Spawn **ONE Agent per batch** (not one per issue). Each agent's prompt MUST include:
+
+1. The list of raw data file paths for its batch:
+   `$TEMP_DIR/raw-OWNER-REPO-NUMBER.json` for each issue in the batch.
+2. Explicit instruction: **"Use the Read tool to read each file listed below."**
+3. The result file schema — read `$SKILL_DIR/references/result-file-schema.md` and include
+   it in the prompt OR instruct the agent to read it.
+4. For each issue in the batch: owner, repo, number, title, role, last_check_date, username,
+   all_tracked_numbers (for filtering duplicate search results).
+5. The `cross_references` and `urls` arrays from each raw JSON — instruct the agent to use
+   these to populate ## Cross-References and ## External Links sections.
+6. Instruction to search for NEW duplicates for ALL issues in the batch (not just authored).
+   Search by SYMPTOMS and ERROR MESSAGES, not just title keywords.
+   Run keyword searches per issue.
+7. Auto-include instruction: If a recently_closed issue from `$STARTUP.recently_closed` is
+   obviously related to an active issue (same topic, same repo, referenced in comments),
+   note it in the Duplicates section.
+8. For duplicates/adjacent: explain whether shared ROOT CAUSE or just SYMPTOMS.
+9. **MANDATORY:** Write one result file per issue to `$TEMP_DIR/issue-OWNER-REPO-NUMBER.md`
+   using the standardized format from `references/result-file-schema.md`.
+
+Include these QUALITY EXAMPLES directly in each agent prompt:
+
+```
+QUALITY REQUIREMENTS — read these before writing any result file:
+
+Role description:
+  BAD:  "Author"
+  GOOD: "Author (filed with 3 crash instances, upstream tracking in bun#28175)"
+
+What to check:
+  BAD:  "Monitor for maintainer engagement"
+  GOOD: "PRs modifying `renameSession` or `custom-title` handling; JSONL title write logic changes"
+
+Workarounds:
+  BAD:  "Use different server names"
+  GOOD: "Name servers differently (`slack-buildpurdue`, `slack-keel`) at user scope via `claude mcp add-json`"
+
+Duplicate reasoning:
+  BAD:  "#40693 — related rename issue"
+  GOOD: "#40693 — VS Code UI blocking during rename. Shares symptoms but different root cause:
+         UI thread vs JSONL write. Adjacent, not duplicate."
+
+Key technical data:
+  BAD:  "Memory leak reported"
+  GOOD: "@kolkov's mimalloc analysis: ~1GB/h growth, traced to arena retention in bun's GC cycle"
+
+Next steps:
+  BAD:  "Follow up"
+  GOOD: "Post memory profiling data from session replay showing 1.2GB peak at 45min mark"
+```
+
+Wait for all agents. Verify file count matches active_issues count:
+```bash
+ls "$TEMP_DIR"/issue-*.md | wc -l
+```
+
+If any result files are missing, report which agents failed and re-run failed agents.
+
+**acceptance_criteria:** One `issue-*.md` per active issue in `$TEMP_DIR`, all following result-file-schema format.
+
+</step>
+
+<step name="synthesis">
+
+## Step 4: Cross-Issue Synthesis
+
+Spawn **ONE Agent** that reads ALL result files from `$TEMP_DIR/issue-*.md`.
 
 Agent prompt:
 
-> Run these general GitHub checks for user USERNAME. Last check date: OLDEST_CHECK_DATE.
+> Use the Read tool to read each of these files: [list all issue-*.md paths].
 >
-> **Fetch in parallel:**
+> Then analyze across all issues for:
+> 1. **Clusters** — issues that are related or affect the same area
+> 2. **Contradictions** — conflicting information across issues
+> 3. **Gaps** — issues missing data or with stale information
+> 4. **Priority signals** — which issues need attention most urgently
+> 5. **Untracked cross-references** — check if any issue numbers found in
+>    ## Cross-References sections point to issues NOT in the tracker
+>    (compare against `$STARTUP.tracker_data.all_tracked_numbers`).
+>    List them as potential tracking candidates.
 >
-> 1. Recent activity involving the user (issues not already in the tracker):
->    `gh api "search/issues?q=involves:USERNAME+updated:>OLDEST_CHECK_DATE+is:open" --jq '.items[] | "#\(.number) \(.repository_url | split("/") | .[-2:] | join("/")) — \(.title) [updated: \(.updated_at)]"'`
->    Filter out these already-tracked issue keys: [ALL_TRACKED_NUMBERS].
->
-> 2. Check closed issues for reopens (run each in parallel):
->    For each closed issue: [CLOSED_ISSUE_LIST]
->    `gh api repos/OWNER/REPO/issues/NUMBER --jq '.state'`
->    Flag any that are no longer "closed".
->
-> **MANDATORY: Write result file to disk.**
->
-> You MUST write your analysis to this exact file path:
-> `TEMP_DIR/general-check.md`
->
-> Use this exact format:
->
-> ```markdown
-> ---
-> type: general
-> ---
->
-> ## New Issues
-> | Issue | Repo | Role | Recommendation |
-> |-------|------|------|----------------|
-> | #NUMBER — Title | owner/repo | role | Track / Ignore (why) |
-> [Or: "None"]
->
-> ## Reopened
-> [List reopened issues, or "None"]
->
-> ## Closed Status
-> All N closed issues confirmed still closed.
-> [Or list surprises]
->
-> ## New Issues to Add
-> [For issues recommended to track, provide full tracker entries here.
->  Or: "None" if no issues recommended for tracking.]
-> ```
->
-> **DO NOT skip writing the file. This is the primary output of your work.**
-> After writing, confirm: "Result written to TEMP_DIR/general-check.md"
+> Write your synthesis to `$TEMP_DIR/synthesis.md` with sections for each of the above.
 
-### 2c. Wait and verify
-
-Wait for ALL agents to complete. Then verify result files exist:
-
-```bash
-ls "$TEMP_DIR"/*.md | wc -l
-```
-
-Expected: one file per active issue + one general-check.md.
-
-If any result files are missing, report which agents failed to write their output.
-DO NOT proceed to compile if critical files are missing — re-run failed agents.
-
-**acceptance_criteria:** `$TEMP_DIR` contains one `issue-*.md` per active issue AND `general-check.md`.
+**acceptance_criteria:** `$TEMP_DIR/synthesis.md` exists with cross-issue analysis.
 
 </step>
 
 <step name="compile_report" priority="must-execute">
 
-## Step 3: Compile and Present Report
+## Step 5: Compile and Present Report
 
 **MANDATORY — DO NOT SKIP THIS STEP.**
 This is the primary output of the check-in. Proceeding to actions or tracker updates
@@ -244,17 +175,58 @@ node "$SKILL_DIR/bin/tracker-tools.cjs" compile-report --temp-dir "$TEMP_DIR" --
 The script reads all result files from `$TEMP_DIR`, compiles the overview report, and
 outputs it to stdout. It also writes it to `$TEMP_DIR/_compiled-report.md`.
 
+After compile-report runs, read `$TEMP_DIR/synthesis.md` if it exists and append a
+**"### Cross-Issue Analysis"** section to the report output.
+
+Also include `new_issues` and `reopened_issues` from `$STARTUP` in the report:
+- Format new_issues as a table: `| Issue | Repo | Recommendation |`
+- Format reopened_issues as a list.
+
+These are sourced directly from the startup command output.
+
 **Show the FULL report output to the user.** Do not summarize, truncate, or paraphrase.
-The user needs to see the complete overview to make decisions in the next step.
 
 **acceptance_criteria:** Report shown to user containing "GitHub Issues Check-In" header.
-`$TEMP_DIR/_compiled-report.md` exists.
+`$TEMP_DIR/_compiled-report.md` exists. New issues and reopened issues surfaced.
+
+</step>
+
+<step name="verification">
+
+## Step 6: Verification Agent
+
+Spawn **ONE Agent** after report compilation.
+
+Agent prompt:
+
+> Use the Read tool to read the compiled report at `$TEMP_DIR/_compiled-report.md`.
+> Then read each issue result file in `$TEMP_DIR/issue-*.md`.
+>
+> Verify:
+> 1. Every active issue has a corresponding section in the report.
+> 2. No data was lost — key findings from result files appear in the report.
+> 3. All new_issues and reopened_issues are mentioned.
+> 4. **QUALITY CHECK** — flag any of these shallow-output patterns:
+>    - 'What to check' that only says 'Monitor for maintainer' or similar generic phrase
+>    - Missing '## Key Technical Data' section or section that says only 'N/A'
+>    - Role field that is a single word ('Author', 'Commenter') without contribution description
+>    - Duplicate listed without WHY reasoning (root cause vs symptoms)
+>    - 'Next steps' that says only 'Follow up' or 'Monitor' without specifics
+>    - Missing '## External Links' section when the issue body/comments clearly contain URLs
+>    - Workarounds described generically instead of with exact commands
+>
+> Write verification result to `$TEMP_DIR/verification.md` with: pass/fail, data gaps,
+> and a 'Quality Flags' section listing any shallow-output issues found.
+
+If verification finds gaps OR quality flags, warn the user before presenting the report.
+
+**acceptance_criteria:** `$TEMP_DIR/verification.md` exists. Quality issues flagged if present.
 
 </step>
 
 <step name="confirm_actions">
 
-## Step 4: Confirm and Execute Actions
+## Step 7: Confirm and Execute Actions
 
 **If there are "Next steps" items in the report:**
 
@@ -296,7 +268,7 @@ If the user wants drafts:
 
 <step name="update_tracker">
 
-## Step 5: Update Tracker
+## Step 8: Update Tracker
 
 Use AskUserQuestion:
 - header: "Update file?"
@@ -319,24 +291,36 @@ Report what changed to the user.
 
 </step>
 
-<step name="validate_and_cleanup" priority="last">
+<step name="completion_checklist" priority="last">
 
-## Step 6: Validate and Cleanup
+## Step 9: Completion Checklist
 
-Run validation to confirm all workflow outputs were produced:
-
+Run validation:
 ```bash
 node "$SKILL_DIR/bin/tracker-tools.cjs" validate --temp-dir "$TEMP_DIR" --tracker "$TRACKER_PATH" --expected ACTIVE_ISSUE_COUNT --date "$(date +%Y-%m-%d)"
 ```
 
-If validation fails, report which checks did not pass.
+Then check each item:
 
-Then clean up the temp directory:
+```
+## Completion Checklist
+- [ ] All N active issues analyzed (result files exist)
+- [ ] Cross-issue synthesis completed
+- [ ] Report compiled and shown to user
+- [ ] Verification agent confirmed no data loss
+- [ ] New issues (N) and reopened issues (N) surfaced to user
+- [ ] User confirmed/skipped actions
+- [ ] Tracker updated/skipped
+- [ ] Temp directory cleaned up
+```
 
+If any item is unchecked, report it to the user before cleanup.
+
+Clean up the temp directory:
 ```bash
 rm -rf "$TEMP_DIR"
 ```
 
-**acceptance_criteria:** Validation passes. Temp directory removed.
+**acceptance_criteria:** All checklist items checked or reported. Temp directory removed.
 
 </step>
