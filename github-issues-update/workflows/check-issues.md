@@ -90,6 +90,15 @@ Spawn **ONE Agent per batch** (not one per issue). Each agent's prompt MUST incl
 9. **MANDATORY:** Write one result file per issue to `$TEMP_DIR/issue-OWNER-REPO-NUMBER.md`
    using the standardized format from `references/result-file-schema.md`.
 
+10. **MANDATORY — Write `history_entry` lines in the `## Tracker Updates` section.** For each
+    issue, include one `history_entry` line per notable event. Use today's date (provided
+    alongside the per-issue data):
+    - If `has_activity` is true: `history_entry: YYYY-MM-DD | New activity: @commenter replied (brief summary)`
+    - If `state_changed` is true: `history_entry: YYYY-MM-DD | State changed to {open|closed}`
+    - If new duplicates found: `history_entry: YYYY-MM-DD | Found duplicate #NUMBER`
+    - If the agent recommends posting a comment: `history_entry: YYYY-MM-DD | Check-in review completed`
+    - If no activity and no changes: `history_entry: YYYY-MM-DD | Check-in: no new activity`
+
 Include these QUALITY EXAMPLES directly in each agent prompt:
 
 ```
@@ -251,6 +260,10 @@ If the user wants drafts:
    - Request edits to specific drafts ("change #3 to ...")
    - Remove specific drafts ("skip #2")
 4. After final approval, post ALL approved comments in parallel via `gh issue comment`.
+   For each comment successfully posted, append a `history_entry` line to the corresponding
+   `$TEMP_DIR/issue-OWNER-REPO-NUMBER.md` result file inside its `## Tracker Updates` section:
+   `history_entry: YYYY-MM-DD | Posted comment on owner/repo#NUMBER: brief description`
+   This way `update-tracker` in Step 8 picks up the action automatically.
 5. Report back with a link table:
 
 ```

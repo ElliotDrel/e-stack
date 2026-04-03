@@ -71,6 +71,17 @@ Run all fetches in parallel.
 
 1. Build new tracker entries following the format in `references/tracker-schema.md`.
    Match the style of existing entries in the tracker exactly.
+   Include a History section with the initial filing entry:
+   - If the user authored the issue:
+     ```
+     - **History:**
+       - **YYYY-MM-DD:** Filed issue (brief context — e.g., "Filed issue with 3 crash instances")
+     ```
+   - If the user is adding an existing issue they didn't author:
+     ```
+     - **History:**
+       - **YYYY-MM-DD:** Added to tracker for monitoring
+     ```
 2. Show the user the entries that will be added.
 3. Ask for confirmation via AskUserQuestion:
    - header: "Add to tracker?"
