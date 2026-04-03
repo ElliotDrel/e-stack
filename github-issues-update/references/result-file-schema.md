@@ -65,10 +65,15 @@ All sections are **REQUIRED** unless explicitly marked optional. Write them in t
 ### ## Status Summary
 **(both) REQUIRED**
 
-2-3 sentences with specific technical details. Not generic descriptions.
+2-3 sentences in plain English explaining where this issue stands and why it matters.
+Write this as if you're briefing someone who hasn't looked at the issue in a week.
+Include specific details (dates, names, numbers) but keep the language conversational — no jargon dumps.
+This section is shown directly in the overview report as the first thing the user reads per issue.
 
 **BAD:** "Issue is about a bug that causes crashes."
-**GOOD:** "Open since 2026-01-15, reports JSONL title write crash when renaming MCP servers. Three separate crash instances documented with distinct memory addresses. Upstream Bun issue bun#28175 tracks the root GC cause."
+**BAD:** "JSONL write fails on MCP rename via net.Server.listen callback with EADDRINUSE."
+**GOOD:** "You filed this bug on Jan 15 about a crash when renaming MCP servers. Three separate crash instances have been documented. The root cause is tracked upstream in Bun issue bun#28175 — until that's fixed, the workaround is naming servers differently."
+**GOOD:** "This is a feature request you commented on for configurable keybindings. The maintainer seemed receptive but hasn't committed to a timeline. Your skill implementation was shared as a proof of concept."
 
 ---
 
@@ -163,7 +168,9 @@ Copy them here and note which (if any) are already tracked.
 ### ## Next Steps
 **(both) REQUIRED**
 
-MUST be specific, not generic.
+MUST be specific and actionable — tell the user exactly what to do, not vague monitoring.
+This section is shown in the overview report as "What to do next" so it should read like
+a to-do list, not a status update.
 
 **BAD examples:**
 - `"Monitor for maintainer engagement"`
@@ -174,6 +181,7 @@ MUST be specific, not generic.
 - `"Respond to @maintainer's request for memory profiling data from session replay"`
 - `"Post memory profiling data from session replay showing 1.2GB peak at 45min mark"`
 - `"Test fix in PR #4521 against reproduction case from comment on 2026-03-15"`
+- `"Nothing to do — waiting on maintainer to review your PR. Check back next week."`
 
 ---
 

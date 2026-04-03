@@ -329,6 +329,7 @@ function compileOverviewReport(tempDir, date) {
   // ── Issues with Activity ──
   if (withActivity.length > 0) {
     report += '### Issues with Activity\n\n';
+    report += `These ${withActivity.length} issue${withActivity.length === 1 ? ' has' : 's have'} new comments or state changes since your last check.\n\n`;
     for (const r of withActivity) {
       report += buildIssueDetailBlock(r);
     }
@@ -337,13 +338,10 @@ function compileOverviewReport(tempDir, date) {
   // ── No Activity ──
   if (noActivity.length > 0) {
     report += '### No Activity\n\n';
-    report += '| Issue | Last activity |\n';
-    report += '|-------|---------------|\n';
+    report += `These ${noActivity.length} issue${noActivity.length === 1 ? ' has' : 's have'} been quiet since your last check. Here's where each one stands and what to watch for.\n\n`;
     for (const r of noActivity) {
-      const lastDate = r.meta.last_comment_date || r.meta.last_check_date || 'unknown';
-      report += `| ${r.meta.owner}/${r.meta.repo}#${r.meta.number} — ${r.meta.title} | ${lastDate} |\n`;
+      report += buildQuietIssueBlock(r);
     }
-    report += '\n---\n\n';
   }
 
   // ── General Check Sections ──
@@ -354,6 +352,7 @@ function compileOverviewReport(tempDir, date) {
     const newIssuesSection = extractSection(body, 'New Issues');
     if (newIssuesSection && newIssuesSection.trim() !== 'None') {
       report += '### New Issues Not in Tracker\n\n';
+      report += 'These issues involve you but aren\'t being tracked yet. Consider adding them.\n\n';
       report += newIssuesSection + '\n\n---\n\n';
     } else {
       report += `### New Issues Not in Tracker\n\nNo new issues found since last check.\n\n---\n\n`;
@@ -424,10 +423,16 @@ function buildIssueDetailBlock(r) {
   }
   block += `| **Your role** | ${r.meta.role || 'Unknown'} |\n\n`;
 
-  // Activity section
+  // Plain English summary of where this issue stands
+  const summary = extractSection(r.body, 'Status Summary');
+  if (summary) {
+    block += `${summary.trim()}\n\n`;
+  }
+
+  // Activity section — what changed since last check
   const activity = extractSection(r.body, 'Activity');
   if (activity) {
-    block += `**What happened:**\n${activity}\n\n`;
+    block += `**What changed:**\n${activity}\n\n`;
   }
 
   // Duplicates
@@ -442,10 +447,38 @@ function buildIssueDetailBlock(r) {
     block += '\n';
   }
 
-  // Next Steps
+  // What you need to do next
   const steps = extractSection(r.body, 'Next Steps');
   if (steps) {
-    block += `**Next steps:**\n${steps}\n\n`;
+    block += `**What to do next:**\n${steps}\n\n`;
+  }
+
+  // Watch For
+  const watch = extractSection(r.body, 'Watch For');
+  if (watch) {
+    block += `**Watch for:**\n${watch}\n\n`;
+  }
+
+  block += '---\n\n';
+  return block;
+}
+
+function buildQuietIssueBlock(r) {
+  let block = '';
+  block += `#### ${r.meta.owner}/${r.meta.repo}#${r.meta.number} — ${r.meta.title}\n`;
+  const lastDate = r.meta.last_comment_date || r.meta.last_check_date || 'unknown';
+  block += `*Last activity: ${lastDate}*\n\n`;
+
+  // Plain English summary so you know where it stands
+  const summary = extractSection(r.body, 'Status Summary');
+  if (summary) {
+    block += `${summary.trim()}\n\n`;
+  }
+
+  // Still show next steps even for quiet issues
+  const steps = extractSection(r.body, 'Next Steps');
+  if (steps) {
+    block += `**What to do next:**\n${steps}\n\n`;
   }
 
   // Watch For
