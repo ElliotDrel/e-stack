@@ -181,6 +181,9 @@ function parseIssueBlock(block) {
   const dateMatch = block.match(/\*\*Status as of (\d{4}-\d{2}-\d{2})\*\*/);
   if (dateMatch) issue.last_check_date = dateMatch[1];
 
+  // Extract History field (multi-line: bullet list under **History:**)
+  issue.history = extractHistoryField(block);
+
   return issue;
 }
 
@@ -221,6 +224,38 @@ function extractNestedItems(block, sectionName) {
     }
   }
   return items;
+}
+
+/**
+ * Extract history entries from an issue block.
+ * Matches all "  - **YYYY-MM-DD:** ..." lines under "**History:**".
+ * Returns array of strings like "**2026-03-15:** Filed issue".
+ */
+function extractHistoryField(block) {
+  // Find **History:** and collect indented bullet lines until next top-level field or section
+  const historyStart = block.search(/- \*\*History:\*\*/);
+  if (historyStart === -1) return [];
+
+  const afterHistory = block.slice(historyStart);
+  // Collect lines after the **History:** line that match date bullets
+  const lines = afterHistory.split(/\r?\n/);
+  const entries = [];
+  let started = false;
+  for (const line of lines) {
+    if (!started) {
+      if (/- \*\*History:\*\*/.test(line)) { started = true; }
+      continue;
+    }
+    // Match indented date bullets: "  - **YYYY-MM-DD:** ..."
+    const bullet = line.match(/^\s+-\s+(\*\*\d{4}-\d{2}-\d{2}\*\*:.+)/);
+    if (bullet) {
+      entries.push(bullet[1].trim());
+    } else if (line.match(/^- \*\*[A-Z]/) || line.match(/^### /)) {
+      // Next top-level field or section header — stop
+      break;
+    }
+  }
+  return entries;
 }
 
 function parseClosedSections(sectionContent) {
@@ -517,6 +552,65 @@ function applyTrackerUpdates(trackerContent, tempDir, date) {
           );
         }
         changes.push(`Added ${newDupeLines.length} duplicates to ${issueKey}`);
+      }
+    }
+
+    // Append history entries from result file
+    if (trackerUpdates) {
+      const newHistoryEntries = [];
+      const historyRe = /^history_entry:\s*(\d{4}-\d{2}-\d{2})\s*\|\s*(.+)/gm;
+      let hm;
+      while ((hm = historyRe.exec(trackerUpdates)) !== null) {
+        newHistoryEntries.push({ date: hm[1], desc: hm[2].trim() });
+      }
+
+      if (newHistoryEntries.length > 0) {
+        const historyHeaderIdx = section.indexOf('- **History:**');
+        if (historyHeaderIdx !== -1) {
+          // History section exists — collect existing entries for dedup
+          const afterHeader = section.slice(historyHeaderIdx);
+          const existingLines = afterHeader.split(/\r?\n/);
+          const existingTexts = new Set();
+          for (const line of existingLines.slice(1)) {
+            const m = line.match(/^\s+-\s+\*\*(\d{4}-\d{2}-\d{2})\*\*:\s*(.+)/);
+            if (m) existingTexts.add(`${m[1]}|${m[2].trim()}`);
+            else if (line.match(/^- \*\*[A-Z]/) || line.match(/^### /)) break;
+          }
+
+          // Build lines to append (deduped)
+          const toAppend = newHistoryEntries
+            .filter(e => !existingTexts.has(`${e.date}|${e.desc}`))
+            .map(e => `  - **${e.date}:** ${e.desc}`);
+
+          if (toAppend.length > 0) {
+            // Find the last history bullet line position and insert after it
+            // We'll insert the new lines before the next top-level field after **History:**
+            const historyBlock = section.slice(historyHeaderIdx);
+            const historyLines = historyBlock.split(/\r?\n/);
+            let lastBulletLine = 0;
+            for (let li = 1; li < historyLines.length; li++) {
+              if (/^\s+-\s+\*\*\d{4}-\d{2}-\d{2}\*\*:/.test(historyLines[li])) {
+                lastBulletLine = li;
+              } else if (/^- \*\*[A-Z]/.test(historyLines[li]) || /^### /.test(historyLines[li])) {
+                break;
+              }
+            }
+            // Insert toAppend after lastBulletLine
+            historyLines.splice(lastBulletLine + 1, 0, ...toAppend);
+            const newHistoryBlock = historyLines.join('\n');
+            section = section.slice(0, historyHeaderIdx) + newHistoryBlock;
+            changes.push(`Appended ${toAppend.length} history entries to ${issueKey}`);
+          }
+        } else {
+          // No history section yet — insert before trailing newline / end of section
+          const insertPoint = section.lastIndexOf('\n');
+          const historyLines = ['- **History:**'];
+          for (const e of newHistoryEntries) {
+            historyLines.push(`  - **${e.date}:** ${e.desc}`);
+          }
+          section = section.slice(0, insertPoint) + '\n' + historyLines.join('\n') + section.slice(insertPoint);
+          changes.push(`Added History section with ${newHistoryEntries.length} entries to ${issueKey}`);
+        }
       }
     }
 
@@ -1239,6 +1333,24 @@ function buildTrackerEntry(meta, body) {
   // Future — from Key Context
   if (keyContext && keyContext.trim() !== 'N/A') {
     lines.push(`- **Future:** ${keyContext.split('\n')[0].replace(/^-\s*/, '').trim()}`);
+  }
+
+  // History — from history_entry lines in Tracker Updates
+  const historyEntries = [];
+  if (trackerUpdates) {
+    const historyRe = /^history_entry:\s*(\d{4}-\d{2}-\d{2})\s*\|\s*(.+)/gm;
+    let hm;
+    while ((hm = historyRe.exec(trackerUpdates)) !== null) {
+      historyEntries.push(`  - **${hm[1]}:** ${hm[2].trim()}`);
+    }
+  }
+  if (historyEntries.length === 0) {
+    // Default entry on initial build
+    historyEntries.push(`  - **${dateStr}:** Added to tracker`);
+  }
+  lines.push(`- **History:**`);
+  for (const he of historyEntries) {
+    lines.push(he);
   }
 
   lines.push('');
