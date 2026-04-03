@@ -43,12 +43,15 @@ node "$SKILL_DIR/bin/tracker-tools.cjs" <command> [options]
 **References (agent reads these, NOT the script):**
 - `references/tracker-schema.md` — Tracker file format and field definitions
 - `references/gh-cli-patterns.md` — gh CLI command templates for ALL API calls
+- `references/result-file-schema.md` — Standardized result file format for agent analysis
 - `tracker-template.md` — Blank tracker template for new setup
 </execution_context>
 
 <process>
 
-<step name="resolve_paths" priority="first">
+<step name="startup_and_route" priority="first">
+
+## Step 1: Startup and Route
 
 1. Determine `$SKILL_DIR` from this file's location.
 2. Verify the script exists:
@@ -57,35 +60,35 @@ node "$SKILL_DIR/bin/tracker-tools.cjs" <command> [options]
    ```
    If MISSING, error: "tracker-tools.cjs not found at $SKILL_DIR/bin/. Skill may be corrupted."
 3. Set `$TRACKER_PATH` to `$HOME/OneDrive/Documents/github-tracker.md`.
-
-</step>
-
-<step name="route">
-
-Parse `$ARGUMENTS` for the mode:
-- If arguments contain `--save` → **Save mode**
-- Otherwise → **Check-in mode** (default)
+4. Parse `$ARGUMENTS` for mode:
+   - If arguments contain `--save` -> **Save mode**
+   - Otherwise -> **Check-in mode** (default)
+5. Run startup:
+   ```bash
+   node "$SKILL_DIR/bin/tracker-tools.cjs" startup --tracker "$TRACKER_PATH"
+   ```
+6. Store entire response as `$STARTUP`. Extract: `auth`, `username`, `tracker_exists`,
+   `tracker_data`, `new_issues`, `reopened_issues`, `recently_closed`.
+7. If `auth` is false -> tell user to run `gh auth login`, **STOP**.
 
 ### Save mode
 
-1. Run: `node "$SKILL_DIR/bin/tracker-tools.cjs" parse-tracker "$TRACKER_PATH"`
-2. If `exists` is false, tell the user to run `/github-issues-update` first, then **STOP**.
-3. Read `workflows/save-issues.md` and `references/tracker-schema.md` from `$SKILL_DIR`.
-4. Execute the save workflow, passing the parsed tracker JSON, `$SKILL_DIR`, and `$TRACKER_PATH`.
+- If `tracker_exists` is false -> tell user to run `/github-issues-update` first, **STOP**.
+- Read `workflows/save-issues.md` and `references/tracker-schema.md` from `$SKILL_DIR`.
+- Execute save workflow passing `$STARTUP`, `$SKILL_DIR`, `$TRACKER_PATH`.
 
 ### Check-in mode
 
-1. Run: `node "$SKILL_DIR/bin/tracker-tools.cjs" parse-tracker "$TRACKER_PATH"`
-2. **If `exists` is false or `empty` is true:**
-   - Tell the user: "No tracker file found. Let's set one up."
-   - Read `setup.md` from `$SKILL_DIR`.
-   - Follow setup instructions end-to-end to create the tracker.
-   - After setup completes, proceed to step 3 to run the first check-in automatically.
-3. **If the tracker exists and has content:**
-   - Store the parsed JSON as `$TRACKER_DATA`.
-   - Read `workflows/check-issues.md` from `$SKILL_DIR`.
-   - Read `references/gh-cli-patterns.md` and `references/tracker-schema.md` from `$SKILL_DIR`.
-   - Execute the check-in workflow, passing `$TRACKER_DATA`, `$SKILL_DIR`, and `$TRACKER_PATH`.
+- **If `tracker_exists` is false or `tracker_data` has no issues:**
+  - Tell the user: "No tracker file found. Let's set one up."
+  - Read `setup.md` from `$SKILL_DIR`.
+  - Follow setup, passing `$STARTUP` (already has username and auth confirmed).
+  - After setup completes, proceed to check-in.
+- **If tracker exists with content:**
+  - Store `$STARTUP` as context (replaces old `$TRACKER_DATA`).
+  - Read `workflows/check-issues.md` from `$SKILL_DIR`.
+  - Read `references/gh-cli-patterns.md` and `references/tracker-schema.md` from `$SKILL_DIR`.
+  - Execute check-in passing `$STARTUP`, `$SKILL_DIR`, `$TRACKER_PATH`.
 
 </step>
 
