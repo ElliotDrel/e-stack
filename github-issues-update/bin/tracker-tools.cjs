@@ -9,6 +9,9 @@
  *   update-tracker --tracker <path> --temp-dir <dir> --date <YYYY-MM-DD>  Apply changes
  *   init-temp                             Create temp directory, print path
  *   validate --temp-dir <dir> --tracker <path> --expected <N>  Check completeness
+ *   startup --tracker <path>              Auth, parse tracker, discover new/reopened issues
+ *   fetch-issues --temp-dir <dir> --issues <json-file>  Parallel gh api fetches per issue
+ *   build-tracker --temp-dir <dir> --template <path> --username <name> --tracker <path>  Compose tracker from result files
  *
  * Zero dependencies. Deterministic output. The agent calls this; it cannot "forget".
  */
@@ -29,6 +32,9 @@ const commands = {
   'update-tracker': cmdUpdateTracker,
   'init-temp': cmdInitTemp,
   'validate': cmdValidate,
+  'startup': cmdStartup,
+  'fetch-issues': cmdFetchIssues,
+  'build-tracker': cmdBuildTracker,
 };
 
 if (!command || !commands[command]) {
@@ -55,7 +61,13 @@ function parseFlags(args) {
 const flags = parseFlags(rawArgs);
 
 try {
-  commands[command](flags);
+  const result = commands[command](flags);
+  if (result instanceof Promise) {
+    result.catch(err => {
+      console.error(`Error in ${command}: ${err.message}`);
+      process.exit(1);
+    });
+  }
 } catch (err) {
   console.error(`Error in ${command}: ${err.message}`);
   process.exit(1);
@@ -687,4 +699,525 @@ function cmdValidate(flags) {
     && checks.all_issues_checked !== false;
 
   console.log(JSON.stringify({ passed, checks }, null, 2));
+}
+
+// ─── Async Helper ──────────────────────────────────────────────────────────
+
+const { exec } = require('child_process');
+const { execSync } = require('child_process');
+
+function execAsync(cmd) {
+  return new Promise((resolve, reject) => {
+    exec(cmd, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
+      if (err) reject(err);
+      else resolve(stdout);
+    });
+  });
+}
+
+/**
+ * Run promises in batches to avoid rate limits.
+ * @param {Array<() => Promise>} tasks - Array of functions returning promises
+ * @param {number} concurrency - Max concurrent tasks
+ * @returns {Promise<Array>} Results in same order as tasks
+ */
+async function batchRun(tasks, concurrency = 15) {
+  const results = [];
+  for (let i = 0; i < tasks.length; i += concurrency) {
+    const batch = tasks.slice(i, i + concurrency);
+    const batchResults = await Promise.all(batch.map(fn => fn()));
+    results.push(...batchResults);
+  }
+  return results;
+}
+
+// ─── Command: startup ──────────────────────────────────────────────────────
+
+async function cmdStartup(flags) {
+  const trackerPath = flags.tracker;
+  if (!trackerPath) {
+    console.error('Usage: startup --tracker <path>');
+    process.exit(1);
+  }
+
+  // Step 1: Check gh auth
+  let username = null;
+  try {
+    const authOutput = execSync('gh auth status 2>&1', { encoding: 'utf8' });
+    const userMatch = authOutput.match(/Logged in to github\.com.*account\s+(\S+)/i)
+      || authOutput.match(/Logged in to github\.com\s+as\s+(\S+)/i)
+      || authOutput.match(/account\s+(\S+)/i);
+    if (userMatch) username = userMatch[1];
+  } catch (err) {
+    console.log(JSON.stringify({ script_ok: true, auth: false }));
+    return;
+  }
+
+  if (!username) {
+    // Try alternate extraction from gh api
+    try {
+      username = execSync('gh api user --jq .login', { encoding: 'utf8' }).trim();
+    } catch (_) {
+      console.log(JSON.stringify({ script_ok: true, auth: false }));
+      return;
+    }
+  }
+
+  // Step 2: Parse tracker
+  if (!fs.existsSync(trackerPath)) {
+    console.log(JSON.stringify({
+      script_ok: true, auth: true, username, tracker_exists: false,
+    }));
+    return;
+  }
+
+  const content = fs.readFileSync(trackerPath, 'utf8');
+  if (!content.trim()) {
+    console.log(JSON.stringify({
+      script_ok: true, auth: true, username, tracker_exists: false,
+    }));
+    return;
+  }
+
+  const parsed = parseTrackerFile(content);
+
+  // Default null last_check_date to 30 days ago
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    .toISOString().split('T')[0];
+  for (const issue of parsed.active_issues) {
+    if (!issue.last_check_date) issue.last_check_date = thirtyDaysAgo;
+  }
+
+  const oldestCheckDate = parsed.active_issues
+    .map(i => i.last_check_date)
+    .filter(Boolean)
+    .sort()[0] || thirtyDaysAgo;
+
+  const allTrackedNumbers = [
+    ...parsed.active_issues.map(i => `${i.owner}/${i.repo}#${i.number}`),
+    ...parsed.closed_issues.map(i => `${i.owner}/${i.repo}#${i.number}`),
+  ];
+
+  // Step 3: Run two gh api search queries in parallel
+  const searchDate = oldestCheckDate;
+  const openQuery = `search/issues?q=involves:${username}+is:open+updated:>${searchDate}&per_page=100`;
+  const closedQuery = `search/issues?q=involves:${username}+is:closed+closed:>${thirtyDaysAgo}&per_page=50`;
+
+  let openResults = [];
+  let closedResults = [];
+
+  try {
+    const [openRaw, closedRaw] = await Promise.all([
+      execAsync(`gh api "${openQuery}" --jq ".items"`),
+      execAsync(`gh api "${closedQuery}" --jq ".items"`),
+    ]);
+    openResults = JSON.parse(openRaw || '[]');
+    closedResults = JSON.parse(closedRaw || '[]');
+  } catch (err) {
+    // Non-fatal: proceed with empty results
+    openResults = [];
+    closedResults = [];
+  }
+
+  // Step 4: Identify new, reopened, recently closed
+  function issueKey(item) {
+    const urlParts = (item.repository_url || '').split('/');
+    const owner = urlParts[urlParts.length - 2];
+    const repo = urlParts[urlParts.length - 1];
+    return `${owner}/${repo}#${item.number}`;
+  }
+
+  function issueInfo(item) {
+    const urlParts = (item.repository_url || '').split('/');
+    return {
+      owner: urlParts[urlParts.length - 2],
+      repo: urlParts[urlParts.length - 1],
+      number: item.number,
+      title: item.title,
+      state: item.state,
+      updated_at: item.updated_at,
+      created_at: item.created_at,
+      html_url: item.html_url,
+      labels: (item.labels || []).map(l => l.name),
+      user: item.user ? item.user.login : null,
+    };
+  }
+
+  const trackedSet = new Set(allTrackedNumbers);
+  const closedNumbers = new Set(
+    parsed.closed_issues.map(i => `${i.owner}/${i.repo}#${i.number}`)
+  );
+
+  const newIssues = openResults
+    .filter(item => !trackedSet.has(issueKey(item)))
+    .map(issueInfo);
+
+  const reopenedIssues = openResults
+    .filter(item => closedNumbers.has(issueKey(item)))
+    .map(issueInfo);
+
+  const recentlyClosed = closedResults.map(issueInfo);
+
+  console.log(JSON.stringify({
+    script_ok: true,
+    auth: true,
+    username,
+    tracker_exists: true,
+    tracker_path: trackerPath,
+    tracker_data: {
+      username: parsed.username,
+      active_issues: parsed.active_issues,
+      closed_issues: parsed.closed_issues,
+      all_tracked_numbers: allTrackedNumbers,
+      oldest_check_date: oldestCheckDate,
+      raw: parsed.raw,
+    },
+    new_issues: newIssues,
+    reopened_issues: reopenedIssues,
+    recently_closed: recentlyClosed,
+  }, null, 2));
+}
+
+// ─── Command: fetch-issues ─────────────────────────────────────────────────
+
+async function cmdFetchIssues(flags) {
+  const tempDir = flags['temp-dir'];
+  const issuesFile = flags.issues;
+
+  if (!tempDir || !issuesFile) {
+    console.error('Usage: fetch-issues --temp-dir <dir> --issues <json-file>');
+    process.exit(1);
+  }
+
+  if (!fs.existsSync(issuesFile)) {
+    console.error(`Issues file not found: ${issuesFile}`);
+    process.exit(1);
+  }
+
+  const issues = JSON.parse(fs.readFileSync(issuesFile, 'utf8'));
+  const errors = [];
+  const files = [];
+
+  // Build all fetch tasks
+  const allTasks = [];
+  const taskMap = []; // Maps task index to { issueIdx, type }
+
+  for (let i = 0; i < issues.length; i++) {
+    const iss = issues[i];
+    const { owner, repo, number, last_check_date, known_dupes, upstream } = iss;
+
+    // Metadata
+    allTasks.push(() => execAsync(
+      `gh api repos/${owner}/${repo}/issues/${number} --jq '{state: .state, labels: [.labels[].name], comments: .comments, updated: .updated_at, created: .created_at, html_url: .html_url}'`
+    ).catch(e => ({ _error: e.message })));
+    taskMap.push({ issueIdx: i, type: 'metadata' });
+
+    // Body
+    allTasks.push(() => execAsync(
+      `gh api repos/${owner}/${repo}/issues/${number} --jq '{title: .title, body: .body, author: .user.login}'`
+    ).catch(e => ({ _error: e.message })));
+    taskMap.push({ issueIdx: i, type: 'body' });
+
+    // Comments
+    const commentJq = last_check_date
+      ? `'[.[] | select(.created_at > "${last_check_date}")] | .[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body}'`
+      : `'.[] | {author: .user.login, date: (.created_at | split("T")[0]), body: .body}'`;
+    allTasks.push(() => execAsync(
+      `gh api repos/${owner}/${repo}/issues/${number}/comments --jq ${commentJq}`
+    ).catch(e => ({ _error: e.message })));
+    taskMap.push({ issueIdx: i, type: 'comments' });
+
+    // Known dupe state checks
+    const dupes = known_dupes || [];
+    for (const dupe of dupes) {
+      const dupeMatch = String(dupe).match(/(?:([^/]+)\/([^#]+))?#?(\d+)/);
+      if (dupeMatch) {
+        const dOwner = dupeMatch[1] || owner;
+        const dRepo = dupeMatch[2] || repo;
+        const dNumber = dupeMatch[3];
+        allTasks.push(() => execAsync(
+          `gh api repos/${dOwner}/${dRepo}/issues/${dNumber} --jq '{state: .state, updated: .updated_at}'`
+        ).catch(e => ({ _error: e.message })));
+        taskMap.push({ issueIdx: i, type: 'dupe', dupeKey: `${dOwner}/${dRepo}#${dNumber}` });
+      }
+    }
+
+    // Upstream check
+    if (upstream) {
+      const uMatch = String(upstream).match(/([^/]+)\/([^#]+)#(\d+)/);
+      if (uMatch) {
+        allTasks.push(() => execAsync(
+          `gh api repos/${uMatch[1]}/${uMatch[2]}/issues/${uMatch[3]} --jq '{state: .state, labels: [.labels[].name], updated: .updated_at}'`
+        ).catch(e => ({ _error: e.message })));
+        taskMap.push({ issueIdx: i, type: 'upstream' });
+      }
+    }
+  }
+
+  // Run all tasks with batching (max 15 concurrent)
+  const results = await batchRun(allTasks, 15);
+
+  // Organize results by issue
+  const issueData = issues.map(() => ({
+    metadata: null,
+    body: null,
+    comments: null,
+    dupe_states: {},
+    upstream_state: null,
+    cross_references: [],
+    urls: [],
+  }));
+
+  for (let t = 0; t < results.length; t++) {
+    const { issueIdx, type, dupeKey } = taskMap[t];
+    let raw = results[t];
+
+    // Parse string results as JSON where possible
+    if (typeof raw === 'string') {
+      try { raw = JSON.parse(raw); } catch (_) { /* keep as string */ }
+    }
+
+    switch (type) {
+      case 'metadata':
+        issueData[issueIdx].metadata = raw;
+        break;
+      case 'body':
+        issueData[issueIdx].body = raw;
+        break;
+      case 'comments':
+        issueData[issueIdx].comments = raw;
+        break;
+      case 'dupe':
+        issueData[issueIdx].dupe_states[dupeKey] = raw;
+        break;
+      case 'upstream':
+        issueData[issueIdx].upstream_state = raw;
+        break;
+    }
+  }
+
+  // Post-process: extract cross_references and urls from body + comments
+  for (let i = 0; i < issues.length; i++) {
+    const data = issueData[i];
+    const allText = collectText(data);
+
+    // Extract #NUMBER and owner/repo#NUMBER patterns
+    const crossRefs = new Set();
+    const refRe = /(?:([a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+))?#(\d+)/g;
+    let m;
+    while ((m = refRe.exec(allText)) !== null) {
+      crossRefs.add(m[1] ? `${m[1]}#${m[2]}` : `#${m[2]}`);
+    }
+    data.cross_references = [...crossRefs];
+
+    // Extract URLs
+    const urlSet = new Set();
+    const urlRe = /https?:\/\/[^\s)>\]"']+/g;
+    while ((m = urlRe.exec(allText)) !== null) {
+      urlSet.add(m[0].replace(/[.,;:]+$/, ''));
+    }
+    data.urls = [...urlSet];
+
+    // Write raw JSON per issue
+    const iss = issues[i];
+    const outFile = path.join(tempDir, `raw-${iss.owner}-${iss.repo}-${iss.number}.json`);
+    try {
+      fs.writeFileSync(outFile, JSON.stringify(data, null, 2), 'utf8');
+      files.push(outFile);
+    } catch (err) {
+      errors.push(`Failed to write ${outFile}: ${err.message}`);
+    }
+  }
+
+  console.log(JSON.stringify({ fetched: files.length, files, errors }));
+}
+
+/**
+ * Collect all text content from issue data for cross-reference/URL extraction.
+ */
+function collectText(data) {
+  const parts = [];
+  if (data.body) {
+    if (typeof data.body === 'string') parts.push(data.body);
+    else if (data.body.body) parts.push(data.body.body);
+  }
+  if (data.comments) {
+    if (typeof data.comments === 'string') parts.push(data.comments);
+    else if (Array.isArray(data.comments)) {
+      for (const c of data.comments) {
+        if (typeof c === 'string') parts.push(c);
+        else if (c && c.body) parts.push(c.body);
+      }
+    }
+  }
+  return parts.join('\n');
+}
+
+// ─── Command: build-tracker ────────────────────────────────────────────────
+
+function cmdBuildTracker(flags) {
+  const tempDir = flags['temp-dir'];
+  const templatePath = flags.template;
+  const username = flags.username;
+  const trackerPath = flags.tracker;
+  const closedJsonPath = flags['closed-json'];
+
+  if (!tempDir || !templatePath || !username || !trackerPath) {
+    console.error('Usage: build-tracker --temp-dir <dir> --template <path> --username <name> --tracker <path> [--closed-json <path>]');
+    process.exit(1);
+  }
+
+  // Step 1: Read template
+  if (!fs.existsSync(templatePath)) {
+    console.error(`Template not found: ${templatePath}`);
+    process.exit(1);
+  }
+  let tracker = fs.readFileSync(templatePath, 'utf8');
+
+  // Step 2: Replace USERNAME_HERE
+  tracker = tracker.replace(/USERNAME_HERE/g, username);
+
+  // Step 3: Read all issue-*.md result files from temp dir
+  if (!fs.existsSync(tempDir)) {
+    console.error(`Temp directory not found: ${tempDir}`);
+    process.exit(1);
+  }
+
+  const resultFiles = fs.readdirSync(tempDir).filter(f =>
+    f.startsWith('issue-') && f.endsWith('.md')
+  );
+
+  const entries = [];
+  for (const file of resultFiles) {
+    const content = fs.readFileSync(path.join(tempDir, file), 'utf8');
+    const { meta, body } = parseFrontmatter(content);
+    if (meta.type !== 'issue') continue;
+
+    // Build tracker entry from result file
+    const entry = buildTrackerEntry(meta, body);
+    entries.push(entry);
+  }
+
+  // Step 4: Insert active entries into tracker
+  const activeEntriesText = entries.join('\n');
+  tracker = tracker.replace(
+    /(## Active Issues[^\n]*\n)([\s\S]*?)(## Closed)/,
+    `$1\n${activeEntriesText}\n$3`
+  );
+
+  // Step 5: Handle closed issues if provided
+  let closedCount = 0;
+  if (closedJsonPath && fs.existsSync(closedJsonPath)) {
+    const closedIssues = JSON.parse(fs.readFileSync(closedJsonPath, 'utf8'));
+    closedCount = closedIssues.length;
+    let closedText = '';
+    for (const ci of closedIssues) {
+      closedText += `### ${ci.owner}/${ci.repo}#${ci.number} — ${ci.title}\n`;
+      closedText += `- ${ci.resolution || 'Closed.'}\n\n`;
+    }
+    if (closedText) {
+      tracker = tracker.replace(
+        /(## Closed[^\n]*\n)/,
+        `$1\n${closedText}`
+      );
+    }
+  }
+
+  // Step 6: Write tracker
+  fs.writeFileSync(trackerPath, tracker, 'utf8');
+
+  console.log(JSON.stringify({
+    written: true,
+    path: trackerPath,
+    active_count: entries.length,
+    closed_count: closedCount,
+  }));
+}
+
+/**
+ * Build a tracker entry string from result file frontmatter and body.
+ */
+function buildTrackerEntry(meta, body) {
+  const lines = [];
+  lines.push(`### ${meta.owner}/${meta.repo}#${meta.number} — ${meta.title}`);
+
+  // Role
+  lines.push(`- **Role:** ${meta.role || 'Unknown'}`);
+
+  // Filed
+  if (meta.filed) {
+    lines.push(`- **Filed:** ${meta.filed}`);
+  }
+
+  // Status — from ## Status Summary + labels
+  const statusSummary = extractSection(body, 'Status Summary') || 'Open.';
+  const labels = meta.labels
+    ? (Array.isArray(meta.labels) ? meta.labels.join(', ') : meta.labels)
+    : '';
+  const trackerUpdates = extractSection(body, 'Tracker Updates') || '';
+  const statusLine = trackerUpdates.match(/^status_summary:\s*(.+)/m);
+  const statusText = statusLine
+    ? statusLine[1].trim()
+    : `${meta.state || 'Open'}. Labels: ${labels}. ${statusSummary.split('\n')[0]}`;
+  const dateStr = new Date().toISOString().split('T')[0];
+  lines.push(`- **Status as of ${dateStr}:** ${statusText}`);
+
+  // What to check — from ## Watch For or tracker updates
+  const watchLine = trackerUpdates.match(/^what_to_check:\s*(.+)/m);
+  const watchFor = watchLine
+    ? watchLine[1].trim()
+    : (extractSection(body, 'Watch For') || 'Monitor for updates.').split('\n')[0].replace(/^-\s*/, '');
+  lines.push(`- **What to check:** ${watchFor}`);
+
+  // Related — from ## Cross-References
+  const crossRefs = extractSection(body, 'Cross-References');
+  if (crossRefs && crossRefs.trim() !== 'None' && crossRefs.trim() !== 'None found.') {
+    lines.push(`- **Related:** ${crossRefs.split('\n')[0].trim()}`);
+  }
+
+  // Upstream
+  const upstream = extractSection(body, 'Upstream');
+  if (upstream && upstream.trim() !== 'N/A' && upstream.trim() !== 'None') {
+    lines.push(`- **Upstream:** ${upstream.split('\n')[0].trim()}`);
+  }
+
+  // Key Context -> workaround / future
+  const keyContext = extractSection(body, 'Key Context');
+  if (keyContext && keyContext.trim() !== 'N/A') {
+    // Check for workaround
+    const workaroundMatch = keyContext.match(/[Ww]orkaround:?\s*(.+)/);
+    if (workaroundMatch) {
+      lines.push(`- **Workaround:** ${workaroundMatch[1].trim()}`);
+    }
+  }
+
+  // Duplicates from ## Duplicates and Related
+  const dupeSection = extractSection(body, 'Duplicates and Related')
+    || extractSection(body, 'Known');
+  if (dupeSection) {
+    const dupeLines = dupeSection.split('\n').filter(l => l.match(/^\s*-?\s*[#*]/));
+    if (dupeLines.length > 0) {
+      lines.push(`- **Duplicates found (${dateStr}):**`);
+      for (const dl of dupeLines) {
+        const cleaned = dl.replace(/^[\s-]*/, '  - ');
+        lines.push(cleaned);
+      }
+    }
+  }
+
+  // Next steps
+  const nextSteps = extractSection(body, 'Next Steps');
+  if (nextSteps && nextSteps.trim() !== 'None' && nextSteps.trim() !== 'None — no action needed.') {
+    lines.push(`- **Next steps (now):** ${nextSteps.split('\n')[0].replace(/^-\s*\[.\]\s*/, '').trim()}`);
+  } else {
+    lines.push(`- **Next steps (now):** None — no action needed.`);
+  }
+
+  // Future — from Key Context
+  if (keyContext && keyContext.trim() !== 'N/A') {
+    lines.push(`- **Future:** ${keyContext.split('\n')[0].replace(/^-\s*/, '').trim()}`);
+  }
+
+  lines.push('');
+  return lines.join('\n');
 }
