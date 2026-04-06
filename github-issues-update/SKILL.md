@@ -93,6 +93,9 @@ plain English directives like excluded repos, focus areas, etc. Apply these when
 issues throughout this step. For example, if config says "Excluded repos: ElliotDrel/*",
 skip any issues from repos owned by ElliotDrel.
 
+If the tracker exists but has no `## Config` section, ask the user if they want to set
+one up (which repos to track/exclude). Add it to the tracker during Step 4c.
+
 **If tracker doesn't exist or has no issues** (first run):
 
 - Show `new_issues` grouped by repo. List which repos were found.
@@ -150,9 +153,21 @@ The duplicate/related search always runs, but the scope changes:
 - **Checked more than 7 days ago:** Medium depth. Read comments since last check. Re-scan
   for new duplicates across a wider window. Check state of known duplicates.
 
+**Fill in missing data:** For each issue, compare what the tracker has against what the
+API returned. If the tracker entry is missing factual fields (Role description, What to check,
+Workaround, Key technical data, etc.), the agent should fill them in from the API data.
+This means every run progressively improves the tracker's completeness. Include any
+newly populated fields in the result file's `## Tracker Updates` section.
+
+**Exception — fields that require user input:** The **Goal** field must be asked, not
+guessed. If an issue is missing a Goal, flag it in the result file. After the report
+(Step 4a), present all issues missing Goals and ask the user what their intent is for
+each one. Same for Config — never assume repo exclusions or preferences, always ask.
+
 Each agent prompt must include:
 
 - Raw data file paths for its batch
+- The existing tracker entry data for each issue (so the agent can identify gaps)
 - `owner`, `repo`, `number`, `title`, `role`, `last_check_date`, `username`
 - `cross_references` and `urls` from raw JSON
 - All tracked issue numbers (to filter dupe search results)
@@ -171,9 +186,14 @@ ls "$TEMP_DIR"/issue-*.md 2>/dev/null | wc -l
 
 **Goal:** Identify concrete next steps for each issue before presenting the report.
 
-Read through all result files in `$TEMP_DIR/issue-*.md`. For each issue, determine:
+Read through all result files in `$TEMP_DIR/issue-*.md`. For each issue, use the
+**Goal** field from the tracker (e.g., "Get my fix merged", "Get maintainer to respond",
+"Monitor for upstream fix") to tailor recommendations. The goal tells you what success
+looks like — next steps should move toward that outcome.
 
-- What action would move this issue toward resolution (accepted or denied)?
+For each issue, determine:
+
+- Given the user's goal, what action would move this issue forward?
 - Are there related issues where commenting with a link to the user's issue would help?
 - Are there duplicates the user should reference or link to?
 - Is there a PR fixing the issue that needs testing or review?
@@ -249,6 +269,15 @@ node "$SKILL_DIR/bin/tracker-tools.cjs" update-tracker --tracker "$TRACKER_PATH"
 ```
 
 Report what changed.
+
+**Every tracker update must be logged in History.** Every change the skill makes to the
+tracker — new fields populated, status updates, new duplicates found, config added,
+goals set — gets a history entry on the affected issue. The History section is an
+append-only audit trail. Examples:
+- `**2026-04-06:** Check-in: no new activity`
+- `**2026-04-06:** Filled in missing Goal and Workaround fields`
+- `**2026-04-06:** Added Config section to tracker (excluded: ElliotDrel/*)`
+- `**2026-04-06:** Found new duplicate #45123`
 
 ### 4d: Cleanup
 

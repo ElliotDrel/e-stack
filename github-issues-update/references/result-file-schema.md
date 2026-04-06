@@ -78,7 +78,10 @@ different root cause: UI thread blocking vs JSONL write. Adjacent, not duplicate
 
 ### ## Next Steps
 
-Specific, actionable items. This shows up in the report as what the user should do.
+Specific, actionable items driven by the user's **Goal** for this issue (from the tracker).
+If the goal is "get my fix merged", focus on what's blocking the merge.
+If "get maintainer to respond", suggest ways to increase visibility.
+If "monitor for upstream fix", focus on upstream signals.
 
 Bad: `"Monitor for updates"`, `"Follow up"`
 Good: `"Respond to @maintainer's request for memory profiling data"`,
@@ -99,6 +102,7 @@ RSS from 2.4GB to 1.1GB but doesn't eliminate growth."`
 Machine-readable lines consumed by `update-tracker` and `build-tracker`:
 
 ```
+goal: Get my fix merged | Get maintainer response | Monitor for upstream fix | etc.
 status_summary: Open. Labels: bug, p1. JSONL crash on rename. 12 comments total.
 what_to_check: PRs modifying renameSession; JSONL title write logic changes.
 ```

@@ -37,6 +37,7 @@ Each issue entry under `## Active Issues (watching for updates)`:
 
 ```markdown
 ### owner/repo#NUMBER — Title
+- **Goal:** What the user wants from this issue (e.g., "Get my fix merged", "Get maintainer to respond", "Monitor for upstream fix"). Drives next-step recommendations.
 - **Role:** Author | Commenter | Mentioned (brief description of involvement)
 - **Filed:** YYYY-MM-DD (only if authored by user)
 - **Status as of YYYY-MM-DD:** Open/Closed. Labels: label1, label2. Summary of current state. N comments total.
@@ -65,6 +66,7 @@ Each issue entry under `## Active Issues (watching for updates)`:
 - **"Duplicates found" date:** Date when the duplicate was first identified. Don't change on subsequent check-ins.
 - **"Next steps (now)":** Clear after execution. If not executed, carry forward.
 - **"Future":** Accumulates over time. Remove items that become "Next steps (now)" or are no longer relevant.
+- **"Goal":** Set on first add, update if the user's intent changes. Use this to drive next-step recommendations — if the goal is "get merged" the next steps focus on what's blocking the merge; if "monitor for fix" the next steps focus on upstream signals.
 - **Role descriptions:** Keep brief. Examples: "confirmed bug + posted workaround", "shared skill + reported 64KB bug", "proposed configurable keybindings".
 - **"History:"** Append-only timestamped log. Format: `- **YYYY-MM-DD:** Action or event description`. Newest entries go last (chronological). Logs both our actions (filing, commenting, posting workarounds) and detected external events (maintainer replies, state changes, PRs merged). On initial filing, first entry must be: `- **YYYY-MM-DD:** Filed issue` (or `Added to tracker` if not authored by user).
 
