@@ -11,10 +11,25 @@ Defines the format and fields for `github-tracker.md`.
 
 GitHub username: **USERNAME**
 
-Use `gh` CLI to check status. This file helps morning check-ins go faster.
+## Config
+
+Tracked repos: all repos where I'm involved
+Excluded repos: none
 
 ---
 ```
+
+## Config Section
+
+Plain English directives that control what the skill tracks and how it reports.
+The skill reads these on every run and respects them when filtering issues.
+
+Common directives:
+- `Tracked repos:` — which repos to include (default: all involving user)
+- `Excluded repos:` — repos to skip entirely (e.g., `ElliotDrel/*` to skip own repos)
+- Any other plain English instructions (e.g., "Don't show bot comments", "Focus on bugs only")
+
+The skill treats these as soft rules — it reads them and applies judgment. No rigid parsing.
 
 ## Active Issues Section
 

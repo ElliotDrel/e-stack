@@ -37,12 +37,17 @@ Extract the date from this string. If you see multiple `today` values in your co
 (from earlier commands), always use the most recent one.
 
 **Tracker file:** `$HOME/OneDrive/Documents/github-tracker.md`
-This is a cache + context store. It makes the agent's job faster by preserving:
+This is the AI's knowledge base and source of truth. It stores everything in full detail:
 
-- Which issues are being tracked and their last-known state
-- What to watch for on each issue (user's intent/goals)
-- History of actions taken and events observed
-- Known duplicates and related issues (so we don't re-search)
+- Every tracked issue with complete context, history, and technical data
+- Known duplicates, related issues, cross-references
+- User's intent/goals for each issue and what to watch for
+- History of all actions taken and events observed
+- Config directives (excluded repos, preferences)
+
+The tracker is written FOR the AI — keep it detailed. When the user asks questions about
+any issue, read the tracker first. It should have enough context to answer without
+re-fetching from GitHub. The user-facing report (Step 4a) is a separate, concise summary.
 
 **References:**
 
@@ -83,15 +88,23 @@ Sources (all from `$STARTUP`):
 - `reopened_issues` — issues previously closed that are now open again
 - `recently_closed` — issues closed since last check
 
+**Read the tracker's `## Config` section first** (if the tracker exists). This contains
+plain English directives like excluded repos, focus areas, etc. Apply these when filtering
+issues throughout this step. For example, if config says "Excluded repos: ElliotDrel/*",
+skip any issues from repos owned by ElliotDrel.
+
 **If tracker doesn't exist or has no issues** (first run):
 
-- Present `new_issues` grouped by repo. Ask user which to track (all, pick specific, none).
+- Show `new_issues` grouped by repo. List which repos were found.
+- Ask: "Which repos do you want to track? You can also exclude any."
+- Save their choices to the `## Config` section when building the tracker.
+- Then ask which specific issues to track from the included repos.
 
 **If tracker exists with issues:**
 
-- Active issues are automatically included.
-- If `new_issues` is non-empty, tell the user what was found and add them to the
-  analysis list. These are issues the user is involved in but wasn't tracking yet.
+- Active issues are automatically included (unless excluded by config).
+- If `new_issues` is non-empty and passes config filters, tell the user what was
+  found and add them to the analysis list.
 - If `reopened_issues` is non-empty, add them back to the active analysis list and
   note in your report that they were reopened (state changed from closed to open).
 
@@ -179,15 +192,35 @@ Collect all next steps. These get included in the report output.
 node "$SKILL_DIR/bin/tracker-tools.cjs" compile-report --temp-dir "$TEMP_DIR" --date "$TODAY"
 ```
 
-The script reads all result files and outputs the report to stdout (also saves to
-`$TEMP_DIR/_compiled-report.md`).
+The script reads all result files and outputs the report. Use the script output as raw
+data, but present the report to the user in YOUR response using the format below.
 
-After running compile-report:
+**Report format — keep it tight and actionable:**
 
-- If there are `new_issues` or `reopened_issues` from startup, append them to the report.
-- Append the next steps identified in Step 3 as a clear action list per issue.
-- **Show the FULL report to the user as text in your response.** The user cannot see
-  bash output — you MUST copy the report into your message. Do not summarize or truncate.
+The user wants to know three things: what changed, what's the update, what do I do.
+Skip GitHub spam (bot comments, auto-close noise, label changes). Use bullets, not tables.
+
+```
+# Check-In — {date}
+
+## What Changed
+- bullet per issue that had real activity (new human comments, state changes, PRs)
+- if nothing changed, say "No new activity across N tracked issues."
+
+## New Issues Found
+- bullet per newly discovered issue (if any, after config filtering)
+
+## Recommended Actions
+### Do Today
+- specific action items the user should take right now
+### Watch For
+- things that might need attention soon but not today
+### No Action Needed
+- brief grouped summary of issues that are just waiting (e.g., "15 google-tools-mcp issues — no maintainer response")
+```
+
+Do NOT list every single issue with its full status. Only mention issues where
+something happened or something needs to happen. Group quiet issues into one line.
 
 ### 4b: Act on next steps
 

@@ -2,7 +2,16 @@
 
 GitHub username: **USERNAME_HERE**
 
-Use `gh` CLI to check status. This file helps morning check-ins go faster.
+## Config
+
+<!-- Directives for the check-in skill. Write in plain English. Examples:
+- "Skip issues on my own repos (ElliotDrel/*)"
+- "Only track issues on anthropics/claude-code and oven-sh/bun"
+- "Don't show me bot comments or auto-close spam"
+-->
+
+Tracked repos: all repos where I'm involved
+Excluded repos: none
 
 ---
 
