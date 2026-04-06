@@ -74,6 +74,9 @@ issues just need a quick diff check.
    creation. If `auth` is false, show the user the `error` message from the output and STOP.
 4. Extract `$TODAY` (the YYYY-MM-DD date) from the `$STARTUP.today` string — use this as today's date for everything.
 5. Extract `$TEMP_DIR` from `$STARTUP.temp_dir`.
+6. Extract `$CONFIG` from `$STARTUP.config`. This is the user's plain English config
+   (excluded repos, preferences, etc.) parsed from the tracker's `## Config` section.
+   If null, the tracker has no config yet — you'll ask the user in Step 1.
 
 ---
 
@@ -88,12 +91,11 @@ Sources (all from `$STARTUP`):
 - `reopened_issues` — issues previously closed that are now open again
 - `recently_closed` — issues closed since last check
 
-**Read the tracker's `## Config` section first** (if the tracker exists). This contains
-plain English directives like excluded repos, focus areas, etc. Apply these when filtering
-issues throughout this step. For example, if config says "Excluded repos: ElliotDrel/*",
-skip any issues from repos owned by ElliotDrel.
+**Check `$CONFIG` from startup.** If it contains directives (excluded repos, preferences),
+apply them when filtering issues throughout this step. For example, if config says
+"Excluded repos: ElliotDrel/*", skip any issues from repos owned by ElliotDrel.
 
-If the tracker exists but has no `## Config` section, ask the user if they want to set
+If `$CONFIG` is null (tracker has no Config section), ask the user if they want to set
 one up (which repos to track/exclude). Add it to the tracker during Step 4c.
 
 **If tracker doesn't exist or has no issues** (first run):
@@ -160,9 +162,8 @@ This means every run progressively improves the tracker's completeness. Include 
 newly populated fields in the result file's `## Tracker Updates` section.
 
 **Exception — fields that require user input:** The **Goal** field must be asked, not
-guessed. If an issue is missing a Goal, flag it in the result file. After the report
-(Step 4a), present all issues missing Goals and ask the user what their intent is for
-each one. Same for Config — never assume repo exclusions or preferences, always ask.
+guessed. If an issue is missing a Goal, flag it in the result file so Step 4b can
+collect them. Same for Config — never assume repo exclusions or preferences, always ask.
 
 Each agent prompt must include:
 
@@ -242,9 +243,13 @@ Skip GitHub spam (bot comments, auto-close noise, label changes). Use bullets, n
 Do NOT list every single issue with its full status. Only mention issues where
 something happened or something needs to happen. Group quiet issues into one line.
 
-### 4b: Act on next steps
+### 4b: Collect missing user input and act
 
-After showing the report, present the actionable items:
+**First, ask for any missing Goals.** If result files flagged issues without a Goal,
+present them to the user grouped by repo and ask what their intent is for each.
+Example: "These issues don't have a goal set yet — what are you hoping for with each?"
+
+**Then, present actionable items:**
 
 - If there are comments to post, issues to link, or other actions: ask the user
   "Want me to act on these next steps?" and list what you'd do.

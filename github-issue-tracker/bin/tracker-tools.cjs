@@ -1,18 +1,16 @@
 #!/usr/bin/env node
 
 /**
- * tracker-tools.cjs — Data service layer for github-issues-update skill.
+ * tracker-tools.cjs — Data service layer for github-issue-tracker skill.
  *
  * Commands:
- *   parse-tracker <path>                  Parse tracker.md into structured JSON
- *   compile-report --temp-dir <dir> --date <YYYY-MM-DD>  Build overview from result files
- *   update-tracker --tracker <path> --temp-dir <dir> --date <YYYY-MM-DD>  Apply changes
- *   init-temp                             Create temp directory, print path
- *   validate --temp-dir <dir> --tracker <path> --expected <N>  Check completeness
- *   startup --tracker <path>              Auth, parse tracker, discover new/reopened issues
+ *   startup --tracker <path>              Auth, parse tracker + config, create temp dir, discover issues
  *   fetch-issues --temp-dir <dir> --issues <json-file>  Parallel gh api fetches per issue
- *   build-tracker --temp-dir <dir> --template <path> --username <name> --tracker <path>  Compose tracker from result files
+ *   compile-report --temp-dir <dir> --date <YYYY-MM-DD>  Build overview from result files
+ *   update-tracker --tracker <path> --temp-dir <dir> --date <YYYY-MM-DD>  Apply changes (incl. Goal)
+ *   build-tracker --temp-dir <dir> --template <path> --username <name> --tracker <path>  First-run tracker creation
  *
+ * All commands return a `today` field with the current date.
  * Zero dependencies. Deterministic output. The agent calls this; it cannot "forget".
  */
 
@@ -33,11 +31,8 @@ function todayTag() {
 const [,, command, ...rawArgs] = process.argv;
 
 const commands = {
-  'parse-tracker': cmdParseTracker,
   'compile-report': cmdCompileReport,
   'update-tracker': cmdUpdateTracker,
-  'init-temp': cmdInitTemp,
-  'validate': cmdValidate,
   'startup': cmdStartup,
   'fetch-issues': cmdFetchIssues,
   'build-tracker': cmdBuildTracker,
@@ -115,6 +110,7 @@ function parseFrontmatter(content) {
 function parseTrackerFile(content) {
   const result = {
     username: null,
+    config: null,
     active_issues: [],
     closed_issues: [],
     raw: content,
@@ -123,6 +119,13 @@ function parseTrackerFile(content) {
   // Extract username
   const userMatch = content.match(/GitHub username:\s*\*\*(.+?)\*\*/);
   if (userMatch) result.username = userMatch[1];
+
+  // Extract Config section (between ## Config and next --- or ##)
+  const configMatch = content.match(/## Config\s*\n([\s\S]*?)(?=\n---|\n## (?!Config))/);
+  if (configMatch) {
+    // Strip HTML comments and trim
+    result.config = configMatch[1].replace(/<!--[\s\S]*?-->/g, '').trim() || null;
+  }
 
   // Split into Active and Closed sections
   const activeSectionMatch = content.match(
@@ -169,6 +172,7 @@ function parseIssueBlock(block) {
     repo: headerMatch[2].trim(),
     number: parseInt(headerMatch[3], 10),
     title: headerMatch[4].trim(),
+    goal: extractField(block, 'Goal'),
     role: extractField(block, 'Role'),
     filed: extractField(block, 'Filed'),
     last_check_date: null,
@@ -553,6 +557,24 @@ function applyTrackerUpdates(trackerContent, tempDir, date) {
           `**What to check:** ${watchLine[1].trim()}`
         );
       }
+
+      // Update or add Goal
+      const goalLine = trackerUpdates.match(/^goal:\s*(.+)/m);
+      if (goalLine) {
+        if (section.includes('**Goal:**')) {
+          section = section.replace(
+            /\*\*Goal:\*\*\s*.+/,
+            `**Goal:** ${goalLine[1].trim()}`
+          );
+        } else {
+          // Insert Goal as first field after the header line
+          section = section.replace(
+            /(### [^\n]+\n)/,
+            `$1- **Goal:** ${goalLine[1].trim()}\n`
+          );
+        }
+        changes.push(`Set Goal for ${issueKey}`);
+      }
     }
 
     // Handle state change: open → closed (move to Closed section)
@@ -686,44 +708,6 @@ function escapeRegex(str) {
 
 // ─── Command Implementations ────────────────────────────────────────────────
 
-function cmdParseTracker(flags) {
-  const filePath = flags._positional || flags.tracker;
-  if (!filePath) {
-    console.error('Usage: parse-tracker <path-to-tracker>');
-    process.exit(1);
-  }
-
-  if (!fs.existsSync(filePath)) {
-    console.log(JSON.stringify({ exists: false, error: 'Tracker file not found' }));
-    return;
-  }
-
-  const content = fs.readFileSync(filePath, 'utf8');
-  if (!content.trim()) {
-    console.log(JSON.stringify({ exists: true, empty: true }));
-    return;
-  }
-
-  const parsed = parseTrackerFile(content);
-  console.log(JSON.stringify({
-    exists: true,
-    empty: false,
-    username: parsed.username,
-    active_count: parsed.active_issues.length,
-    closed_count: parsed.closed_issues.length,
-    active_issues: parsed.active_issues,
-    closed_issues: parsed.closed_issues,
-    all_tracked_numbers: [
-      ...parsed.active_issues.map(i => `${i.owner}/${i.repo}#${i.number}`),
-      ...parsed.closed_issues.map(i => `${i.owner}/${i.repo}#${i.number}`),
-    ],
-    oldest_check_date: parsed.active_issues
-      .map(i => i.last_check_date)
-      .filter(Boolean)
-      .sort()[0] || null,
-  }, null, 2));
-}
-
 function cmdCompileReport(flags) {
   const tempDir = flags['temp-dir'];
   const date = flags.date;
@@ -784,54 +768,6 @@ function cmdUpdateTracker(flags) {
 
   fs.writeFileSync(trackerPath, updated, 'utf8');
   console.log(JSON.stringify({ today: todayTag(), updated: true, changes }));
-}
-
-function cmdInitTemp(flags) {
-  const prefix = 'giu-checkin-';
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-  console.log(tempDir);
-}
-
-function cmdValidate(flags) {
-  const tempDir = flags['temp-dir'];
-  const trackerPath = flags.tracker;
-  const expected = parseInt(flags.expected || '0', 10);
-
-  if (!tempDir) {
-    console.error('Usage: validate --temp-dir <dir> [--tracker <path>] [--expected <N>]');
-    process.exit(1);
-  }
-
-  const checks = {
-    temp_dir_exists: fs.existsSync(tempDir),
-    result_files: [],
-    report_compiled: false,
-    tracker_valid: null,
-    all_issues_checked: null,
-  };
-
-  if (checks.temp_dir_exists) {
-    const files = fs.readdirSync(tempDir).filter(f => f.endsWith('.md'));
-    checks.result_files = files;
-    checks.report_compiled = files.includes('_compiled-report.md');
-
-    const issueFiles = files.filter(f => f.startsWith('issue-'));
-    checks.all_issues_checked = expected > 0
-      ? issueFiles.length >= expected
-      : issueFiles.length > 0;
-  }
-
-  if (trackerPath && fs.existsSync(trackerPath)) {
-    const content = fs.readFileSync(trackerPath, 'utf8');
-    const today = flags.date || new Date().toISOString().split('T')[0];
-    checks.tracker_valid = content.includes(`Status as of ${today}`);
-  }
-
-  const passed = checks.temp_dir_exists
-    && checks.report_compiled
-    && checks.all_issues_checked !== false;
-
-  console.log(JSON.stringify({ today: todayTag(), passed, checks }, null, 2));
 }
 
 // ─── Async Helper ──────────────────────────────────────────────────────────
@@ -1000,6 +936,7 @@ async function cmdStartup(flags) {
     temp_dir: tempDir,
     tracker_exists: trackerExists,
     tracker_path: trackerPath,
+    config: parsed.config,
     tracker_data: {
       username: parsed.username,
       active_issues: parsed.active_issues,
@@ -1312,6 +1249,13 @@ function cmdBuildTracker(flags) {
 function buildTrackerEntry(meta, body) {
   const lines = [];
   lines.push(`### ${meta.owner}/${meta.repo}#${meta.number} — ${meta.title}`);
+
+  // Goal — from tracker updates or frontmatter
+  const trackerUpdatesForGoal = extractSection(body, 'Tracker Updates') || '';
+  const goalLine = trackerUpdatesForGoal.match(/^goal:\s*(.+)/m);
+  if (goalLine) {
+    lines.push(`- **Goal:** ${goalLine[1].trim()}`);
+  }
 
   // Role
   lines.push(`- **Role:** ${meta.role || 'Unknown'}`);
