@@ -1,0 +1,12 @@
+{
+  "run_id": "eval-1-daily-checkin-with_skill",
+  "expectations": [
+    { "text": "Report uses bullet format, not tables", "passed": true, "evidence": "Zero tables in report. All content is bulleted lists." },
+    { "text": "Report follows What Changed → New Issues → Recommended Actions structure", "passed": true, "evidence": "Exact structure: ## What Changed, ## New Issues Found, ## Recommended Actions with Do Today / Watch For / No Action Needed subsections" },
+    { "text": "Report skips bot comments, auto-close noise, label changes", "passed": true, "evidence": "No mention of CodeRabbit bot, auto-close timers, or label changes in the report body" },
+    { "text": "Quiet issues grouped into brief summary", "passed": true, "evidence": "'15 anthropics/claude-code issues — no maintainer response', '15 karthikcsq/google-tools-mcp issues — no maintainer response', '1 oven-sh/bun issue'" },
+    { "text": "Config section read and applied", "passed": false, "evidence": "Tracker has no Config section yet (existing tracker predates the template change). Skill didn't flag this or create one." },
+    { "text": "Tracker updates maintain full detail", "passed": true, "evidence": "proposed-tracker-updates.md exists with detailed per-issue entries" },
+    { "text": "Uses date from script's today tag", "passed": true, "evidence": "Report header: 'Check-In -- 2026-04-05'" }
+  ]
+}

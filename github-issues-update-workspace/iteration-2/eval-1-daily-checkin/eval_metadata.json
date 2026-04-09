@@ -1,0 +1,43 @@
+{
+  "eval_id": 1,
+  "eval_name": "daily-checkin",
+  "prompt": "/github-issues-update",
+  "assertions": [
+    {
+      "id": "report-concise",
+      "text": "Report uses bullet format, not tables. Concise — no full status dump of every issue.",
+      "type": "manual"
+    },
+    {
+      "id": "report-structure",
+      "text": "Report follows What Changed → New Issues → Recommended Actions structure",
+      "type": "manual"
+    },
+    {
+      "id": "no-spam",
+      "text": "Report skips bot comments, auto-close noise, label changes",
+      "type": "manual"
+    },
+    {
+      "id": "quiet-issues-grouped",
+      "text": "Issues with no activity are grouped into a brief summary, not listed individually",
+      "type": "manual"
+    },
+    {
+      "id": "config-respected",
+      "text": "Reads the tracker Config section and applies any directives",
+      "type": "manual"
+    },
+    {
+      "id": "tracker-detail-preserved",
+      "text": "Tracker updates (if proposed) maintain full detail — not trimmed like the report",
+      "type": "manual"
+    },
+    {
+      "id": "date-from-script",
+      "text": "Uses the date from the script's today tag, not a guessed date",
+      "type": "grep",
+      "pattern": "2026-04-0[5-9]"
+    }
+  ]
+}

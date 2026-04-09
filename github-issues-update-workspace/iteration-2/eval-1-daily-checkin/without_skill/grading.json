@@ -1,0 +1,12 @@
+{
+  "run_id": "eval-1-daily-checkin-without_skill",
+  "expectations": [
+    { "text": "Report uses bullet format, not tables", "passed": false, "evidence": "Multiple tables throughout — authored issues, commented issues, google-tools-mcp, bun, other repos" },
+    { "text": "Report follows What Changed → New Issues → Recommended Actions structure", "passed": false, "evidence": "Structure is: Summary → Issues By Repo → What Changed (at line 93!) → Clusters → Next Steps" },
+    { "text": "Report skips bot comments, auto-close noise, label changes", "passed": false, "evidence": "Mentions CodeRabbit bot plan, auto-close bot survival, label details" },
+    { "text": "Quiet issues grouped into brief summary", "passed": false, "evidence": "Every single issue listed in individual table rows — 15 google-tools-mcp issues each get their own row" },
+    { "text": "Config section read and applied", "passed": false, "evidence": "Baseline has no config concept" },
+    { "text": "Tracker updates maintain full detail", "passed": false, "evidence": "Baseline doesn't propose tracker updates" },
+    { "text": "Uses date from script's today tag", "passed": false, "evidence": "Uses 'Date: 2026-04-05' — guessed, not from script" }
+  ]
+}

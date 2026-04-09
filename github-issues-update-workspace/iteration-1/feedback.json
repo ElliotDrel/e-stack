@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "run_id": "eval-1-daily-checkin-with_skill",
+      "feedback": "",
+      "timestamp": "2026-04-06T02:33:29.217Z"
+    },
+    {
+      "run_id": "eval-1-daily-checkin-without_skill",
+      "feedback": "OK, so in the skills, in the one that didn't have a skill, I     \n  really liked the recommended next step section. That's exactly      \n  what I want to have, so that's exactly what I want to see. I want \n  to know what action we should do today and what action we're going\n  to do in the future and stuff like that.",
+      "timestamp": "2026-04-06T02:33:29.217Z"
+    }
+  ],
+  "status": "complete"
+}

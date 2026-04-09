@@ -1,0 +1,40 @@
+{
+  "run_id": "eval-1-without_skill",
+  "expectations": [
+    {
+      "text": "Full report text appears in the output",
+      "passed": true,
+      "evidence": "146-line report saved to report.md with repo-by-repo breakdown and cluster analysis"
+    },
+    {
+      "text": "Report covers all 3 tracked repos",
+      "passed": true,
+      "evidence": "Report has sections for anthropics/claude-code (12 issues), karthikcsq/google-tools-mcp (15 issues), oven-sh/bun (1 issue)"
+    },
+    {
+      "text": "Next steps are concrete actions",
+      "passed": true,
+      "evidence": "3 recommendations: check if google-tools-mcp is maintained, watch #38229 for registry fix, defend #33165 against auto-closure. Also found fluid-calendar issues."
+    },
+    {
+      "text": "Uses date from script (2026-04-06)",
+      "passed": false,
+      "evidence": "Report header says 'Date: 2026-04-05' — used its own date, not from any script (baseline didn't use the script)"
+    },
+    {
+      "text": "Offers to update the tracker after presenting the report",
+      "passed": false,
+      "evidence": "No mention of updating the tracker file. Baseline had no instructions to do so."
+    },
+    {
+      "text": "Surfaces newly discovered Prompt-Vault#43",
+      "passed": true,
+      "evidence": "'Other Open Issues' section lists ElliotDrel/Prompt-Vault#43 plus 2 fluid-calendar issues"
+    },
+    {
+      "text": "Checks and reports on known duplicate/related issue states",
+      "passed": true,
+      "evidence": "Dedicated 'Duplicate/Related Issue Clusters' section covering session title, Slack OAuth, keybinding, and Bun segfault clusters"
+    }
+  ]
+}

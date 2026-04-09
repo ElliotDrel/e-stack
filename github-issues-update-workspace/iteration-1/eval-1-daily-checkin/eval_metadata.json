@@ -1,0 +1,45 @@
+{
+  "eval_id": 1,
+  "eval_name": "daily-checkin",
+  "prompt": "/github-issues-update",
+  "assertions": [
+    {
+      "id": "report-shown",
+      "text": "Full report text appears in the output (not just a reference to a file or 'check your tracker')",
+      "type": "manual"
+    },
+    {
+      "id": "all-repos-covered",
+      "text": "Report covers all 3 tracked repos: anthropics/claude-code, karthikcsq/google-tools-mcp, oven-sh/bun",
+      "type": "grep",
+      "pattern": "anthropics/claude-code|karthikcsq/google-tools-mcp|oven-sh/bun"
+    },
+    {
+      "id": "next-steps-specific",
+      "text": "Next steps are concrete actions (not generic 'monitor' or 'watch for updates')",
+      "type": "manual"
+    },
+    {
+      "id": "date-from-script",
+      "text": "Uses 2026-04-06 (the date the script returned), not a guessed date",
+      "type": "grep",
+      "pattern": "2026-04-06"
+    },
+    {
+      "id": "tracker-update-offered",
+      "text": "Offers to update the tracker after presenting the report",
+      "type": "manual"
+    },
+    {
+      "id": "new-issues-surfaced",
+      "text": "Surfaces the newly discovered Prompt-Vault#43 issue",
+      "type": "grep",
+      "pattern": "Prompt-Vault#43|Prompt.Vault.*43"
+    },
+    {
+      "id": "duplicate-state-checked",
+      "text": "Checks and reports on the state of known duplicate/related issues",
+      "type": "manual"
+    }
+  ]
+}

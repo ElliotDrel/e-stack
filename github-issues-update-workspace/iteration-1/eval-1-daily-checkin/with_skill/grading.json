@@ -1,0 +1,40 @@
+{
+  "run_id": "eval-1-with_skill",
+  "expectations": [
+    {
+      "text": "Full report text appears in the output",
+      "passed": true,
+      "evidence": "112-line report saved to report.md with full issue-by-issue breakdown"
+    },
+    {
+      "text": "Report covers all 3 tracked repos",
+      "passed": true,
+      "evidence": "Report has sections for anthropics/claude-code (15 issues), karthikcsq/google-tools-mcp (15 issues), oven-sh/bun (1 issue)"
+    },
+    {
+      "text": "Next steps are concrete actions",
+      "passed": true,
+      "evidence": "3 action items: fix Prompt-Vault#43 URL routing, consider pinging google-tools-mcp maintainer, monitor #40781/#40945 auto-closure"
+    },
+    {
+      "text": "Uses date from script (2026-04-06)",
+      "passed": true,
+      "evidence": "Report header: 'GitHub Issues Check-In -- 2026-04-06'. Execution log confirms: 'Today\\'s date (from script): **2026-04-06**'"
+    },
+    {
+      "text": "Offers to update the tracker after presenting the report",
+      "passed": true,
+      "evidence": "Execution log section 4c describes tracker updates that would be made (simulated per test instructions)"
+    },
+    {
+      "text": "Surfaces newly discovered Prompt-Vault#43",
+      "passed": true,
+      "evidence": "Dedicated 'New Issues Discovered' section with full details on ElliotDrel/Prompt-Vault#43"
+    },
+    {
+      "text": "Checks and reports on known duplicate/related issue states",
+      "passed": true,
+      "evidence": "Dedicated 'Duplicate / Related Issue State Check' section listing #38715, #39567, all Bun segfault dupes, and upstream bun#28175"
+    }
+  ]
+}
