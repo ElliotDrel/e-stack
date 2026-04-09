@@ -1,19 +1,24 @@
 {
-  "name": "e-stack",
+  "name": "elliot-stack",
   "version": "1.0.0",
-  "description": "Elliot's skill stack for Claude Code — install via npx e-stack@latest",
+  "description": "Elliot's skill stack for Claude Code — install via npx elliot-stack@latest",
   "bin": {
-    "e-stack": "bin/install.cjs"
+    "elliot-stack": "bin/install.cjs"
   },
   "files": [
     "bin/",
     "skills/"
   ],
-  "keywords": ["claude-code", "skills", "claude", "ai"],
+  "keywords": [
+    "claude-code",
+    "skills",
+    "claude",
+    "ai"
+  ],
   "author": "Elliot Drel",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ElliotDrel/elliot-skills"
+    "url": "git+https://github.com/ElliotDrel/e-stack.git"
   }
 }

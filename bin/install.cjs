@@ -135,7 +135,7 @@ function setupStartupHook() {
     for (const group of existing) {
       if (group.matcher === 'startup' && group.hooks) {
         for (const hook of group.hooks) {
-          if (hook.command && hook.command.includes('e-stack@latest --startup')) {
+          if (hook.command && hook.command.includes('elliot-stack@latest --startup')) {
             return false;
           }
         }
@@ -156,7 +156,7 @@ function setupStartupHook() {
 
   startupGroup.hooks.push({
     type: 'command',
-    command: 'npx --yes e-stack@latest --startup',
+    command: 'npx --yes elliot-stack@latest --startup',
   });
 
   fs.mkdirSync(CLAUDE_DIR, { recursive: true });

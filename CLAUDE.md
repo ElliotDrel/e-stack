@@ -2,7 +2,7 @@
 
 This repo contains Claude Code skills distributed as **e-stack**. Each skill is a subfolder inside `skills/`, with a `SKILL.md` and optional supporting files.
 
-**Distribution:** `npx e-stack@latest` → copies skills to `~/.claude/skills/`
+**Distribution:** `npx elliot-stack@latest` → copies skills to `~/.claude/skills/`
 
 Skills live under `skills/<skill-name>/` in this repo (e.g. `skills/better-title/`, `skills/chris-voss/`).
 
