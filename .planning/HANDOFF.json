@@ -1,37 +1,40 @@
 {
   "version": "1.0",
-  "timestamp": "2026-04-03T12:13:48.669Z",
-  "phase": "quick",
-  "phase_name": "260402-mkl-revise-github-issues-update-skill-with-g",
-  "phase_dir": ".planning/quick/260402-mkl-revise-github-issues-update-skill-with-g",
+  "timestamp": "2026-04-09T16:33:12.839Z",
+  "phase": "quick-260403-bmd",
+  "phase_name": "Build estack distribution",
+  "phase_dir": ".planning/quick/260403-bmd-build-estack-distribution-plugin-marketp",
   "plan": 1,
-  "task": 0,
-  "total_tasks": 6,
+  "task": 3,
+  "total_tasks": 3,
   "status": "paused",
-  "completed_tasks": [],
+  "completed_tasks": [
+    {"id": 1, "name": "Restructure repo and create plugin marketplace", "status": "done", "commit": "7a465fb"},
+    {"id": 2, "name": "Build npx installer with change detection", "status": "done", "commit": "7a465fb"},
+    {"id": 3, "name": "Human verify and publish", "status": "in_progress", "progress": "All code reviewed, bugs fixed, committed. npm publish blocked by 2FA requirement."}
+  ],
   "remaining_tasks": [
-    {"id": 1, "name": "Define standardized result file format", "status": "not_started"},
-    {"id": 2, "name": "Add startup, fetch-issues, build-tracker commands to tracker-tools.cjs", "status": "not_started"},
-    {"id": 3, "name": "Revise SKILL.md router to use startup command", "status": "not_started"},
-    {"id": 4, "name": "Revise check-issues.md workflow", "status": "not_started"},
-    {"id": 5, "name": "Revise setup.md workflow", "status": "not_started"},
-    {"id": 6, "name": "Revise save-issues.md to use startup data", "status": "not_started"}
+    {"id": "post-1", "name": "Set up npm 2FA and publish e-stack@1.0.0", "status": "not_started"},
+    {"id": "post-2", "name": "Rename GitHub repo elliot-skills → e-stack", "status": "not_started"},
+    {"id": "post-3", "name": "Update git remote and package.json repo URL", "status": "not_started"},
+    {"id": "post-4", "name": "Rename local folder (optional)", "status": "not_started"},
+    {"id": "post-5", "name": "Commit package.json fix from npm pkg fix", "status": "not_started"}
   ],
-  "blockers": [],
-  "human_actions_pending": [],
+  "blockers": [
+    {"description": "npm 2FA required to publish", "type": "human_action", "workaround": "Set up 2FA at npmjs.com/settings/~/tfa then run npm publish"}
+  ],
+  "human_actions_pending": [
+    {"action": "Set up npm 2FA", "context": "npm requires 2FA or granular access token to publish", "blocking": true},
+    {"action": "Rename GitHub repo to e-stack", "context": "Repo name should match npm package name", "blocking": false}
+  ],
   "decisions": [
-    {"decision": "Full data layer script (parse, compile, update, validate)", "rationale": "Offload all deterministic work to Node script, agent only orchestrates", "phase": "quick"},
-    {"decision": "Temp dir with auto-cleanup for subagent results", "rationale": "Results on disk, not in context memory — prevents forgetting the overview", "phase": "quick"},
-    {"decision": "Full XML rewrite for all workflows", "rationale": "Named steps with acceptance criteria and enforcement language", "phase": "quick"},
-    {"decision": "All workflows get revised (check-in, save, setup)", "rationale": "Consistency across the skill", "phase": "quick"},
-    {"decision": "Core 5 + 3 new script commands", "rationale": "startup, fetch-issues, build-tracker added to existing parse-tracker, compile-report, update-tracker, init-temp, validate", "phase": "quick"},
-    {"decision": "overview-template.md logic moved into compile-report", "rationale": "Split duty: script compiles report, agent refs stay for tracker-schema and gh-cli-patterns", "phase": "quick"},
-    {"decision": "Single startup command replaces 3 separate init calls", "rationale": "Auth + username + tracker parse + discovery all in one call", "phase": "quick"},
-    {"decision": "fetch-issues does all gh API calls in script", "rationale": "Deterministic, parallel, no LLM needed for API fetching", "phase": "quick"},
-    {"decision": "Batched analysis agents (~5 issues each)", "rationale": "Reduces 32 agents to ~7, each with pre-fetched data", "phase": "quick"},
-    {"decision": "GOOD vs BAD quality examples in agent prompts", "rationale": "v3 tracker comparison showed shallow output — concrete examples prevent generic language", "phase": "quick"}
+    {"decision": "npm package name: e-stack", "rationale": "estack was taken on npm, e-stack was available", "phase": "quick-260403-bmd"},
+    {"decision": "Skill prefix: estack: (no hyphen)", "rationale": "Cleaner slash command names like /estack:better-title", "phase": "quick-260403-bmd"},
+    {"decision": "npx-only distribution, no plugin marketplace", "rationale": "npx gives more control over update experience and local change detection", "phase": "quick-260403-bmd"},
+    {"decision": "SessionStart hook for auto-update", "rationale": "Runs npx e-stack@latest --startup on every new Claude Code session", "phase": "quick-260403-bmd"},
+    {"decision": "Backup + merge for local changes", "rationale": "On startup: backup local version, install new, give Claude context to offer merge. Interactive: prompt overwrite/skip/merge/abort", "phase": "quick-260403-bmd"}
   ],
-  "uncommitted_files": [],
-  "next_action": "Execute the 6-task plan in 260402-mkl-PLAN.md. Spawn gsd-executor with the plan. All tasks are not_started.",
-  "context_notes": "Initial implementation was done earlier in this session (script + workflow rewrite, committed as ee11a8c). Then extensive testing produced 3 rounds of feedback. All feedback was captured in the plan update (d840034). The plan is ready to execute — user verified it and said 'go' but we paused before spawning the executor. The prior implementation (ee11a8c) will be overwritten by the plan execution since all the same files are being revised."
+  "uncommitted_files": ["package.json (npm pkg fix formatting)"],
+  "next_action": "Set up npm 2FA, then run npm publish. After that, rename GitHub repo elliot-skills → e-stack, update git remote URL, and commit the package.json fix.",
+  "context_notes": "The e-stack distribution system is fully built and tested. All code reviewed by both a code reviewer and Codex — 5 bugs found and fixed. The only remaining work is operational: npm 2FA setup, publish, and GitHub repo rename. User also wants to do a 'large conversion' to rename everything from elliot-skills to e-stack across all chat history — that's a separate task."
 }
