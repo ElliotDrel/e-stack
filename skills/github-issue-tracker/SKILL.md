@@ -1,5 +1,5 @@
 ---
-name: github-issue-tracker
+name: estack:github-issue-tracker
 description: >
   GitHub issue tracker management. Checks all open issues the user is involved in,
   finds related/duplicate issues, reports what changed, and recommends next steps.

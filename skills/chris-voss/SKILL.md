@@ -1,5 +1,5 @@
 ---
-name: chris-voss
+name: estack:chris-voss
 description: >
   Applies Chris Voss negotiation principles from *Never Split the Difference* to any situation
   where understanding human psychology, persuasion, or influence would improve the output. Use
