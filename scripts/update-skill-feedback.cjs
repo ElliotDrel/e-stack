@@ -43,7 +43,8 @@ for (const dirName of skillDirs) {
   const skillName = nameMatch ? nameMatch[1] : dirName;
 
   const rendered = template.replace(/\{\{SKILL_NAME\}\}/g, skillName);
-  const renderedSection = SECTION_MARKER + rendered.trimEnd() + '\n';
+  // Template already includes "---\n\n## Skill Feedback" — just add a leading newline separator
+  const renderedSection = '\n' + rendered.trimEnd() + '\n';
 
   // Find existing feedback section: from "\n---\n\n## Skill Feedback" to EOF
   const sectionStart = original.indexOf(SECTION_MARKER);
