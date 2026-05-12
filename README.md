@@ -17,17 +17,27 @@ This copies skills to `~/.claude/skills/` and registers a `SessionStart` hook so
 
 | Skill | Command | Description |
 |-------|---------|-------------|
+| **Active Learning Tutor** | `/estack-active-learning-tutor` | Tutors a student through exam preparation using active learning — questioning, gap diagnosis, and concept mastery tracking |
 | **Better Title** | `/estack-better-title` | Renames Claude Code chat sessions with descriptive titles |
 | **Chris Voss** | `/estack-chris-voss` | Applies negotiation principles from *Never Split the Difference* |
 | **Customer Discovery** | `/estack-customer-discovery` | Guides through customer discovery — validating ideas, outreach, interviews, and analysis |
 | **GitHub Issue Tracker** | `/estack-github-issue-tracker` | Tracks and manages GitHub issues across repos |
 | **Repo Search** | `/estack-repo-search` | Clones and searches external GitHub repos to answer questions about their code |
 
+## Hooks
+
+| Hook | Purpose |
+|------|---------|
+| **repo-search-nudge** | Suggests `estack-repo-search` when WebFetch/WebSearch hits GitHub |
+
+Hooks install to `~/.claude/hooks/` and are auto-registered in your `~/.claude/settings.json`.
+
 ## How it works
 
-- Skills install to `~/.claude/skills/estack/`
-- A `SessionStart` hook auto-updates skills each time you open Claude Code
-- If you've made local edits to a skill, the installer detects the conflict and lets you choose: overwrite, skip, or merge
+- Skills install to `~/.claude/skills/estack-*/`
+- Hooks install to `~/.claude/hooks/` and are registered in `~/.claude/settings.json`
+- A `SessionStart` hook auto-updates both each time you open Claude Code
+- If you've made local edits to a skill or hook, the installer detects the conflict and lets you choose: overwrite, skip, or merge
 
 ## Updating
 
