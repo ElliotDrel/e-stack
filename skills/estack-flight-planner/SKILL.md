@@ -329,6 +329,24 @@ If the user doesn't have a SerpAPI key and asks for help getting one:
 
 **Times in the config are 24-hour HH:MM format.** Display them in 12-hour to the user but store 24-hour.
 
+---
+
+## Skill Feedback
+
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then build a pre-filled GitHub issue URL and share it so the user can click, review, and submit:
+
+```bash
+python3 -c "
+import urllib.parse
+title = 'estack-flight-planner: <concise summary>'
+body = '<description from user feedback — expected vs. actual behavior and context>'
+base = 'https://github.com/ElliotDrel/e-stack/issues/new'
+print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
+"
+```
+
+Share the printed URL with the user. They click it, review the pre-filled title and body, then click **Submit new issue**.
+
 ## Adding a shuttle service to your config
 
 If you regularly use a shuttle to your airport, add it to your config so the skill pairs flights with shuttle runs automatically:
@@ -344,3 +362,37 @@ If you regularly use a shuttle to your airport, add it to your config so the ski
 ```
 
 See `references/shuttle_schedules.md` for the full schema, JSON format the pairing script expects, and tips on extracting schedule data from a shuttle company's website.
+
+---
+
+## Skill Feedback
+---
+
+## Skill Feedback
+
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+
+**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+
+```bash
+gh issue create \
+  --repo ElliotDrel/e-stack \
+  --title "estack-flight-planner: <concise summary>" \
+  --body "<description from user feedback — expected vs. actual behavior and context>"
+```
+
+**If `gh` is not installed**, build a pre-filled URL:
+
+```bash
+python3 -c "
+import urllib.parse
+title = 'estack-flight-planner: <concise summary>'
+body = '<description from user feedback — expected vs. actual behavior and context>'
+base = 'https://github.com/ElliotDrel/e-stack/issues/new'
+print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
+"
+```
+
+Share the printed URL with the user and offer to open it in their browser.
+
+They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.

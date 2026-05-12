@@ -61,3 +61,66 @@ git clone --depth 1 <repo-url> ~/repo-search-storage/<repo-name>
 To explore a repo, spawn one or more **Haiku** subagents using the Agent tool with `model: "haiku"` and `subagent_type: "Explore"`. In the prompt, always include the **full absolute path** to the cloned repo (e.g. `C:/Users/2supe/repo-search-storage/gstack`) and tell the subagent to search within that directory. Without this, the subagent won't know where to look.
 
 If the question spans multiple areas of the repo, spawn multiple subagents in parallel — each focused on a different aspect — to get answers faster.
+
+---
+
+## Skill Feedback
+
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+
+**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+
+```bash
+gh issue create \
+  --repo ElliotDrel/e-stack \
+  --title "estack-repo-search: <concise summary>" \
+  --body "<description from user feedback — expected vs. actual behavior and context>"
+```
+
+**If `gh` is not installed**, build a pre-filled URL and share it so the user can click, review, and submit:
+
+```bash
+python3 -c "
+import urllib.parse
+title = 'estack-repo-search: <concise summary>'
+body = '<description from user feedback — expected vs. actual behavior and context>'
+base = 'https://github.com/ElliotDrel/e-stack/issues/new'
+print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
+"
+```
+
+Share the printed URL with the user. They click it, review the pre-filled title and body, then click **Submit new issue**.
+
+---
+
+## Skill Feedback
+---
+
+## Skill Feedback
+
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+
+**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+
+```bash
+gh issue create \
+  --repo ElliotDrel/e-stack \
+  --title "estack-repo-search: <concise summary>" \
+  --body "<description from user feedback — expected vs. actual behavior and context>"
+```
+
+**If `gh` is not installed**, build a pre-filled URL:
+
+```bash
+python3 -c "
+import urllib.parse
+title = 'estack-repo-search: <concise summary>'
+body = '<description from user feedback — expected vs. actual behavior and context>'
+base = 'https://github.com/ElliotDrel/e-stack/issues/new'
+print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
+"
+```
+
+Share the printed URL with the user and offer to open it in their browser.
+
+They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
