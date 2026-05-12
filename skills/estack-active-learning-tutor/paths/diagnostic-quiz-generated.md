@@ -6,7 +6,7 @@ You read all source materials, generate a comprehensive MCQ quiz covering every 
 
 1. Read every source material file for the chapter or topic in scope: slides, transcripts, practice exam, and the student's notes. Read fully — do not skim.
 2. Inventory every testable concept. Include concepts in the notes, concepts in the slides/transcripts that aren't in the notes (flag these to the student), and concepts implied by the practice exam.
-3. **Preload `teach_list.md`** with every identified concept as NOT STARTED, organized by Major Topic, foundational → capstone within each topic.
+3. **Preload `teach_list.md`** per the **Teach List Protocol** in `SKILL.md` with every identified concept as NOT STARTED, organized by Major Topic, foundational → capstone within each topic.
 4. Generate one MCQ per concept following the question design rules in `SKILL.md`.
 5. Tell the student: the total concept count, that the quiz is MCQ-only, that correct answers count toward mastery and are skipped in active learning, and that wrong answers become the active learning focus.
 

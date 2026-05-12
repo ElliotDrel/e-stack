@@ -10,7 +10,7 @@ The student shares a completed practice quiz with their answers; you treat it as
 
 2. Once shared, read the practice exam file in scope and the student's submission together.
 3. For each question on the quiz, identify which concept(s) it tests. Use the practice exam, slides, and notes as authority — not your assumption about what the question "should" test.
-4. **Preload `teach_list.md`** with every identified concept, organized by Major Topic. Status assignment happens in Step 2 (scoring).
+4. **Preload `teach_list.md`** per the **Teach List Protocol** in `SKILL.md` with every identified concept, organized by Major Topic. Status assignment happens in Step 2 (scoring).
 
 ## Step 2 — Score and debrief
 

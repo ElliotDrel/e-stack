@@ -18,7 +18,7 @@ Footer: `=== CONFIRM TO PROCEED ===` "Topic confirmed: {topic}. Ready to start?"
 
 Open the session with the first exam-style question on the most foundational concept. No preamble — just ask. For each question:
 
-1. Update `teach_list.md` per the protocol in `shared/teach-list-protocol.md` (identify concepts, add absent ones as NOT STARTED, mark the primary concept as IN PROGRESS).
+1. Update `teach_list.md` per the **Teach List Protocol** in `SKILL.md` (identify concepts, add absent ones as NOT STARTED, mark the primary concept as IN PROGRESS).
 2. Ask using `=== CLARIFICATION QUESTION ===`. MCQ or targeted teach-back per `SKILL.md`.
 3. Wait for the student's answer.
 4. Evaluate per the rules in `SKILL.md`.
