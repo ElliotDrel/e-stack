@@ -1,116 +1,71 @@
 # Path D — Practice Test Walkthrough
 
-You and the student work through a practice test together, one question at a time. For each question you help build up the underlying concepts via clarification questions, then the student attempts the actual practice question. The teach list is built JIT — concepts get added as you encounter them per-question.
+You and the student work through a practice test together, one question at a time. For each question you help build up the underlying concepts via clarification questions, then the student attempts the actual practice question. Concepts are added to `teach_list.md` per-question — **do not preload**.
 
-This is the only path that uses `=== ACTIVE QUESTION ===` and the numerical/conceptual firewall.
+This is the only path that uses `=== ACTIVE QUESTION ===` and the firewall, both defined below.
 
 ---
 
-## Step 1 — Confirm the test and read it
+## Path D footer type — `=== ACTIVE QUESTION ===`
 
-1. Confirm with the student which practice test (or which section of one) they want to walk through.
+Displays the verbatim practice exam question the student is attempting. The question text and options must match the source material exactly — do not paraphrase. The firewall (below) is in effect from the moment this footer is set until the student submits an answer.
+
+## The numerical and conceptual firewall
+
+The firewall is in effect from the moment an `=== ACTIVE QUESTION ===` is set until the student submits an answer to it. While in effect:
+
+1. **No leakage from the active question.** Don't use any numbers, percentages, dollar amounts, dates, or named entities from it in your teaching, examples, or analogies. If a calculation example helps, invent original values clearly different from the active question's.
+2. **No approach hints.** Don't tell the student which formula to apply, which framework fits, or what the first step is. Teach the underlying concepts. The student bridges concept → application.
+3. **Diagnose by asking, not telling.** When the student is stuck, ask them to walk through their reasoning. Use what they say to identify the missing concept, then teach it with original examples.
+
+When a Socratic probe is the right next move during teaching, the probe **becomes** that turn's footer (`=== CLARIFICATION QUESTION ===`). The active question is paused for that turn — it returns next turn after the probe is answered. Never both at once.
+
+The firewall lifts the moment the student submits an answer. Score, debrief, then either move to the next question or run the gap sub-process.
+
+---
+
+## Step 1 — Confirm and read
+
+1. Confirm with the student which practice test (or section) they want to walk through.
 2. Read the practice exam file fully. Read the student's notes fully. Read the relevant slides and transcripts fully.
-3. Do not preload `teach_list.md`. Concepts will be added per-question.
 
 Footer: `=== CONFIRM TO PROCEED ===` "Practice test loaded: {name}. Start with question {N}?"
 
----
-
 ## Step 2 — Per-question loop
 
-Repeat this loop for every question in the practice test the student wants to cover.
+Repeat for every question in the practice test the student wants to cover.
 
-### 2a. Identify concepts and update teach list
+### 2a. Display the active question
 
-Before showing the student anything for question N:
-1. Read question N fully.
-2. Identify every concept this question tests. List them explicitly to yourself.
-3. Add each concept to `teach_list.md` as NOT STARTED (under appropriate Major Topic headings; create headings as needed) if not already present.
-4. Mark the primary concept being tested as IN PROGRESS.
+Update `teach_list.md` for question N's concepts per the protocol in `shared/teach-list-protocol.md`.
 
-### 2b. Display the active question
-
-Body: brief framing — e.g., "Here's question {N}. Take a swing at it, or tell me where you want help first."
+Body: brief framing of the question.
 
 Footer: `=== ACTIVE QUESTION ===` with question N's text and options exactly as written.
 
-From this turn onward, **the firewall is in effect** for every subsequent turn until the student submits an answer to question N. No numbers from question N in any teaching, examples, analogies. No formula-mapping. No approach hints. (See `shared/footer-protocol.md` section "The numerical and conceptual firewall.")
+### 2b. Branch on the student's response
 
-### 2c. Branch on the student's response
+- **Student attempts the question directly** → go to **2d** (evaluate).
+- **Student asks for help, says they don't get it, or shows clear gaps in their reasoning** → go to **2c** (teach the concepts).
 
-**Student attempts question N directly** → go to **2e** (evaluate).
+### 2c. Teach the concepts via clarification questions
 
-**Student asks for help, says they don't get it, or shows clear gaps in their reasoning** → go to **2d** (teach the concepts).
+1. Diagnose by asking. Use a `=== CLARIFICATION QUESTION ===` that asks the student to walk through their current thinking and where it stops making sense.
+2. Run the gap sub-process from `SKILL.md`. Use different numbers and entities than question N for any examples — invent values if needed.
+3. Test understanding with a `=== CLARIFICATION QUESTION ===` that uses different numbers and entities than question N.
+4. Evaluate per `SKILL.md`. Update `teach_list.md`.
+5. When the primary concept(s) of question N are MASTERED, ask if the student is ready to attempt the question. Footer: `=== CONFIRM TO PROCEED ===` "Ready to take question {N}?" Yes → next turn switches back to `=== ACTIVE QUESTION ===`. No → continue with whatever else they need (return to 2c.1).
 
-### 2d. Teach the concepts via clarification questions
-
-The firewall is in effect throughout this step.
-
-1. **Diagnose by asking, not telling.** Ask the student to walk through their current thinking. Use `=== CLARIFICATION QUESTION ===`:
-   ```
-   === CLARIFICATION QUESTION ===
-   Walk me through how you're thinking about this so far. Where does it stop making sense?
-   ```
-   Their answer reveals the gap.
-
-2. **Run the gap sub-process** from `shared/rules.md`. Teach the concept fully:
-   - Define it (from the source material)
-   - Cover what they need to own it
-   - Present an example from the source material that uses **different numbers and entities than question N** — invent values if needed
-   - Do not solve the example; let them try it
-
-3. **Test understanding** with a `=== CLARIFICATION QUESTION ===` that uses different numbers and entities than question N.
-
-4. **Evaluate**:
-   - **Correct + reasoning** → mark per threshold. Update `teach_list.md`. Increment `correct attempts`.
-     - If the concept that was the primary target of question N is now MASTERED (or if all primary concepts are PASSED 1/2 toward MASTERED at threshold = 1-correct), ask the student if they're ready to attempt question N. Footer: `=== CONFIRM TO PROCEED ===` "Ready to take question {N}?" Yes → next turn switches to `=== ACTIVE QUESTION ===` again. No → continue with whatever else they need (return to 2d.1).
-   - **Wrong** → do not repeat the explanation. Try a different angle, drill prerequisites if a deeper gap appeared, retry. Watchlist applies (see step 2g).
-
-5. **Updating during teaching**: increment the `taught` counter for the concept each time you do a teaching block. The watchlist will catch repeated failures.
-
-### 2e. Evaluate the active question
+### 2d. Evaluate the active question
 
 When the student submits an answer to question N:
+
 1. **Lift the firewall.** Numbers and entities from question N are now fair game in your debrief.
-2. **Score the answer.**
-3. **Correct + reasoning** → mark all concepts question N tested per threshold. Update `teach_list.md`. Move to the next question (return to 2a with N+1).
+2. Score the answer.
+3. **Correct + reasoning** → mark all concepts question N tested as MASTERED. Move to question N+1 (return to 2a).
 4. **Correct + shallow** → ask for the reasoning before counting it.
-5. **Wrong** → run the gap sub-process from `shared/rules.md`. Teach the missing concept (firewall does NOT re-engage now since the question is being debriefed, not attempted — but use original examples anyway since question N's numbers are now revealed). After teaching, re-display question N as `=== ACTIVE QUESTION ===` and let the student attempt again. Cycle 2d → 2e until correct.
+5. **Wrong** → run the gap sub-process. Use original examples (firewall is off but the question has been revealed; original examples are still pedagogically cleaner). After teaching, re-display question N as `=== ACTIVE QUESTION ===` and let the student attempt again. Cycle 2c → 2d until correct.
 
-### 2f. Watchlist check
+## Step 3 — Close
 
-After every question is fully resolved (correct + reasoning), scan the Repeated-miss watchlist in `teach_list.md`. For any concept on the watchlist:
-- Drill into the suspected prerequisite gap before continuing to the next practice question.
-- Teach-count >= 2 with `correct attempts = 0` means you're treating a symptom, not a cause.
-
-### 2g. Move on
-
-Return to 2a with question N+1.
-
----
-
-## Step 3 — Backfill scenario (mid-session arrival)
-
-If you join the session mid-walkthrough — e.g., this is a fresh context window resuming prior work, or the student has been working through questions in this conversation before `teach_list.md` existed — backfill before continuing:
-
-1. Scroll through the conversation. For each practice question already covered, identify concepts tested.
-2. Add those concepts to `teach_list.md` per the format in `shared/teach-list-protocol.md`.
-3. For each correct answer, set status per threshold. For each gap that was taught, increment `taught` counters.
-4. For the question currently in flight, recreate the IN PROGRESS state (and the active question state if the firewall would be in effect).
-5. Note in the file under Configuration: `Backfilled at {timestamp} — historical accuracy approximate.`
-6. Resume from where the conversation left off. If the student was just taught a concept and is about to retry the active question, your next response should display the active question footer.
-
----
-
-## Step 4 — Close
-
-Session is complete when:
-- Every practice question targeted has been answered correctly with reasoning explained
-- Every concept on the teach list is MASTERED
-
-Close with a bulleted summary in the body:
-- Practice questions covered with the student's final answers
-- Concepts mastered, grouped by Major Topic
-- Watchlist items that required deeper drilling — these are signals for future study sessions
-
-Final response ends with a footer (`=== CONFIRM TO PROCEED ===` "Wrap up here, or continue to question {N+1}?").
+Use the **Universal Close** in `SKILL.md`. Path D's path-specific completion criterion: every targeted practice question is answered correctly with reasoning explained.
