@@ -56,6 +56,10 @@ Rule 2, the builder hands off to the auditor automatically. When the Useful Ques
 Rule 3, the Definition-of-Done Generator runs alone or mid-flow. It runs standalone when the user does not know what they want. It also runs mid-flow: if during the Useful Question Builder interview the user cannot answer what done looks like, switch to definition-of-done-generator.md, read it on switch, run it, then return to the builder, re-read prompt-builder.md, and continue from where you paused.
 </cross_part_rules>
 
+<examples>
+A fifth file, examples.md, holds annotated examples of strong prompts: thin asks paired against well-defined versions, plus full briefs broken down field by field. Read examples.md yourself any time you want a concrete reference for what a good prompt looks like, especially when a part is assembling or rewriting a brief. If the user asks to see examples of good prompts, show them examples.md directly.
+</examples>
+
 <output>
 Every finished prompt or brief gets saved to a markdown file with a descriptive snake_case name. In this environment, save to /mnt/user-data/outputs/. If present_files is available, present the file. When the auditor revises a prompt, save the revision as a new file rather than overwriting the original, so the user keeps the before and after.
 </output>
