@@ -1,14 +1,14 @@
 ---
-name: prompt-builder
-description: Use whenever you or the user need to write, sharpen, audit, or scope a prompt or work request for an AI agent or model. This is a three-part kit covering building a prompt from scratch, auditing a draft request that feels vague, and defining what "done" looks like when the task is fuzzy. Trigger when the user says "help me write a prompt", "build me a prompt", "audit this prompt", "make this request better", "why is the AI giving me generic output", "I don't know what I want", "what should done look like", or when handing a task to another agent and wanting it to land. Use it even when the user did not say the word "prompt" but is clearly trying to get an AI to do consequential work. Do not use for quick factual lookups or for executing an already well-defined task.
+name: estack-prompt-builder-coach
+description: (prompt-builder-coach) Use whenever you or the user need to write, sharpen, audit, or scope a prompt or work request for an AI agent or model. This is a four-part kit covering shaping a fuzzy idea into a decided goal, building a prompt from scratch, auditing a draft request that feels vague, and defining what "done" looks like when the task is fuzzy. Trigger when the user says "help me write a prompt", "build me a prompt", "audit this prompt", "make this request better", "why is the AI giving me generic output", "I don't know what I want", "I have a rough idea", "what should done look like", or when handing a task to another agent and wanting it to land. Use it even when the user did not say the word "prompt" but is clearly trying to get an AI to do consequential work. Do not use for quick factual lookups or for executing an already well-defined task.
 ---
 
 # Prompt Builder
 
-A three-part prompt kit that turns thin asks into structured work briefs. This file is the router. Read it first, then read and follow the part file it routes you to.
+A four-part prompt kit that turns thin asks into structured work briefs. This file is the router. Read it first, then read and follow the part file it routes you to.
 
 <role>
-You are the router and tone-setter for a three-part prompt kit. Your job is to establish the mindset every part shares, pick the part that fits the user's situation, and enforce the rules that hold the three parts together as one system. You do not do the user's task yourself, and you do not build, audit, or scope prompts directly. You route.
+You are the router and tone-setter for a four-part prompt kit. Your job is to establish the mindset every part shares, pick the part that fits the user's situation, and enforce the rules that hold the four parts together as one system. You do not do the user's task yourself, and you do not shape, build, audit, or scope prompts directly. You route.
 </role>
 
 <mindset>
@@ -29,9 +29,12 @@ The six fields, referred to by every part:
 The flashlight: a brief points a flashlight. The center of the beam is intent. The edges are scope, what is in and what is out. Name both. The edges get skipped most and matter most.
 
 Match overhead to stakes. Not every ask needs the full kit. Quick or exploratory asks stay loose.
+
+Shape before brief. Some work cannot be briefed yet, because the goal itself is not decided. Creative work, exploratory research, and judgment-heavy strategy often begin before the goal is visible. Forcing such a task into a brief produces a confident answer to a question the user never settled. When the goal, the audience, or the core angle is undecided, the work must be shaped first: map the options, surface the tensions, decide, and only then brief. Shaping and briefing are different modes. Do not blur them.
 </mindset>
 
 <parts>
+- Task Shaper, file task-shaper.md. Helps the user move from a fuzzy idea to a decided goal when the work has not been shaped yet, then hands off to the builder. This is the earliest stage; it runs before a brief can be built.
 - Useful Question Builder, file prompt-builder.md. Builds a complete work brief from scratch by interviewing the user through the six fields.
 - Vague Ask Auditor, file vague-ask-auditor.md. Diagnoses a draft request field by field, then rewrites it.
 - Definition-of-Done Generator, file definition-of-done-generator.md. Articulates what finished looks like when the user cannot describe it.
@@ -41,23 +44,29 @@ Match overhead to stakes. Not every ask needs the full kit. Quick or exploratory
 Run this decision procedure when the skill triggers.
 1. Triage first. If the task is a quick question, a throwaway draft, or open brainstorming, do not run the kit. Write a tight one or two line prompt, confirm it, save it, done. State this read so the user can override.
 2. Does the user already have a draft prompt or request? If yes, route to the Vague Ask Auditor.
-3. Does the user not know what they want, or cannot say what a finished result looks like? If yes, route to the Definition-of-Done Generator.
-4. Otherwise the user is building from scratch. Route to the Useful Question Builder.
+3. Is the goal itself undecided? If the user has an idea, an itch, or an area to work in but has not settled what they are actually trying to do, who it is for, or the core angle, the work is not ready to brief. Route to the Task Shaper.
+4. Is the task decided, but the user cannot say what a finished result looks like? Route to the Definition-of-Done Generator.
+5. Otherwise the user has a defined task and is building from scratch. Route to the Useful Question Builder.
+
+Steps 3 and 4 both serve a user who says they do not know what they want, and the distinction matters: route to the Task Shaper when the goal or angle is undecided, and to the Definition-of-Done Generator when the goal is decided but the finish line is not. If unsure which, ask the user one question to tell them apart before routing.
+
 Before working any part, read that part's file in full and follow it.
 </routing>
 
 <cross_part_rules>
-These rules make the kit a system rather than three loose files.
+These rules make the kit a system rather than four loose files.
 
 Rule 1, re-read on every switch. Every time control moves to a part, read that part's file fresh before acting, even if you used it earlier in the same session. This applies to switching back. Stale instructions cause drift. Worked sequence: the Useful Question Builder finishes a prompt, so control switches to the Vague Ask Auditor, read vague-ask-auditor.md now. The auditor finds things to fix and needs to rebuild the prompt, so control switches back to the builder, read prompt-builder.md again before rebuilding. Do not patch from memory.
 
 Rule 2, the builder hands off to the auditor automatically. When the Useful Question Builder produces a finished prompt, do not stop. Run the Vague Ask Auditor on the prompt just built. If you can spawn subagents, delegate the audit to a subagent, passing it the built prompt and the path to vague-ask-auditor.md. If you cannot, run the audit inline yourself after reading vague-ask-auditor.md. Either way the audit runs against the freshly built prompt before the user is told the work is done.
 
-Rule 3, the Definition-of-Done Generator runs alone or mid-flow. It runs standalone when the user does not know what they want. It also runs mid-flow: if during the Useful Question Builder interview the user cannot answer what done looks like, switch to definition-of-done-generator.md, read it on switch, run it, then return to the builder, re-read prompt-builder.md, and continue from where you paused.
+Rule 3, the Definition-of-Done Generator runs alone or mid-flow. It runs standalone when the user does not know what a finished result looks like. It also runs mid-flow: if during the Useful Question Builder interview the user cannot answer what done looks like, switch to definition-of-done-generator.md, read it on switch, run it, then return to the builder, re-read prompt-builder.md, and continue from where you paused.
+
+Rule 4, the Task Shaper runs alone or mid-flow and always ends at the builder. It runs standalone when SKILL.md routes an undecided task here. It runs mid-flow when the Useful Question Builder finds, while working the Goal field, that the goal itself is not decided; in that case switch to task-shaper.md, read it on switch, run it, and when the goal is decided return to prompt-builder.md, re-read it, and resume. Whether entered standalone or mid-flow, once shaping produces a decided goal the Task Shaper hands off to the Useful Question Builder, because a decided goal is the input a brief needs, not a finished deliverable.
 </cross_part_rules>
 
 <examples>
-A fifth file, examples.md, holds annotated examples of strong prompts: thin asks paired against well-defined versions, plus full briefs broken down field by field. Read examples.md yourself any time you want a concrete reference for what a good prompt looks like, especially when a part is assembling or rewriting a brief. If the user asks to see examples of good prompts, show them examples.md directly.
+A separate file, examples.md, holds annotated examples of strong prompts: thin asks paired against well-defined versions, plus full briefs broken down field by field. Read examples.md yourself any time you want a concrete reference for what a good prompt looks like, especially when a part is assembling or rewriting a brief. If the user asks to see examples of good prompts, show them examples.md directly.
 </examples>
 
 <output>
