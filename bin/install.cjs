@@ -15,6 +15,8 @@ const BACKUP_DIR = path.join(CLAUDE_DIR, '.estack-backup');
 const CHECKSUMS_FILE = path.join(CLAUDE_DIR, '.estack-checksums.json');
 const SETTINGS_FILE = path.join(CLAUDE_DIR, 'settings.json');
 const PACKAGE_SKILLS_DIR = path.join(__dirname, '..', 'skills');
+const HOOKS_DIR = path.join(CLAUDE_DIR, 'hooks');
+const PACKAGE_HOOKS_DIR = path.join(__dirname, '..', 'hooks');
 
 // ── Flags ──────────────────────────────────────────────────────────────────
 const SILENT = process.argv.includes('--silent');
@@ -37,6 +39,13 @@ function walkDir(dir, base) {
     }
   }
   return files;
+}
+
+function computeFileHash(filePath) {
+  if (!fs.existsSync(filePath)) return null;
+  const hash = crypto.createHash('sha256');
+  hash.update(fs.readFileSync(filePath));
+  return hash.digest('hex');
 }
 
 function computeSkillHash(skillDir) {
@@ -64,6 +73,14 @@ function backupSkill(name) {
   if (!fs.existsSync(installedDir)) return;
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
   copyDir(installedDir, path.join(BACKUP_DIR, name));
+}
+
+function backupHook(filename) {
+  const installedFile = path.join(HOOKS_DIR, filename);
+  if (!fs.existsSync(installedFile)) return;
+  const dest = path.join(BACKUP_DIR, 'hooks', filename);
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.copyFileSync(installedFile, dest);
 }
 
 function promptChar(question) {
@@ -118,7 +135,7 @@ function getSkillDescription(skillDir) {
   return '';
 }
 
-// ── Startup hook setup ─────────────────────────────────────────────────────
+// ── Hook setup ─────────────────────────────────────────────────────────────
 
 function setupStartupHook() {
   let settings = {};
@@ -164,6 +181,45 @@ function setupStartupHook() {
   return true;
 }
 
+function setupRepoSearchNudgeHook() {
+  let settings = {};
+  if (fs.existsSync(SETTINGS_FILE)) {
+    try {
+      settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+    } catch (_) {
+      settings = {};
+    }
+  }
+
+  if (settings.hooks && settings.hooks.PostToolUse) {
+    for (const group of settings.hooks.PostToolUse) {
+      if (group.matcher === 'WebFetch|WebSearch' && group.hooks) {
+        for (const hook of group.hooks) {
+          if (hook.command && hook.command.includes('repo-search-nudge.js')) {
+            return false;
+          }
+        }
+      }
+    }
+  }
+
+  if (!settings.hooks) settings.hooks = {};
+  if (!settings.hooks.PostToolUse) settings.hooks.PostToolUse = [];
+
+  settings.hooks.PostToolUse.push({
+    matcher: 'WebFetch|WebSearch',
+    hooks: [{
+      type: 'command',
+      command: `node "${path.join(HOOKS_DIR, 'repo-search-nudge.js').replace(/\\/g, '/')}"`,
+      timeout: 5,
+    }],
+  });
+
+  fs.mkdirSync(CLAUDE_DIR, { recursive: true });
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+  return true;
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -189,6 +245,16 @@ async function main() {
   const packageHashes = {};
   for (const name of skillNames) {
     packageHashes[name] = computeSkillHash(path.join(PACKAGE_SKILLS_DIR, name));
+  }
+
+  // 2b. Scan package hooks
+  const hookFilenames = fs.existsSync(PACKAGE_HOOKS_DIR)
+    ? fs.readdirSync(PACKAGE_HOOKS_DIR).filter((f) => f.endsWith('.js')).sort()
+    : [];
+
+  const packageHookHashes = {};
+  for (const filename of hookFilenames) {
+    packageHookHashes[filename] = computeFileHash(path.join(PACKAGE_HOOKS_DIR, filename));
   }
 
   // 3. Load existing checksums
@@ -230,9 +296,36 @@ async function main() {
     }
   }
 
+  // 4b. Detect local modifications and needed updates for hooks
+  const modifiedHooks = [];
+  const hooksNeedingUpdate = [];
+  for (const filename of hookFilenames) {
+    const installedFile = path.join(HOOKS_DIR, filename);
+    const key = 'hook:' + filename;
+    if (!fs.existsSync(installedFile)) {
+      hooksNeedingUpdate.push(filename);
+      continue;
+    }
+    const currentHash = computeFileHash(installedFile);
+    if (!storedChecksums[key]) {
+      if (currentHash !== packageHookHashes[filename]) {
+        modifiedHooks.push(filename);
+        hooksNeedingUpdate.push(filename);
+      }
+    } else if (currentHash !== storedChecksums[key]) {
+      modifiedHooks.push(filename);
+      if (storedChecksums[key] !== packageHookHashes[filename]) {
+        hooksNeedingUpdate.push(filename);
+      }
+    } else if (currentHash !== packageHookHashes[filename]) {
+      hooksNeedingUpdate.push(filename);
+    }
+  }
+
   // 5. Silent mode — no output at all
   if (SILENT) {
-    if (needsUpdate.length === 0 && modifiedSkills.length === 0) {
+    if (needsUpdate.length === 0 && modifiedSkills.length === 0 &&
+        hooksNeedingUpdate.length === 0 && modifiedHooks.length === 0) {
       process.exit(0);
     }
     fs.mkdirSync(SKILLS_DIR, { recursive: true });
@@ -243,13 +336,21 @@ async function main() {
       copyDir(path.join(PACKAGE_SKILLS_DIR, name), path.join(SKILLS_DIR, name));
       newChecksums[name] = packageHashes[name];
     }
+    fs.mkdirSync(HOOKS_DIR, { recursive: true });
+    for (const filename of hookFilenames) {
+      if (modifiedHooks.includes(filename)) continue;
+      if (!hooksNeedingUpdate.includes(filename) && fs.existsSync(path.join(HOOKS_DIR, filename))) continue;
+      fs.copyFileSync(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
+      newChecksums['hook:' + filename] = packageHookHashes[filename];
+    }
     fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums, null, 2));
     process.exit(0);
   }
 
   // 6. Startup mode — non-interactive, backup + merge context for Claude Code
   if (STARTUP) {
-    if (needsUpdate.length === 0 && modifiedSkills.length === 0) {
+    if (needsUpdate.length === 0 && modifiedSkills.length === 0 &&
+        hooksNeedingUpdate.length === 0 && modifiedHooks.length === 0) {
       process.exit(0);
     }
 
@@ -273,6 +374,27 @@ async function main() {
       updated.push(name);
     }
 
+    // Install hooks
+    fs.mkdirSync(HOOKS_DIR, { recursive: true });
+    const updatedHooks = [];
+    const mergeNeededHooks = [];
+
+    for (const filename of hookFilenames) {
+      if (modifiedHooks.includes(filename)) {
+        backupHook(filename);
+        fs.copyFileSync(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
+        newChecksums['hook:' + filename] = packageHookHashes[filename];
+        mergeNeededHooks.push(filename);
+        continue;
+      }
+      if (!hooksNeedingUpdate.includes(filename) && fs.existsSync(path.join(HOOKS_DIR, filename))) continue;
+      fs.copyFileSync(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
+      newChecksums['hook:' + filename] = packageHookHashes[filename];
+      updatedHooks.push(filename);
+    }
+
+    setupRepoSearchNudgeHook();
+
     fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums, null, 2));
 
     // Build output for Claude Code
@@ -281,6 +403,10 @@ async function main() {
 
     if (updated.length > 0) {
       msgParts.push('estack: updated ' + updated.join(', '));
+    }
+
+    if (updatedHooks.length > 0) {
+      msgParts.push('estack: updated hooks ' + updatedHooks.join(', '));
     }
 
     if (mergeNeeded.length > 0) {
@@ -299,6 +425,21 @@ async function main() {
         'identify the user\'s changes, and apply them to the new version where compatible.';
     }
 
+    if (mergeNeededHooks.length > 0) {
+      const backupPath = BACKUP_DIR.replace(HOME, '~');
+      msgParts.push(
+        'estack: updated hooks ' + mergeNeededHooks.join(', ') +
+        ' (local changes backed up to ' + backupPath + '/hooks/)'
+      );
+      const existingContext = output.additionalContext ? output.additionalContext + ' ' : '';
+      output.additionalContext =
+        existingContext +
+        'estack hooks were updated but the user had local modifications to: ' +
+        mergeNeededHooks.join(', ') + '. ' +
+        'Their previous versions are saved at ' + path.join(BACKUP_DIR, 'hooks') + '. ' +
+        'The new upstream versions are now installed at ' + HOOKS_DIR + '.';
+    }
+
     if (msgParts.length > 0) {
       output.systemMessage = msgParts.join('\n');
     }
@@ -312,10 +453,19 @@ async function main() {
   // 7. Interactive mode — prompt if modifications detected
   let modifiedAction = null; // 'overwrite', 'skip', or 'merge'
 
-  if (modifiedSkills.length > 0) {
-    console.log('\nThe following skills have been modified locally:');
-    for (const name of modifiedSkills) {
-      console.log('  - ' + name);
+  if (modifiedSkills.length > 0 || modifiedHooks.length > 0) {
+    console.log('\nThe following items have been modified locally:');
+    if (modifiedSkills.length > 0) {
+      console.log('  Skills:');
+      for (const name of modifiedSkills) {
+        console.log('    - ' + name);
+      }
+    }
+    if (modifiedHooks.length > 0) {
+      console.log('  Hooks:');
+      for (const filename of modifiedHooks) {
+        console.log('    - ' + filename);
+      }
     }
     console.log('\nChoose an action:');
     console.log('  [o] Overwrite all (replace with latest)');
@@ -371,15 +521,49 @@ async function main() {
     console.log('  Installed ' + name);
   }
 
+  // 8b. Install hooks
+  fs.mkdirSync(HOOKS_DIR, { recursive: true });
+  let installedHookCount = 0;
+  const mergedHooks = [];
+
+  for (const filename of hookFilenames) {
+    if (modifiedHooks.includes(filename)) {
+      if (modifiedAction === 'skip') {
+        console.log('  Skipped hook ' + filename + ' (local modifications preserved)');
+        const currentHash = computeFileHash(path.join(HOOKS_DIR, filename));
+        if (currentHash) newChecksums['hook:' + filename] = currentHash;
+        continue;
+      }
+      if (modifiedAction === 'merge') {
+        backupHook(filename);
+        mergedHooks.push(filename);
+        console.log('  Backed up hook ' + filename + ' → ~/.claude/.estack-backup/hooks/' + filename);
+      }
+      // overwrite or merge — fall through to install
+    } else if (!hooksNeedingUpdate.includes(filename) && fs.existsSync(path.join(HOOKS_DIR, filename))) {
+      // Already installed and up-to-date
+      continue;
+    }
+    fs.copyFileSync(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
+    newChecksums['hook:' + filename] = packageHookHashes[filename];
+    installedHookCount++;
+    console.log('  Installed hook ' + filename);
+  }
+
   // 9. Write checksums
   fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums, null, 2));
 
-  // 10. Setup startup hook
+  // 10. Setup startup hook and repo-search nudge hook
   const hookInstalled = setupStartupHook();
+  const nudgeHookInstalled = setupRepoSearchNudgeHook();
 
   // 11. Summary output
   console.log('\nestack installed successfully!\n');
-  console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' installed to ~/.claude/skills/\n');
+  console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' installed to ~/.claude/skills/');
+  if (installedHookCount > 0) {
+    console.log('  ' + installedHookCount + ' hook' + (installedHookCount !== 1 ? 's' : '') + ' installed to ~/.claude/hooks/');
+  }
+  console.log('');
   console.log('Skills available:');
 
   for (const name of skillNames) {
@@ -393,12 +577,22 @@ async function main() {
     console.log('  "Merge my estack changes from ~/.claude/.estack-backup/"');
   }
 
+  if (mergedHooks.length > 0) {
+    console.log('\nLocal hook changes backed up for: ' + mergedHooks.join(', '));
+    console.log('Backed up to ~/.claude/.estack-backup/hooks/');
+  }
+
   if (hookInstalled) {
     console.log('\nAuto-update hook added to ~/.claude/settings.json');
     console.log('Skills will update automatically when you start Claude Code.');
   } else {
     console.log('\nAuto-update hook already configured.');
   }
+
+  if (nudgeHookInstalled) {
+    console.log('Repo-search nudge hook registered in settings.json.');
+  }
+
   console.log('');
 }
 

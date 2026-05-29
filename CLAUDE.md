@@ -16,7 +16,7 @@
 |---|---|
 | **Any change to e-stack** (add, edit, publish a skill) | Invoke `manage-e-stack` skill — it routes to the right step file |
 | **Skill authoring reference** | Read `docs/skill-authoring.md` |
-| **Publishing/OIDC debugging** | Read `docs/publishing.md` |
+| **Publishing, OIDC, branch protection, or repo security settings** | Read `docs/publishing.md` |
 
 ## 2. Repo Structure
 
@@ -36,6 +36,7 @@ docs/                    # Reference docs (publishing, skill authoring)
 
 ## 3. Hard Rules
 
-- **Never manually bump `package.json` version** — the publish workflow handles this on push to main
-- **`[publish]` in a commit message** triggers npm publish via GitHub Actions. Commits without it are safe to push.
+- **Publishing is tag-triggered.** To release: `npm version patch && git push --follow-tags`. The `v*` tag push triggers `publish.yml`. Regular commits to `main` do NOT publish.
+- **Never push a `v*` tag without intent to publish.** Any `v*` tag push starts a real npm release.
+- **Only the repo owner can push to `main`.** Branch protection requires PRs from everyone else. Don't bypass.
 - **Always show diff and confirm** before syncing changed skills to the live location

@@ -52,6 +52,12 @@ npx elliot-stack@latest
 - [Claude Code](https://claude.ai/code) CLI installed
 - Node.js 18+
 
+## Contributing
+
+External contributions are welcome via pull request. Direct pushes to `main` are blocked — fork the repo, push your changes to a branch, and open a PR. Only the maintainer (Elliot) can merge to `main` and cut releases. This is intentional: `elliot-stack` is a security-sensitive npm package and the release tag can only be pushed by the maintainer.
+
+See [`docs/publishing.md`](docs/publishing.md) for the release flow and security model.
+
 ## License
 
 MIT

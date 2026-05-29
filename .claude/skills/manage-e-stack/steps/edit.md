@@ -21,7 +21,7 @@ Edit the skill files in `skills/estack-*/` as needed. Conventions are in the mai
 - Skill folders prefixed with `estack-`
 - `name` field matches the folder name
 - `description` starts with `(<short-name>)`
-- Do NOT manually bump `package.json` version
+- Do NOT bump `package.json` version as part of an edit — version bumps happen during release (`npm version`), not while editing skills
 
 ## Phase 3: Review — APPROVAL GATE
 

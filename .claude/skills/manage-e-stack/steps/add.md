@@ -1,6 +1,6 @@
 # Adding a Skill to E-Stack
 
-Follow these steps in order. Do not manually bump `package.json` version.
+Follow these steps in order. Adding a skill is separate from releasing it — version bumps happen at release time (`steps/publish.md`), not while adding.
 
 ## 1. Create the skill folder
 
@@ -51,19 +51,18 @@ NEVER commit or push without explicit confirmation from the user. Before touchin
 
 1. Show the user a summary of all files that will be committed
 2. Show the proposed commit message
-3. Remind them that `[publish]` in the message triggers an npm publish
-4. Ask for explicit confirmation (e.g. "Ready to commit and push?")
-5. Only proceed after the user says yes
+3. Ask for explicit confirmation (e.g. "Ready to commit and push?")
+4. Only proceed after the user says yes
 
 ```bash
 git pull --rebase origin main
 git add skills/estack-<skill-name>/
-git commit -m "add <skill-name> skill [publish]"
+git commit -m "add <skill-name> skill"
 git push
 ```
 
-Do NOT manually bump `package.json` version — the GitHub Actions workflow handles it automatically.
+Committing alone does NOT publish. Publishing is triggered by pushing a `v*` git tag (see `steps/publish.md`).
 
 ## 6. Route to publish (optional)
 
-If the commit included `[publish]`, follow `steps/publish.md` Phase 3 to verify the publish landed.
+If the user wants this change released to npm, follow `steps/publish.md`.
