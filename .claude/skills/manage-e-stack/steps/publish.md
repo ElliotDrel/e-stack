@@ -7,19 +7,24 @@ Follow each phase in order. There is one approval gate.
 Verify the repo is ready to publish:
 
 1. Run `git status --short` and `git diff --stat` to see what will be committed
-2. Check for uncommitted changes that should be included or excluded
-3. Do NOT commit unrelated files (e.g. `Untitled-1.md`)
+2. Confirm everything intended for the release is committed and on `main` (or staged to be committed in this flow)
+3. Do NOT include unrelated files (e.g. `Untitled-1.md`)
 
-## Phase 2: Commit and Push — APPROVAL GATE
+## Phase 2: Bump Version, Tag, and Push — APPROVAL GATE
 
 Key rules:
-- **Pull before committing** — CI commits a version bump after each publish, so local is always behind. Run `git pull --rebase origin main` first (stash if needed).
-- **Include `[publish]` in the commit message** — this triggers the GitHub Actions workflow. Without it, nothing publishes.
-- **Do NOT manually bump `package.json` version** — the workflow does this automatically.
+- **Sync first** — run `git pull --rebase origin main` so the version bump lands on top of latest `main`.
+- **`npm version patch` does three things**: updates `package.json`, makes a commit (e.g. `1.0.16`), and creates a matching `v1.0.16` tag locally. Use `minor` or `major` for non-patch bumps.
+- **Tags trigger publishing.** Pushing a `v*` tag runs the npm publish workflow. Never push a `v*` tag unless you intend to release.
+- **Only the repo owner can push to `main`.** Branch protection requires PRs from everyone else.
 
-Show the user the proposed commit message and ask: **"Ready to commit and push with [publish]?"**
+Show the user the planned bump (current → next version) and ask: **"Ready to bump to vX.Y.Z and push the tag (this publishes)?"**
 
-Only after they confirm, commit and push.
+After they confirm:
+```bash
+npm version patch        # or minor / major
+git push --follow-tags   # pushes commit + tag, tag triggers publish
+```
 
 ## Phase 3: Post-publish Verification
 

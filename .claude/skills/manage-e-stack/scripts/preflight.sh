@@ -44,6 +44,57 @@ if [ "$diffs" -eq 0 ]; then
 fi
 
 echo ""
+echo "=== Current installed hooks ==="
+hook_count=0
+for hook in ~/.claude/hooks/*.js; do
+  [ -f "$hook" ] || continue
+  echo "$(basename "$hook")"
+  hook_count=$((hook_count + 1))
+done
+[ "$hook_count" -eq 0 ] && echo "(none)"
+
+echo ""
+echo "=== Repo hooks ==="
+repo_hook_count=0
+for hook in hooks/*.js; do
+  [ -f "$hook" ] || continue
+  echo "$(basename "$hook")"
+  repo_hook_count=$((repo_hook_count + 1))
+done
+[ "$repo_hook_count" -eq 0 ] && echo "(none)"
+
+echo ""
+echo "=== Hook diffs between repo and installed ==="
+hook_diffs=0
+for hook in hooks/*.js; do
+  [ -f "$hook" ] || continue
+  name=$(basename "$hook")
+  if [ ! -f ~/.claude/hooks/"$name" ]; then
+    echo "NEW: $name (not yet installed)"
+    hook_diffs=$((hook_diffs + 1))
+  else
+    diff_output=$(diff -q "$hook" ~/.claude/hooks/"$name" 2>&1)
+    if [ -n "$diff_output" ]; then
+      echo "CHANGED: $name"
+      hook_diffs=$((hook_diffs + 1))
+    fi
+  fi
+done
+for hook in ~/.claude/hooks/*.js; do
+  [ -f "$hook" ] || continue
+  name=$(basename "$hook")
+  if [ -f hooks/"$name" ]; then continue; fi
+  # Only flag as STALE if the repo previously had it (heuristic: installed via estack checksums)
+  if grep -q "\"hook:$name\"" ~/.claude/.estack-checksums.json 2>/dev/null; then
+    echo "STALE: $name (installed but not in repo)"
+    hook_diffs=$((hook_diffs + 1))
+  fi
+done
+if [ "$hook_diffs" -eq 0 ]; then
+  echo "(all match)"
+fi
+
+echo ""
 echo "=== Frontmatter check ==="
 fm_errors=0
 for skill in skills/estack-*/; do

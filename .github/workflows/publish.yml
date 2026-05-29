@@ -2,7 +2,8 @@ name: Publish to npm
 
 on:
   push:
-    branches: [main]
+    tags:
+      - "v*"
 
 concurrency:
   group: publish
@@ -10,16 +11,17 @@ concurrency:
 
 permissions:
   id-token: write
-  contents: write
+  contents: read
 
 jobs:
   publish:
-    if: "contains(github.event.head_commit.message, '[publish]')"
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -27,16 +29,14 @@ jobs:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Configure git
+      - name: Verify tag matches package.json version
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Bump patch version
-        run: 'npm version patch -m "bump to %s [skip ci]"'
-
-      - name: Push version bump
-        run: git push
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
 
       - name: Publish to npm
         run: npm publish --access public
