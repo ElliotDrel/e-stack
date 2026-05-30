@@ -624,9 +624,9 @@ async function main() {
   // 11. Summary output
   if (DRY_RUN) {
     console.log('\n[dry run] No files were changed. Run with --install to apply.\n');
-    console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' would be installed to ~/.claude/skills/');
+    console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' would be installed/updated in ~/.claude/skills/');
     if (installedHookCount > 0) {
-      console.log('  ' + installedHookCount + ' hook' + (installedHookCount !== 1 ? 's' : '') + ' would be installed to ~/.claude/hooks/');
+      console.log('  ' + installedHookCount + ' hook' + (installedHookCount !== 1 ? 's' : '') + ' would be installed/updated in ~/.claude/hooks/');
     }
   } else {
     console.log('\nestack installed successfully!\n');
