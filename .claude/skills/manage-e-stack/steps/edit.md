@@ -23,6 +23,21 @@ Edit the skill files in `skills/estack-*/` as needed. Conventions are in the mai
 - `description` starts with `(<short-name>)`
 - Do NOT bump `package.json` version as part of an edit — version bumps happen during release (`npm version`), not while editing skills
 
+### Renaming or removing a skill
+
+If this edit **renames** a skill (e.g. `estack-foo` → `estack-foo-coach`) or **removes** one entirely, the new/renamed folder alone is not enough — the installer only adds and updates, it never deletes. Without the step below, every existing user keeps the old folder *and* gets the new one (a duplicate).
+
+Add the old folder name to the `DEPRECATED_SKILLS` array in `bin/install.cjs`:
+
+```js
+const DEPRECATED_SKILLS = [
+  'estack-prompt-builder', // renamed to estack-prompt-builder-coach
+  'estack-foo',            // renamed to estack-foo-coach   ← your new entry
+];
+```
+
+On the next install (any mode), the installer deletes each listed folder from `~/.claude/skills/` and drops its checksum entry. Leave entries in the list permanently — they're cheap and protect users who update infrequently.
+
 ## Phase 3: Review — APPROVAL GATE
 
 After all edits are complete, show the user what will change:
