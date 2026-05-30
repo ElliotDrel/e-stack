@@ -29,6 +29,7 @@ These apply to every route. Violating them breaks the install or publish.
 - **NEVER push a `v*` tag without intent to publish.** Any `v*` tag push runs a real npm release.
 - **Only the repo owner can push to `main`.** Branch protection requires PRs from everyone else.
 - **Live install location:** `~/.claude/skills/estack-*/` (the installer copies from `skills/` here)
+- **Renaming/removing a skill** requires adding the old folder name to `DEPRECATED_SKILLS` in `bin/install.cjs` — the installer only adds/updates, never deletes, so without this users keep the old folder *and* the new one. See `steps/edit.md`.
 - **Hooks** live in `hooks/<name>.js` at the repo root (flat — no subfolders). They are single self-contained Node scripts that read JSON from stdin and may write JSON to stdout. The installer copies them to `~/.claude/hooks/` and registers each via a dedicated `setup<Name>Hook()` function in `bin/install.cjs` that idempotently patches `~/.claude/settings.json`. Hook scripts MUST wrap their body in `try { ... } catch { /* never break the tool */ }` and exit 0 — a hook crash must never break the underlying tool call. See `docs/hook-authoring.md`.
 - **Installer:** `node bin/install.cjs` from repo root
 - **Always `git pull --rebase origin main`** before committing or pushing. The user wants a linear commit history, so never plain `git pull` or `git merge` (those create merge commits).

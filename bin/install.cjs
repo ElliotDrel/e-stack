@@ -21,6 +21,19 @@ const PACKAGE_HOOKS_DIR = path.join(__dirname, '..', 'hooks');
 // ── Flags ──────────────────────────────────────────────────────────────────
 const SILENT = process.argv.includes('--silent');
 const STARTUP = process.argv.includes('--startup');
+// When run directly from the repo (not via npx/node_modules), default to dry-run
+// so local testing never silently clobbers the live ~/.claude/skills install.
+// Pass --install to actually write files, or --dry-run to force preview mode.
+const IS_LOCAL = !__dirname.includes('node_modules');
+const DRY_RUN = process.argv.includes('--dry-run') ||
+  (IS_LOCAL && !process.argv.includes('--install'));
+
+// ── Deprecated skills ──────────────────────────────────────────────────────
+// Skills that were renamed or removed. The installer removes these on every
+// run so users don't end up with both the old and new name installed.
+const DEPRECATED_SKILLS = [
+  'estack-prompt-builder', // renamed to estack-prompt-builder-coach
+];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -137,7 +150,9 @@ function getSkillDescription(skillDir) {
 
 // ── Hook setup ─────────────────────────────────────────────────────────────
 
-function setupStartupHook() {
+// Returns true if the hook was added (or would be added in dryRun), false if
+// it was already configured. In dryRun mode nothing is written to disk.
+function setupStartupHook(dryRun) {
   let settings = {};
   if (fs.existsSync(SETTINGS_FILE)) {
     try {
@@ -160,6 +175,8 @@ function setupStartupHook() {
     }
   }
 
+  if (dryRun) return true;
+
   if (!settings.hooks) settings.hooks = {};
   if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
 
@@ -181,7 +198,9 @@ function setupStartupHook() {
   return true;
 }
 
-function setupRepoSearchNudgeHook() {
+// Returns true if the hook was added (or would be added in dryRun), false if
+// it was already configured. In dryRun mode nothing is written to disk.
+function setupRepoSearchNudgeHook(dryRun) {
   let settings = {};
   if (fs.existsSync(SETTINGS_FILE)) {
     try {
@@ -203,6 +222,8 @@ function setupRepoSearchNudgeHook() {
     }
   }
 
+  if (dryRun) return true;
+
   if (!settings.hooks) settings.hooks = {};
   if (!settings.hooks.PostToolUse) settings.hooks.PostToolUse = [];
 
@@ -223,6 +244,29 @@ function setupRepoSearchNudgeHook() {
 // ── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
+  // 0. Remove deprecated skills (renamed/deleted from the package)
+  if (fs.existsSync(SKILLS_DIR)) {
+    const newChecksums0 = fs.existsSync(CHECKSUMS_FILE)
+      ? (() => { try { return JSON.parse(fs.readFileSync(CHECKSUMS_FILE, 'utf8')); } catch (_) { return {}; } })()
+      : {};
+    let changed = false;
+    for (const name of DEPRECATED_SKILLS) {
+      const dir = path.join(SKILLS_DIR, name);
+      if (fs.existsSync(dir)) {
+        if (!DRY_RUN) fs.rmSync(dir, { recursive: true, force: true });
+        delete newChecksums0[name];
+        changed = true;
+        if (!SILENT && !STARTUP) {
+          console.log((DRY_RUN ? '  [dry run] Would remove deprecated skill: ' : '  Removed deprecated skill: ') + name);
+        }
+      } else if (newChecksums0[name]) {
+        delete newChecksums0[name];
+        changed = true;
+      }
+    }
+    if (changed && !DRY_RUN) fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums0, null, 2));
+  }
+
   // 1. Scan package skills
   if (!fs.existsSync(PACKAGE_SKILLS_DIR)) {
     if (!SILENT && !STARTUP) {
@@ -467,32 +511,39 @@ async function main() {
         console.log('    - ' + filename);
       }
     }
-    console.log('\nChoose an action:');
-    console.log('  [o] Overwrite all (replace with latest)');
-    console.log('  [s] Skip all (keep local versions)');
-    console.log('  [m] Merge (backup local, install new, merge in Claude Code)');
-    console.log('  [a] Abort (cancel installation)');
-    console.log('');
 
-    const answer = await promptChar('Your choice (o/s/m/a): ');
-
-    if (answer === 'a') {
-      console.log('Installation aborted.');
-      process.exit(0);
-    } else if (answer === 's') {
-      modifiedAction = 'skip';
-    } else if (answer === 'm') {
-      modifiedAction = 'merge';
-    } else if (answer === 'o') {
+    if (DRY_RUN) {
+      console.log('\n[dry run] Would prompt: overwrite / skip / merge / abort');
+      console.log('[dry run] Showing what would happen with default overwrite...');
       modifiedAction = 'overwrite';
     } else {
-      console.log('Invalid choice. Installation aborted.');
-      process.exit(1);
+      console.log('\nChoose an action:');
+      console.log('  [o] Overwrite all (replace with latest)');
+      console.log('  [s] Skip all (keep local versions)');
+      console.log('  [m] Merge (backup local, install new, merge in Claude Code)');
+      console.log('  [a] Abort (cancel installation)');
+      console.log('');
+
+      const answer = await promptChar('Your choice (o/s/m/a): ');
+
+      if (answer === 'a') {
+        console.log('Installation aborted.');
+        process.exit(0);
+      } else if (answer === 's') {
+        modifiedAction = 'skip';
+      } else if (answer === 'm') {
+        modifiedAction = 'merge';
+      } else if (answer === 'o') {
+        modifiedAction = 'overwrite';
+      } else {
+        console.log('Invalid choice. Installation aborted.');
+        process.exit(1);
+      }
     }
   }
 
   // 8. Install skills
-  fs.mkdirSync(SKILLS_DIR, { recursive: true });
+  if (!DRY_RUN) fs.mkdirSync(SKILLS_DIR, { recursive: true });
   const newChecksums = Object.assign({}, storedChecksums);
   let installedCount = 0;
   const mergedSkills = [];
@@ -506,23 +557,29 @@ async function main() {
         continue;
       }
       if (modifiedAction === 'merge') {
-        backupSkill(name);
+        if (!DRY_RUN) backupSkill(name);
         mergedSkills.push(name);
-        console.log('  Backed up ' + name + ' → ~/.claude/.estack-backup/' + name);
+        console.log((DRY_RUN ? '  [dry run] Would back up ' : '  Backed up ') + name + ' → ~/.claude/.estack-backup/' + name);
       }
       // overwrite or merge — fall through to install
     } else if (!needsUpdate.includes(name) && fs.existsSync(path.join(SKILLS_DIR, name))) {
       // Already installed and up-to-date
+      if (DRY_RUN) console.log('  [dry run] Up to date (no change): ' + name);
       continue;
     }
-    copyDir(path.join(PACKAGE_SKILLS_DIR, name), path.join(SKILLS_DIR, name));
+    const isUpdate = fs.existsSync(path.join(SKILLS_DIR, name));
+    if (!DRY_RUN) copyDir(path.join(PACKAGE_SKILLS_DIR, name), path.join(SKILLS_DIR, name));
     newChecksums[name] = packageHashes[name];
     installedCount++;
-    console.log('  Installed ' + name);
+    if (DRY_RUN) {
+      console.log('  [dry run] Would ' + (isUpdate ? 'update ' : 'install ') + name);
+    } else {
+      console.log('  Installed ' + name);
+    }
   }
 
   // 8b. Install hooks
-  fs.mkdirSync(HOOKS_DIR, { recursive: true });
+  if (!DRY_RUN) fs.mkdirSync(HOOKS_DIR, { recursive: true });
   let installedHookCount = 0;
   const mergedHooks = [];
 
@@ -535,33 +592,48 @@ async function main() {
         continue;
       }
       if (modifiedAction === 'merge') {
-        backupHook(filename);
+        if (!DRY_RUN) backupHook(filename);
         mergedHooks.push(filename);
-        console.log('  Backed up hook ' + filename + ' → ~/.claude/.estack-backup/hooks/' + filename);
+        console.log((DRY_RUN ? '  [dry run] Would back up hook ' : '  Backed up hook ') + filename + ' → ~/.claude/.estack-backup/hooks/' + filename);
       }
       // overwrite or merge — fall through to install
     } else if (!hooksNeedingUpdate.includes(filename) && fs.existsSync(path.join(HOOKS_DIR, filename))) {
       // Already installed and up-to-date
+      if (DRY_RUN) console.log('  [dry run] Up to date (no change): hook ' + filename);
       continue;
     }
-    fs.copyFileSync(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
+    const isHookUpdate = fs.existsSync(path.join(HOOKS_DIR, filename));
+    if (!DRY_RUN) fs.copyFileSync(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
     newChecksums['hook:' + filename] = packageHookHashes[filename];
     installedHookCount++;
-    console.log('  Installed hook ' + filename);
+    if (DRY_RUN) {
+      console.log('  [dry run] Would ' + (isHookUpdate ? 'update hook ' : 'install hook ') + filename);
+    } else {
+      console.log('  Installed hook ' + filename);
+    }
   }
 
   // 9. Write checksums
-  fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums, null, 2));
+  if (!DRY_RUN) fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums, null, 2));
 
   // 10. Setup startup hook and repo-search nudge hook
-  const hookInstalled = setupStartupHook();
-  const nudgeHookInstalled = setupRepoSearchNudgeHook();
+  // In dry-run these inspect settings.json read-only and report would-be action.
+  const hookInstalled = setupStartupHook(DRY_RUN);
+  const nudgeHookInstalled = setupRepoSearchNudgeHook(DRY_RUN);
 
   // 11. Summary output
-  console.log('\nestack installed successfully!\n');
-  console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' installed to ~/.claude/skills/');
-  if (installedHookCount > 0) {
-    console.log('  ' + installedHookCount + ' hook' + (installedHookCount !== 1 ? 's' : '') + ' installed to ~/.claude/hooks/');
+  if (DRY_RUN) {
+    console.log('\n[dry run] No files were changed. Run with --install to apply.\n');
+    console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' would be installed to ~/.claude/skills/');
+    if (installedHookCount > 0) {
+      console.log('  ' + installedHookCount + ' hook' + (installedHookCount !== 1 ? 's' : '') + ' would be installed to ~/.claude/hooks/');
+    }
+  } else {
+    console.log('\nestack installed successfully!\n');
+    console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' installed to ~/.claude/skills/');
+    if (installedHookCount > 0) {
+      console.log('  ' + installedHookCount + ' hook' + (installedHookCount !== 1 ? 's' : '') + ' installed to ~/.claude/hooks/');
+    }
   }
   console.log('');
   console.log('Skills available:');
@@ -582,15 +654,27 @@ async function main() {
     console.log('Backed up to ~/.claude/.estack-backup/hooks/');
   }
 
-  if (hookInstalled) {
-    console.log('\nAuto-update hook added to ~/.claude/settings.json');
-    console.log('Skills will update automatically when you start Claude Code.');
+  if (DRY_RUN) {
+    if (hookInstalled) {
+      console.log('\n[dry run] Would add auto-update hook to ~/.claude/settings.json');
+    } else {
+      console.log('\nAuto-update hook already configured (no change).');
+    }
+    if (nudgeHookInstalled) {
+      console.log('[dry run] Would register repo-search nudge hook in settings.json.');
+    } else {
+      console.log('Repo-search nudge hook already configured (no change).');
+    }
   } else {
-    console.log('\nAuto-update hook already configured.');
-  }
-
-  if (nudgeHookInstalled) {
-    console.log('Repo-search nudge hook registered in settings.json.');
+    if (hookInstalled) {
+      console.log('\nAuto-update hook added to ~/.claude/settings.json');
+      console.log('Skills will update automatically when you start Claude Code.');
+    } else {
+      console.log('\nAuto-update hook already configured.');
+    }
+    if (nudgeHookInstalled) {
+      console.log('Repo-search nudge hook registered in settings.json.');
+    }
   }
 
   console.log('');
