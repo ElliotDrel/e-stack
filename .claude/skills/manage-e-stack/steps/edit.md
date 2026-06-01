@@ -52,10 +52,12 @@ After all edits are complete, show the user what will change:
    ```
 3. Ask: **"Ready to run the installer? This will overwrite your local skills in ~/.claude/skills/."**
 
-Only after they confirm, run:
+Only after they confirm, run the installer with `--install` (run from the repo it dry-runs by default and writes nothing):
 ```bash
-node bin/install.cjs
+node bin/install.cjs --install
 ```
+
+Tip: you can run `node bin/install.cjs` (no flags) first for a read-only preview of exactly what would change — that preview is itself the diff to show before confirming.
 
 Then re-run preflight to verify everything installed correctly. If anything fails, stop and fix.
 

@@ -40,10 +40,11 @@ rm -rf ~/.claude/skills/<old-skill-name>
 ## 4. Run the installer
 
 ```bash
-node bin/install.cjs
+node bin/install.cjs            # dry run — preview what would change, writes nothing
+node bin/install.cjs --install  # actually copy skills to ~/.claude/skills/
 ```
 
-This copies all skills from `skills/` to `~/.claude/skills/`. Confirm the new skill appears in the output.
+Run from the repo, the installer **dry-runs by default** — preview first, then pass `--install` to apply. The `--install` run copies all skills from `skills/` to `~/.claude/skills/`. Confirm the new skill appears in the output.
 
 ## 5. Confirm with the user before committing
 
