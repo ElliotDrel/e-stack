@@ -25,9 +25,10 @@ Required shape:
 - Tunables (skill name, thresholds, timeouts) go as `const` at the top
 
 Then register the hook in `bin/install.cjs`:
-- Add a `setup<Name>Hook()` function modeled on the existing `setupStartupHook()` and `setupRepoSearchNudgeHook()`
+- Add a `setup<Name>Hook(dryRun)` function modeled on the existing `setupStartupHook(dryRun)` and `setupRepoSearchNudgeHook(dryRun)`
 - The function MUST be idempotent — scan existing `hooks.<event>[]` entries and bail out if a matching command is already there
-- Wire the new setup call into `main()` alongside the existing setup calls
+- The function MUST honor `dryRun` — do the read-only idempotency check, then `if (dryRun) return true;` BEFORE writing `settings.json`, so a preview never mutates the user's config
+- Wire the new setup call into `main()` alongside the existing setup calls, passing the global `DRY_RUN` through: `setup<Name>Hook(DRY_RUN)`
 
 See `hooks/repo-search-nudge.js` and `setupRepoSearchNudgeHook()` for the canonical example. See also `docs/hook-authoring.md` for deeper guidance.
 
@@ -43,9 +44,11 @@ Show the user what will change:
 3. Re-run preflight.
 4. Ask: **"Ready to run the installer? This will copy the hook to ~/.claude/hooks/ and patch settings.json."**
 
-Only after they confirm:
+   You can run `node bin/install.cjs` (no flags) first for a read-only dry-run preview — it reports whether the hook *would be* copied and whether settings.json *would be* patched, without writing anything.
+
+Only after they confirm, apply with `--install` (run from the repo, the installer dry-runs by default):
 ```bash
-node bin/install.cjs
+node bin/install.cjs --install
 ```
 
 Then re-run preflight to verify the install landed.

@@ -31,7 +31,7 @@ docs/                    # Reference docs (publishing, skill authoring)
 ```
 
 - **Distribution:** `npx elliot-stack@latest` copies skills to `~/.claude/skills/`
-- **Local sync:** `node bin/install.cjs` syncs repo skills to the live location
+- **Local preview / sync:** `node bin/install.cjs` run from the repo defaults to a **dry run** — it previews what would change in `~/.claude/` and writes nothing. Add `--install` to actually sync repo skills to the live location.
 - **Skills in the pack:** `estack-better-title`, `estack-chris-voss`, `estack-customer-discovery`, `estack-github-issue-tracker`, `estack-repo-search`
 
 ## 3. Hard Rules
@@ -39,4 +39,4 @@ docs/                    # Reference docs (publishing, skill authoring)
 - **Publishing is tag-triggered.** To release: `npm version patch && git push --follow-tags`. The `v*` tag push triggers `publish.yml`. Regular commits to `main` do NOT publish.
 - **Never push a `v*` tag without intent to publish.** Any `v*` tag push starts a real npm release.
 - **Only the repo owner can push to `main`.** Branch protection requires PRs from everyone else. Don't bypass.
-- **Always show diff and confirm** before syncing changed skills to the live location
+- **Always show diff and confirm** before syncing changed skills to the live location. The installer's default dry run (`node bin/install.cjs`, no flags) is the preferred way to produce that diff — only run `node bin/install.cjs --install` after the user confirms.

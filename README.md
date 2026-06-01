@@ -56,6 +56,17 @@ npx elliot-stack@latest
 
 External contributions are welcome via pull request. Direct pushes to `main` are blocked — fork the repo, push your changes to a branch, and open a PR. Only the maintainer (Elliot) can merge to `main` and cut releases. This is intentional: `elliot-stack` is a security-sensitive npm package and the release tag can only be pushed by the maintainer.
 
+### Testing locally
+
+Run the installer straight from your checkout to preview what a real install would do to your `~/.claude/`:
+
+```bash
+node bin/install.cjs            # dry run — previews changes, writes nothing
+node bin/install.cjs --install  # actually sync your local edits to ~/.claude/skills/
+```
+
+Run from the repo, the installer **dry-runs by default** so testing never clobbers your live `~/.claude/skills/` install. Pass `--install` once the preview looks right. (`--dry-run` forces a preview even under `npx`.)
+
 See [`docs/publishing.md`](docs/publishing.md) for the release flow and security model.
 
 ## License
