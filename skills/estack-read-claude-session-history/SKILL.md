@@ -66,6 +66,7 @@ python "C:\Users\2supe\.claude\skills\read-transcript\scripts\read_transcript.py
 | `pre-compact` | 40 exchanges before the most recent /compact | "What happened before compact?" |
 | `dump` | Last 80 text messages, human-readable | Want the full picture |
 | `search` | Every assistant message matching a keyword | Looking for specific output |
+| `search` (with `--cwd`) | Searches across **all** sessions in the project directory | Finding content that might be in any session |
 | `debug` | Entry type distribution, block types, advisor probe, compact probe, sample messages | A mode returns empty/unexpected results — check if transcript format has drifted |
 
 ## Transcript structure (for context)
