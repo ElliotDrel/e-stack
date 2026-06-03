@@ -32,7 +32,7 @@ def fake_root(fixtures_dir, tmp_path):
     root = tmp_path / "projects"
     proj = root / "C--fake-proj"
     proj.mkdir(parents=True)
-    shutil.copy(fixtures_dir / "timeline-day.jsonl", proj / "abc12345.jsonl")
+    shutil.copy(fixtures_dir / "timeline-day-test.jsonl", proj / "abc12345.jsonl")
     return root
 
 
