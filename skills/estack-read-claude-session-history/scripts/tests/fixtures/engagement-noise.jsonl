@@ -1,0 +1,7 @@
+{"type":"user","timestamp":"2026-05-01T09:00:00Z","isMeta":true,"message":{"role":"user","content":[{"type":"text","text":"SessionStart hook output — not a human action"}]}}
+{"type":"user","timestamp":"2026-05-01T10:00:00Z","message":{"role":"user","content":"This session is being continued from a previous conversation. Summary: we were doing things."}}
+{"type":"user","timestamp":"2026-05-01T10:01:00Z","message":{"role":"user","content":"Real prompt one"}}
+{"type":"assistant","timestamp":"2026-05-01T10:02:00Z","message":{"role":"assistant","content":[{"type":"tool_use","name":"Read","input":{"file_path":"x"},"id":"t9"}]}}
+{"type":"user","timestamp":"2026-05-01T10:03:00Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t9","content":"file contents"}]}}
+{"type":"user","timestamp":"2026-05-01T10:05:00Z","isMeta":true,"message":{"role":"user","content":[{"type":"text","text":"Skill expansion injected text"}]}}
+{"type":"user","timestamp":"2026-05-01T10:06:00Z","message":{"role":"user","content":"Real prompt two"}}

@@ -1,0 +1,9 @@
+{"type":"user","timestamp":"2026-05-01T10:00:00Z","message":{"role":"user","content":"Start the analysis"}}
+{"type":"assistant","timestamp":"2026-05-01T10:01:00Z","message":{"role":"assistant","content":[{"type":"text","text":"On it."}]}}
+{"type":"user","timestamp":"2026-05-01T10:05:00Z","message":{"role":"user","content":"Looks good, continue"}}
+{"type":"assistant","timestamp":"2026-05-01T10:06:00Z","message":{"role":"assistant","content":[{"type":"text","text":"Done with phase 1."}]}}
+{"type":"user","timestamp":"2026-05-01T10:08:00Z","message":{"role":"user","content":"Next phase"}}
+{"type":"assistant","timestamp":"2026-05-01T10:09:00Z","message":{"role":"assistant","content":[{"type":"text","text":"Phase 2 complete."}]}}
+{"type":"user","timestamp":"2026-05-01T10:40:00Z","message":{"role":"user","content":"Back from a break, keep going"}}
+{"type":"assistant","timestamp":"2026-05-01T10:41:00Z","message":{"role":"assistant","content":[{"type":"text","text":"Resumed."}]}}
+{"type":"user","timestamp":"2026-05-01T10:45:00Z","message":{"role":"user","content":"Wrap it up"}}

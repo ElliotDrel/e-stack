@@ -133,10 +133,44 @@ python "$PY" --mode timeline --since 2026-06-01 --until 2026-06-03
 
 Reading the output: each block is a contiguous stretch of activity (events ≤ gap
 apart); the sessions inside it are listed with message counts; `── idle Xm ──`
-lines mark the breaks; the totals line gives summed active time vs. span.
+lines mark the breaks; the totals line gives block count, span, and session count.
 
-Caveat: this measures *Claude-visible* activity only — message timestamps, not
-attention or time spent away from Claude.
+Caveat: timeline maps *session* activity (Claude's work included) — it makes no
+claim about your attention time. For "how long did this actually take ME?", use
+`--mode engagement` (recipe 5d).
+
+---
+
+## 5d. Attention accounting ("how long did X actually take me?")
+
+`engagement` measures *your* time, not the session's. It merges your real
+prompts from ALL projects into one stream, so two parallel chats split the
+clock instead of double-counting it, and long Claude runs you sat waiting on
+are credited (you replied right after Claude finished) while runs you walked
+away from are not.
+
+```bash
+# How much focused time did today actually consume?
+python "$PY" --mode engagement --date today
+
+# One project over a week
+python "$PY" --mode engagement --project keel --since 7d
+
+# One session, window auto-derived from its first→last prompt
+python "$PY" --mode engagement --file <session.jsonl>
+
+# Strict mode: anything over 5 minutes quiet is a break
+python "$PY" --mode engagement --date today --break 5m
+```
+
+Reading the output: one row per session (`active / ratio / msgs / first–last`),
+a total line (sum of attributed time — already interval-merged, safe to quote),
+and the breaks in the merged stream. `ratio` = active/elapsed; 0.50 means half
+the wall-clock span was real attention.
+
+Scoping caveat: `--project`/`--file` filter which sessions are *reported*; the
+attention stream is always computed across all projects so the math stays
+honest. A scoped total can therefore be less than the same window's global total.
 
 ---
 
@@ -150,8 +184,8 @@ git-bash) — they work exactly as written:
 python "$PY" --mode list --all-projects --since yesterday --format json \
   | python -c "import json,sys; [print(s['path']) for s in json.load(sys.stdin)]"
 
-# Machine-readable day totals
-python "$PY" --mode timeline --date yesterday --format json \
+# Machine-readable day totals (attention time → engagement, not timeline)
+python "$PY" --mode engagement --date yesterday --format json \
   | python -c "import json,sys; t=json.load(sys.stdin)['totals']; print(t['active_minutes'], 'min across', t['sessions'], 'sessions')"
 ```
 

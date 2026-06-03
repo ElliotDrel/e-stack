@@ -15,7 +15,7 @@ python read_transcript.py [--root <root>] [--cwd <path> | --all-projects | --pro
 ```
 
 Global flag notes:
-- `--project <name>` — case-insensitive substring filter on project directory names (encoded or decoded form). Applies to `list`, `journal`, `search`, `count`, `find`, `timeline`. Exit 1 when nothing matches.
+- `--project <name>` — case-insensitive substring filter on project directory names (encoded or decoded form). Applies to `list`, `journal`, `search`, `count`, `find`, `timeline`, `engagement`. Exit 1 when nothing matches.
 - `--tz <spec>` — display timezone: IANA name (`America/New_York`), `UTC`, or fixed offset (`+5`, `-4`, `+05:30`, `UTC-4`). Default is system local time. All displayed timestamps AND `--since/--until/--date` interpretation use this zone.
 - `--format json` (alias `--json`) — structured output on every mode except the legacy `--list`/`--list-subagents` aliases. Shapes per mode are listed below.
 
@@ -277,8 +277,9 @@ JSON shape: array of session-summary objects (same fields as `list`).
 ### `timeline`
 
 Block-grouped activity timeline across all sessions in a time window, with idle
-gaps and active-time totals. Answers "where did my day go?" and "how much time on
-X?". Defaults to all projects and today.
+gaps. Answers "what was I doing, when?". It is a *map* of session activity —
+Claude's work included — and makes no claim about attention time; for "how much
+time did this consume?" use `engagement`. Defaults to all projects and today.
 
 ```bash
 # Yesterday, everything
@@ -295,7 +296,7 @@ How it works: every signal-message timestamp in the window is an activity event;
 events across all sessions are merged chronologically and grouped into blocks
 separated by gaps longer than `--gap` (default 15m). Each block lists the sessions
 active in it with message counts; idle gaps are printed between blocks; a totals
-line gives block count, summed active time, span, and session count.
+line gives block count, span, and session count.
 
 Flags:
 - `--date <spec>` — single-day window (midnight to midnight). Wins over `--since/--until`.
@@ -306,7 +307,62 @@ Flags:
 
 JSON shape: `{since, until, gap_minutes, blocks: [{start, end, duration_minutes,
 sessions: [{uuid, project, title, path, events}]}], totals: {blocks,
-active_minutes, sessions}}`.
+span_minutes, sessions}}`.
+
+### `engagement`
+
+Attention-time accounting: how much focused time a window, project, or session
+actually consumed — *your* time, not Claude's. Answers "how long did X actually
+take me?". Defaults to all projects and today; with `--file` and no time flags,
+the window is the session's own first→last prompt.
+
+```bash
+# Today's real work time, everything
+python read_transcript.py --mode engagement --date today
+
+# One project over a week
+python read_transcript.py --mode engagement --project keel --since 7d
+
+# One session, strict 5-minute break threshold
+python read_transcript.py --mode engagement --file <session.jsonl> --break 5m
+```
+
+How it works — three deterministic rules over ONE merged stream:
+
+1. Real user prompts (typed messages and slash commands — not tool results,
+   hook/skill injections, or compact continuations) from EVERY project are
+   merged into a single chronological stream. A gap between consecutive prompts
+   ≤ `--break` (default 10m) counts fully as active time, attributed to the
+   session of the *later* prompt — the chat being read/typed in. One stream
+   means a moment of wall clock is never counted twice across parallel chats.
+2. A longer gap still counts in full if Claude was working in that session
+   during the gap and the user replied within `--break` of Claude's last event
+   (sitting-there-waiting credit). Long runs you walked away from get nothing.
+3. Everything else is a break and contributes zero. A session left open with no
+   prompts accrues nothing.
+
+Output: one row per session (active, ratio = active/elapsed, prompt count,
+first–last), a totals line (already interval-merged — safe to quote), breaks in
+the merged stream, and (single-session view) median/p90 prompt gaps. Ratio is
+capped at 1.0: composing time leading into a chat's first prompt is credited to
+that chat, so raw active can slightly exceed its first–last span.
+
+Scoping caveat: `--project`/`--cwd`/`--file` filter which sessions are
+*reported*; the stream is always computed across all projects under `--root` so
+parallel-chat math stays correct. A scoped total can be less than the global
+total for the same window.
+
+Flags:
+- `--break <spec>` — break threshold: `5m`, `20m`, `1h` (default 10m).
+- `--date` / `--since` / `--until` — window (same semantics as timeline).
+- `--cwd` / `--project` / `--all-projects` / `--file` — reporting scope.
+- `--tz` — display timezone.
+- `--exclude-current` — drop the current session from stream and report.
+
+JSON shape: `{since, until, break_minutes, sessions: [{uuid, project, title,
+path, first, last, elapsed_minutes, active_minutes, active_seconds, ratio,
+user_messages}], totals: {sessions, active_minutes, active_seconds,
+span_minutes}, stream_breaks: [{start, end, minutes}]}`.
 
 ---
 
@@ -353,6 +409,7 @@ Output is prefixed `A>` / `B>` (or with subagent id shorts).
 | `resume-prev` | `{session, path, mtime_iso, messages}` |
 | `diff` | `{a, b, messages: [{source, role, timestamp, text}]}` |
 | `timeline` | see the `timeline` section above |
+| `engagement` | see the `engagement` section above |
 
 Session-summary object fields: `path, uuid, mtime, mtime_iso, size, exists, title,
 first_prompt, last_assistant, last_activity, msg_count, edit_count, tool_counts,
