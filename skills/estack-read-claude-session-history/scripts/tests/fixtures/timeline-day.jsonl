@@ -1,0 +1,5 @@
+{"type":"user","timestamp":"2026-05-01T10:00:00Z","message":{"role":"user","content":"Start the CRM cleanup"}}
+{"type":"assistant","timestamp":"2026-05-01T10:05:00Z","message":{"role":"assistant","content":[{"type":"text","text":"Working on it."}]}}
+{"type":"assistant","timestamp":"2026-05-01T10:08:00Z","message":{"role":"assistant","content":[{"type":"text","text":"First pass done."}]}}
+{"type":"user","timestamp":"2026-05-01T12:00:00Z","message":{"role":"user","content":"Back — continue"}}
+{"type":"assistant","timestamp":"2026-05-01T12:02:00Z","message":{"role":"assistant","content":[{"type":"text","text":"Resumed and finished."}]}}
