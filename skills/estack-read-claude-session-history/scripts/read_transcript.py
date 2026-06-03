@@ -228,7 +228,7 @@ def mode_search(lines, query: str):
             if q in combined.lower():
                 results.append(combined)
     if not results:
-        return f"No assistant messages containing '{query}' found."
+        return None
     output = [f"=== {len(results)} match(es) for '{query}' ===\n"]
     for i, r in enumerate(results, 1):
         output.append(f"--- Match #{i} ---\n{r[:1500]}")
@@ -377,10 +377,15 @@ def main():
             print("No transcript files found.")
             return
         total_matches = 0
-        for f in files:
-            lines = parse_lines(f)
-            result = mode_search(lines, args.query)
-            if not result.startswith("No assistant messages"):
+        for i, f in enumerate(files, 1):
+            print(f"Searching {i}/{len(files)}: {f.name}...", file=sys.stderr, end='\r')
+            try:
+                lines = parse_lines(f)
+                result = mode_search(lines, args.query)
+            except Exception as e:
+                print(f"\nError reading {f.name}: {e}", file=sys.stderr)
+                continue
+            if result is not None:
                 from datetime import datetime
                 mtime = datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
                 print(f"\n{'='*60}")
@@ -388,6 +393,7 @@ def main():
                 print("="*60)
                 print(result)
                 total_matches += 1
+        print(file=sys.stderr)  # clear progress line
         if total_matches == 0:
             print(f"No matches for '{args.query}' found across {len(files)} session(s).")
         else:
@@ -429,7 +435,8 @@ def main():
         if not args.query:
             print("--query required with --mode search", file=sys.stderr)
             sys.exit(1)
-        print(mode_search(lines, args.query))
+        result = mode_search(lines, args.query)
+        print(result if result is not None else f"No assistant messages containing '{args.query}' found.")
     elif args.mode == "debug":
         print(mode_debug(lines))
 
