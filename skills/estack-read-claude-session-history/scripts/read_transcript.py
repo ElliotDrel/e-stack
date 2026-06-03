@@ -367,6 +367,33 @@ def main():
             print(f"  {mtime}  {size_kb:6.0f}KB  {f.name}")
         return
 
+    # Search across all sessions in a project directory
+    if args.cwd and args.mode == "search":
+        if not args.query:
+            print("--query required with --mode search", file=sys.stderr)
+            sys.exit(1)
+        files = list_transcripts(args.cwd)
+        if not files:
+            print("No transcript files found.")
+            return
+        total_matches = 0
+        for f in files:
+            lines = parse_lines(f)
+            result = mode_search(lines, args.query)
+            if not result.startswith("No assistant messages"):
+                from datetime import datetime
+                mtime = datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
+                print(f"\n{'='*60}")
+                print(f"Session: {f.name}  ({mtime})")
+                print("="*60)
+                print(result)
+                total_matches += 1
+        if total_matches == 0:
+            print(f"No matches for '{args.query}' found across {len(files)} session(s).")
+        else:
+            print(f"\n--- Found matches in {total_matches}/{len(files)} session(s) ---")
+        return
+
     if not args.file:
         print("--file required (or use --list with --cwd)", file=sys.stderr)
         sys.exit(1)
