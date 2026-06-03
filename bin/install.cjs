@@ -57,7 +57,8 @@ function walkDir(dir, base) {
 function computeFileHash(filePath) {
   if (!fs.existsSync(filePath)) return null;
   const hash = crypto.createHash('sha256');
-  hash.update(fs.readFileSync(filePath));
+  const raw = fs.readFileSync(filePath);
+  hash.update(Buffer.from(raw.toString('utf8').replace(/\r\n/g, '\n')));
   return hash.digest('hex');
 }
 
@@ -67,9 +68,9 @@ function computeSkillHash(skillDir) {
   const files = walkDir(skillDir, skillDir);
   for (const relPath of files) {
     const fullPath = path.join(skillDir, relPath);
-    const contents = fs.readFileSync(fullPath);
+    const raw = fs.readFileSync(fullPath);
     hash.update(relPath.replace(/\\/g, '/'));
-    hash.update(contents);
+    hash.update(Buffer.from(raw.toString('utf8').replace(/\r\n/g, '\n')));
   }
   return hash.digest('hex');
 }
@@ -331,7 +332,7 @@ async function main() {
     } else if (currentHash !== storedChecksums[name]) {
       // Stored checksum exists but current doesn't match — user modified it
       modifiedSkills.push(name);
-      if (storedChecksums[name] !== packageHashes[name]) {
+      if (currentHash !== packageHashes[name]) {
         needsUpdate.push(name);
       }
     } else if (currentHash !== packageHashes[name]) {
