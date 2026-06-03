@@ -829,10 +829,10 @@ def _fmt_dur(td: timedelta) -> str:
 _GAP_RE = re.compile(r"^(\d+)\s*(m|h)?$", re.IGNORECASE)
 
 
-def _parse_gap(spec: str | None) -> int:
-    """Parse a --gap spec ('15m', '1h', '20') into minutes. Default 15."""
+def _parse_gap(spec: str | None, default: int = 15) -> int:
+    """Parse a gap/break spec ('15m', '1h', '20') into minutes."""
     if not spec:
-        return 15
+        return default
     m = _GAP_RE.match(spec.strip())
     if not m:
         raise ValueError(f"Unrecognized gap spec: {spec!r}. Use forms like 15m or 1h.")
@@ -910,22 +910,21 @@ def render_timeline(data: dict, tz_label: str) -> str:
     if not blocks:
         return head + "\n\n(no activity in range)"
     out = [head, ""]
-    active = timedelta()
     prev_end: datetime | None = None
     for b in blocks:
         if prev_end is not None:
             out.append(f"     ── idle {_fmt_dur(b['start'] - prev_end)} ──")
         dur = b["end"] - b["start"]
-        active += dur
         out.append(f"{b['start'].strftime(tfmt)}–{b['end'].strftime('%H:%M')}  ({_fmt_dur(dur)})")
         for f, n in sorted(b["counts"].items(), key=lambda x: -x[1]):
             out.append(f"   · {_session_label(sessions[f])} — {n} msgs")
         prev_end = b["end"]
     span = blocks[-1]["end"] - blocks[0]["start"]
     out.append("")
+    # Timeline is a map of WHEN sessions were active (Claude included) — it makes
+    # no claim about user attention time. For that, use --mode engagement.
     out.append(
-        f"Total: {len(blocks)} active block(s), {_fmt_dur(active)} active "
-        f"within a {_fmt_dur(span)} span "
+        f"Total: {len(blocks)} block(s) across a {_fmt_dur(span)} span "
         f"({blocks[0]['start'].strftime(tfmt)}–{blocks[-1]['end'].strftime('%H:%M')}), "
         f"{len(sessions)} session(s)"
     )
@@ -935,10 +934,8 @@ def render_timeline(data: dict, tz_label: str) -> str:
 def timeline_json(data: dict) -> dict:
     sessions = data["sessions"]
     blocks_out = []
-    active_min = 0
     for b in data["blocks"]:
         dur_min = int((b["end"] - b["start"]).total_seconds() // 60)
-        active_min += dur_min
         blocks_out.append({
             "start": b["start"].isoformat(),
             "end": b["end"].isoformat(),
@@ -954,6 +951,11 @@ def timeline_json(data: dict) -> dict:
                 for f, n in sorted(b["counts"].items(), key=lambda x: -x[1])
             ],
         })
+    span_min = 0
+    if data["blocks"]:
+        span_min = int(
+            (data["blocks"][-1]["end"] - data["blocks"][0]["start"]).total_seconds() // 60
+        )
     return {
         "since": data["since"].isoformat(),
         "until": data["until"].isoformat(),
@@ -961,9 +963,290 @@ def timeline_json(data: dict) -> dict:
         "blocks": blocks_out,
         "totals": {
             "blocks": len(blocks_out),
-            "active_minutes": active_min,
+            "span_minutes": span_min,
             "sessions": len(sessions),
         },
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Engagement mode — user attention time, not session activity
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _is_real_user_prompt(obj: dict) -> bool:
+    """True only for an actual human action: typed prompt or slash command.
+
+    Excludes tool results (user-role, no text blocks), hook/skill injections
+    (isMeta), and compact continuations (classified upstream).
+    """
+    if obj.get("isMeta"):
+        return False
+    content = obj.get("message", {}).get("content", "")
+    if isinstance(content, str):
+        return bool(content.strip())
+    if isinstance(content, list):
+        return any(
+            isinstance(b, dict) and b.get("type") == "text" and b.get("text", "").strip()
+            for b in content
+        )
+    return False
+
+
+def _engagement_event_streams(
+    path: Path, since: datetime | None, until: datetime | None
+) -> tuple[list[datetime], list[datetime]]:
+    """One session's (user_events, claude_events) inside [since, until).
+
+    user_events — real user prompts only (see _is_real_user_prompt).
+    claude_events — assistant messages and tool results: evidence Claude was
+    working. Used only to grant waiting-on-Claude credit for long gaps.
+    """
+    user_ev: list[datetime] = []
+    claude_ev: list[datetime] = []
+    for obj in PR.parse_lines(path):
+        cls = PR.classify_entry(obj)
+        if cls in ("noise", "title", "compact"):
+            continue
+        ts = PR._parse_timestamp(obj.get("timestamp"))
+        if ts is None or (since and ts < since) or (until and ts >= until):
+            continue
+        if cls == "user":
+            if obj.get("isMeta"):
+                continue
+            if _is_real_user_prompt(obj):
+                user_ev.append(ts)
+            else:
+                claude_ev.append(ts)  # tool_result entries
+        else:  # assistant
+            claude_ev.append(ts)
+    user_ev.sort()
+    claude_ev.sort()
+    return user_ev, claude_ev
+
+
+def build_engagement(
+    root: Path,
+    report_dirs: list[Path] | None,
+    report_file: Path | None,
+    since: datetime,
+    until: datetime,
+    break_minutes: int,
+    current_uuid: str | None,
+    exclude_current: bool = False,
+) -> dict:
+    """Attention-time accounting over ONE merged user-prompt stream.
+
+    Real user prompts from EVERY project are merged into a single global
+    stream, so a moment of wall-clock time is never counted twice across
+    parallel chats. Three rules:
+
+    1. A gap between consecutive prompts ≤ break_minutes counts fully as
+       active time, attributed to the session of the LATER prompt (that's
+       the chat being read/typed in).
+    2. A longer gap still counts in full if Claude was working in the later
+       prompt's session during the gap AND the user replied within
+       break_minutes of Claude's last event (sitting-there-waiting credit).
+    3. Anything else is a break: contributes nothing.
+
+    report_dirs/report_file only filter which sessions are REPORTED — the
+    stream itself always spans all projects under root for correctness.
+    """
+    import bisect
+
+    user_events: dict[Path, list[datetime]] = {}
+    claude_events: dict[Path, list[datetime]] = {}
+    walk_dirs = P.list_projects(root)
+    files: list[Path] = []
+    for pd in walk_dirs:
+        # mtime >= since only; a session still active after `until` may hold
+        # events inside the window (same reasoning as timeline).
+        files.extend(P.list_transcripts(pd, since=since))
+    if report_file:
+        report_file = report_file.resolve()
+        files = [f.resolve() for f in files]
+        if report_file not in files:
+            files.append(report_file)  # e.g. --file under a different root
+    for f in files:
+        if exclude_current and current_uuid and f.stem == current_uuid:
+            continue
+        u, c = _engagement_event_streams(f, since, until)
+        if u or c:
+            user_events[f] = u
+            claude_events[f] = c
+
+    stream = sorted(
+        (ts, f) for f, evs in user_events.items() for ts in evs
+    )
+
+    brk = timedelta(minutes=break_minutes)
+    active: dict[Path, timedelta] = {}
+    breaks: list[tuple[datetime, datetime]] = []
+    for (t0, _f0), (t1, f1) in zip(stream, stream[1:]):
+        gap = t1 - t0
+        if gap <= brk:
+            active[f1] = active.get(f1, timedelta()) + gap
+            continue
+        # Waiting-on-Claude credit: last Claude event in f1 inside the gap.
+        cl = claude_events.get(f1, [])
+        i = bisect.bisect_left(cl, t1)
+        t_done = cl[i - 1] if i > 0 and cl[i - 1] > t0 else None
+        if t_done is not None and (t1 - t_done) <= brk:
+            active[f1] = active.get(f1, timedelta()) + gap
+        else:
+            breaks.append((t0, t1))
+
+    # Reporting scope
+    report_dir_set = {d.resolve() for d in report_dirs} if report_dirs else None
+    sessions: dict[Path, dict] = {}
+    for f, evs in user_events.items():
+        if not evs:
+            continue
+        if report_file and f != report_file:
+            continue
+        if report_dir_set is not None and f.parent.resolve() not in report_dir_set:
+            continue
+        sessions[f] = {
+            "summary": PR.session_summary(f, current_session_id=current_uuid),
+            "first": evs[0],
+            "last": evs[-1],
+            "user_messages": len(evs),
+            "active": active.get(f, timedelta()),
+        }
+
+    return {
+        "since": since,
+        "until": until,
+        "break_minutes": break_minutes,
+        "sessions": sessions,
+        "breaks": breaks,
+        "stream_events": len(stream),
+    }
+
+
+def _gap_percentiles(evs: list[datetime]) -> tuple[int, int] | None:
+    """(median, p90) of intra-session user-prompt gaps, in whole minutes."""
+    if len(evs) < 2:
+        return None
+    gaps = sorted(
+        (b - a).total_seconds() / 60 for a, b in zip(evs, evs[1:])
+    )
+    median = gaps[len(gaps) // 2]
+    p90 = gaps[min(len(gaps) - 1, int(len(gaps) * 0.9))]
+    return int(median), int(p90)
+
+
+def render_engagement(data: dict, tz_label: str) -> str:
+    since, until = data["since"], data["until"]
+    sessions = data["sessions"]
+    multi_day = (until - since) > timedelta(days=1)
+    tfmt = "%Y-%m-%d %H:%M" if multi_day else "%H:%M"
+    head = (
+        f"=== Engagement {since:%Y-%m-%d %H:%M} → {until:%Y-%m-%d %H:%M} "
+        f"(times: {tz_label}, break={data['break_minutes']}m) ==="
+    )
+    if not sessions:
+        return head + "\n\n(no user messages in range)"
+    out = [head, ""]
+    rows = sorted(sessions.items(), key=lambda kv: -kv[1]["active"].total_seconds())
+    for f, s in rows:
+        elapsed = s["last"] - s["first"]
+        # Composing time leading into a chat's first prompt is credited to it,
+        # so active can slightly exceed first–last; cap the ratio at 1.0.
+        ratio = (
+            f"{min(1.0, s['active'].total_seconds() / elapsed.total_seconds()):.2f}"
+            if elapsed.total_seconds() > 0 else "  — "
+        )
+        out.append(
+            f"{_fmt_dur(s['active']):>7}  ratio {ratio}  msgs {s['user_messages']:<4} "
+            f"{s['first'].strftime(tfmt)}–{s['last'].strftime('%H:%M')}  "
+            f"{_session_label(s['summary'])}"
+        )
+    total_active = sum((s["active"] for s in sessions.values()), timedelta())
+    first = min(s["first"] for s in sessions.values())
+    last = max(s["last"] for s in sessions.values())
+    out.append("")
+    out.append(
+        f"Total: {_fmt_dur(total_active)} active across {len(sessions)} session(s), "
+        f"{first.strftime(tfmt)}–{last.strftime('%H:%M')} span ({_fmt_dur(last - first)})"
+    )
+    breaks = data["breaks"]
+    if breaks:
+        shown = breaks[:6]
+        items = ", ".join(
+            f"{a.strftime(tfmt)}→{b.strftime('%H:%M')} ({_fmt_dur(b - a)})"
+            for a, b in shown
+        )
+        more = f" (+{len(breaks) - len(shown)} more)" if len(breaks) > len(shown) else ""
+        out.append(f"Breaks >{data['break_minutes']}m in the merged stream: "
+                   f"{len(breaks)} — {items}{more}")
+    # Single-session detail: prompt-gap percentiles
+    if len(sessions) == 1:
+        (f, s), = sessions.items()
+        # recompute the session's own user events from the stored bounds is not
+        # enough — pull them again (cached parse, cheap)
+        evs, _ = _engagement_event_streams(f, data["since"], data["until"])
+        pct = _gap_percentiles(evs)
+        if pct:
+            out.append(f"Prompt gaps: median {pct[0]}m, p90 {pct[1]}m")
+    out.append(
+        "(active time = your message cadence merged across ALL projects; "
+        "parallel chats split the clock, never double-count. "
+        "Long gaps count only when you replied right after Claude finished.)"
+    )
+    return "\n".join(out)
+
+
+def engagement_json(data: dict) -> dict:
+    sessions_out = []
+    rows = sorted(
+        data["sessions"].items(), key=lambda kv: -kv[1]["active"].total_seconds()
+    )
+    total_active = timedelta()
+    for f, s in rows:
+        elapsed = s["last"] - s["first"]
+        active = s["active"]
+        total_active += active
+        summary = s["summary"]
+        sessions_out.append({
+            "uuid": summary["uuid"],
+            "project": summary["decoded_project"],
+            "title": summary.get("title") or summary.get("first_prompt") or "",
+            "path": str(f),
+            "first": s["first"].isoformat(),
+            "last": s["last"].isoformat(),
+            "elapsed_minutes": int(elapsed.total_seconds() // 60),
+            "active_minutes": int(active.total_seconds() // 60),
+            "active_seconds": int(active.total_seconds()),
+            "ratio": (
+                min(1.0, round(active.total_seconds() / elapsed.total_seconds(), 2))
+                if elapsed.total_seconds() > 0 else None
+            ),
+            "user_messages": s["user_messages"],
+        })
+    span_min = 0
+    if data["sessions"]:
+        first = min(s["first"] for s in data["sessions"].values())
+        last = max(s["last"] for s in data["sessions"].values())
+        span_min = int((last - first).total_seconds() // 60)
+    return {
+        "since": data["since"].isoformat(),
+        "until": data["until"].isoformat(),
+        "break_minutes": data["break_minutes"],
+        "sessions": sessions_out,
+        "totals": {
+            "sessions": len(sessions_out),
+            "active_minutes": int(total_active.total_seconds() // 60),
+            "active_seconds": int(total_active.total_seconds()),
+            "span_minutes": span_min,
+        },
+        "stream_breaks": [
+            {
+                "start": a.isoformat(),
+                "end": b.isoformat(),
+                "minutes": int((b - a).total_seconds() // 60),
+            }
+            for a, b in data["breaks"]
+        ],
     }
 
 
@@ -1058,7 +1341,7 @@ NEW_MODES = {
     "list", "lookup", "find", "resume-cmd", "brief",
     "changelog", "file-edits", "tool-calls",
     "subagent-list", "subagent-finals", "subagent-tools", "subagent-files",
-    "resume-prev", "count", "journal", "diff", "timeline",
+    "resume-prev", "count", "journal", "diff", "timeline", "engagement",
 }
 
 ALL_MODES = LEGACY_MODES | NEW_MODES
@@ -1086,6 +1369,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--until", help="Upper time bound (same forms as --since)")
     p.add_argument("--date", help="Single-day window for timeline mode (ISO date / yesterday / today)")
     p.add_argument("--gap", help="Idle-gap threshold for timeline blocks (e.g. 15m, 1h; default 15m)")
+    p.add_argument("--break", dest="break_spec",
+                   help="Break threshold for engagement mode (e.g. 5m, 20m; default 10m)")
     p.add_argument(
         "--tz", default=None,
         help="Display timezone override: IANA name (America/New_York), UTC, or offset (+5, -4). "
@@ -1288,6 +1573,49 @@ def main() -> int:
             _print_json(timeline_json(data))
         else:
             print(render_timeline(data, tz_label=args.tz or "local"))
+        return 0
+    if mode == "engagement":
+        try:
+            break_minutes = _parse_gap(args.break_spec, default=10)
+            if args.date:
+                day = P.parse_timespec(args.date).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+                e_since, e_until = day, day + timedelta(days=1)
+            else:
+                e_since, e_until = since, until
+        except ValueError as e:
+            print(str(e), file=sys.stderr)
+            return 1
+        report_file = Path(args.file) if args.file else None
+        if report_file and not report_file.exists():
+            print(f"File not found: {report_file}", file=sys.stderr)
+            return 1
+        if report_file and e_since is None:
+            # Window defaults to the file's own first→last user prompt.
+            evs, _ = _engagement_event_streams(report_file, None, None)
+            if not evs:
+                print("(no user messages in this session)")
+                return 0
+            e_since = evs[0]
+            e_until = e_until or evs[-1] + timedelta(seconds=1)
+        else:
+            e_since = e_since or P.parse_timespec("today")
+            e_until = e_until or P.parse_timespec("now")
+        # Scope filters reporting only; the attention stream is always global.
+        report_dirs = None
+        if not report_file:
+            report_dirs = _scoped_project_dirs(
+                root, args.cwd, args.all_projects, args.project, default_all=True
+            )
+        data = build_engagement(
+            root, report_dirs, report_file, e_since, e_until, break_minutes,
+            current_uuid, exclude_current=args.exclude_current,
+        )
+        if fmt == "json":
+            _print_json(engagement_json(data))
+        else:
+            print(render_engagement(data, tz_label=args.tz or "local"))
         return 0
     if mode == "diff":
         if args.subagents_of:

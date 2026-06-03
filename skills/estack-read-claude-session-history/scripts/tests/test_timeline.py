@@ -112,7 +112,9 @@ def test_timeline_cli_text(cli_path, fake_root):
     assert "10:00" in r.stdout
     assert "12:02" in r.stdout
     assert "idle" in r.stdout
-    assert "2 active block(s)" in r.stdout
+    assert "2 block(s)" in r.stdout
+    # Timeline makes no attention claim — that's engagement mode's job.
+    assert "active" not in r.stdout
 
 
 def test_timeline_cli_json(cli_path, fake_root):
@@ -124,6 +126,8 @@ def test_timeline_cli_json(cli_path, fake_root):
     data = json.loads(r.stdout)
     assert data["totals"]["blocks"] == 2
     assert data["totals"]["sessions"] == 1
+    assert data["totals"]["span_minutes"] == 122  # 10:00 → 12:02
+    assert "active_minutes" not in data["totals"]
     assert data["blocks"][0]["start"].endswith("10:00:00")
     assert data["blocks"][0]["sessions"][0]["uuid"] == "abc12345"
 

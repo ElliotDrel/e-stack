@@ -1,0 +1,3 @@
+{"type":"user","timestamp":"2026-05-01T10:10:00Z","message":{"role":"user","content":"Chat B start"}}
+{"type":"assistant","timestamp":"2026-05-01T10:11:00Z","message":{"role":"assistant","content":[{"type":"text","text":"Working in B."}]}}
+{"type":"user","timestamp":"2026-05-01T10:20:00Z","message":{"role":"user","content":"Chat B follow-up"}}
