@@ -7,7 +7,7 @@ import sys
 from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
-from typing import Iterator, Literal, Optional
+from typing import Iterator, Literal
 
 from . import parser as _parser
 from . import paths as _paths

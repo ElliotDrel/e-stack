@@ -104,11 +104,65 @@ python "$PY" --all-projects --mode journal --since 7d
 python "$PY" --cwd "C:\Users\2supe\Other Claude Code" \
   --mode journal --since 2026-05-13 --until 2026-05-20
 
+# By project name instead of path
+python "$PY" --project keel --mode journal --since 7d
+
 # Count how many sessions touched a topic
 python "$PY" --all-projects --mode count --query "linkedin"
 ```
 
 The output is one 5-line block per session: `date·uuid·project` / first prompt / last assistant message / N files edited / top tools.
+
+---
+
+## 5b. Day accounting ("where did my day go?")
+
+```bash
+# Block-grouped timeline of yesterday across ALL projects, with idle gaps
+python "$PY" --mode timeline --date yesterday
+
+# How much time on one project today
+python "$PY" --mode timeline --project keel --date today
+
+# Tighter idle threshold (treat >5m quiet as a break between blocks)
+python "$PY" --mode timeline --date today --gap 5m
+
+# Multi-day window
+python "$PY" --mode timeline --since 2026-06-01 --until 2026-06-03
+```
+
+Reading the output: each block is a contiguous stretch of activity (events ≤ gap
+apart); the sessions inside it are listed with message counts; `── idle Xm ──`
+lines mark the breaks; the totals line gives summed active time vs. span.
+
+Caveat: this measures *Claude-visible* activity only — message timestamps, not
+attention or time spent away from Claude.
+
+---
+
+## 5c. Piping structured output into a next step
+
+Every mode supports `--format json`. **Run pipe chains in Bash** (the Bash tool /
+git-bash) — they work exactly as written:
+
+```bash
+# Pull the paths of yesterday's sessions for batch processing
+python "$PY" --mode list --all-projects --since yesterday --format json \
+  | python -c "import json,sys; [print(s['path']) for s in json.load(sys.stdin)]"
+
+# Machine-readable day totals
+python "$PY" --mode timeline --date yesterday --format json \
+  | python -c "import json,sys; t=json.load(sys.stdin)['totals']; print(t['active_minutes'], 'min across', t['sessions'], 'sessions')"
+```
+
+PowerShell warnings (5.1):
+- Piping between native commands injects a UTF-8 BOM and re-encodes through the
+  console codepage (can corrupt non-ASCII transcript content). If you must pipe
+  in PowerShell, read stdin as `utf-8-sig`:
+  `python -c "import io,json,sys; data=json.load(io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8-sig'))"`
+- `>` redirection writes UTF-16 — read redirected files with `encoding='utf-16'`.
+
+Prefer Bash for any JSON chaining; prefer either shell for plain single commands.
 
 ---
 

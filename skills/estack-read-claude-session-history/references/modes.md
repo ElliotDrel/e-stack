@@ -7,12 +7,17 @@ For the high-level decision tree, see `../SKILL.md`. For the JSONL schema, see `
 ## CLI grammar
 
 ```
-python read_transcript.py [--root <root>] [--cwd <path> | --all-projects | --file <path>]
-                          [--since <spec>] [--until <spec>]
+python read_transcript.py [--root <root>] [--cwd <path> | --all-projects | --project <name> | --file <path>]
+                          [--since <spec>] [--until <spec>] [--tz <spec>]
                           --mode <mode> [mode-specific flags]
-                          [--exclude-current] [--include-subagents] [-n N]
+                          [--format json] [--exclude-current] [--include-subagents] [-n N]
                           [--force-dump]
 ```
+
+Global flag notes:
+- `--project <name>` — case-insensitive substring filter on project directory names (encoded or decoded form). Applies to `list`, `journal`, `search`, `count`, `find`, `timeline`. Exit 1 when nothing matches.
+- `--tz <spec>` — display timezone: IANA name (`America/New_York`), `UTC`, or fixed offset (`+5`, `-4`, `+05:30`, `UTC-4`). Default is system local time. All displayed timestamps AND `--since/--until/--date` interpretation use this zone.
+- `--format json` (alias `--json`) — structured output on every mode except the legacy `--list`/`--list-subagents` aliases. Shapes per mode are listed below.
 
 Legacy flags are preserved unchanged:
 - `--list` (alias for `--mode list` with the v1 column layout)
@@ -264,8 +269,44 @@ python read_transcript.py --cwd <path> --mode resume-prev [-n 10]
 Per-session 5-line block: date·uuid·project / prompt / ended / edits / tools.
 
 ```bash
-python read_transcript.py --mode journal --since 7d [--cwd <path> | --all-projects]
+python read_transcript.py --mode journal --since 7d [--cwd <path> | --all-projects | --project <name>]
 ```
+
+JSON shape: array of session-summary objects (same fields as `list`).
+
+### `timeline`
+
+Block-grouped activity timeline across all sessions in a time window, with idle
+gaps and active-time totals. Answers "where did my day go?" and "how much time on
+X?". Defaults to all projects and today.
+
+```bash
+# Yesterday, everything
+python read_transcript.py --mode timeline --date yesterday
+
+# One project, today, stricter idle threshold
+python read_transcript.py --mode timeline --project keel --date today --gap 5m
+
+# Arbitrary window
+python read_transcript.py --mode timeline --since 2026-06-01 --until 2026-06-03
+```
+
+How it works: every signal-message timestamp in the window is an activity event;
+events across all sessions are merged chronologically and grouped into blocks
+separated by gaps longer than `--gap` (default 15m). Each block lists the sessions
+active in it with message counts; idle gaps are printed between blocks; a totals
+line gives block count, summed active time, span, and session count.
+
+Flags:
+- `--date <spec>` — single-day window (midnight to midnight). Wins over `--since/--until`.
+- `--since/--until` — arbitrary window (until defaults to now).
+- `--gap <spec>` — idle threshold: `15m`, `20`, `1h`.
+- `--cwd` / `--project` / `--all-projects` — scope (default: all projects).
+- `--tz` — display timezone (timestamps render in it; the window is interpreted in it).
+
+JSON shape: `{since, until, gap_minutes, blocks: [{start, end, duration_minutes,
+sessions: [{uuid, project, title, path, events}]}], totals: {blocks,
+active_minutes, sessions}}`.
 
 ---
 
@@ -289,12 +330,37 @@ Output is prefixed `A>` / `B>` (or with subagent id shorts).
 
 ---
 
+## JSON shapes per mode (`--format json`)
+
+| Mode | Shape |
+|---|---|
+| `last` | `[{n_from_end, timestamp, text}]` |
+| `advisor` | `[<advisor text>, …]` |
+| `pre-compact` | `{found_compact, messages: [{role, timestamp, is_compact, text}]}` |
+| `dump` | `[{role, timestamp, is_compact, text}]` |
+| `debug` | `{entry_types, block_types, advisor_blocks, compact_markers}` |
+| `brief` | session-summary object (+ `subagent_finals` with `--include-subagents`) |
+| `list` / `journal` / `find` | array of session-summary objects |
+| `lookup` | `{prefix, path, matches}` (same exit codes as text) |
+| `resume-cmd` | `{uuid, path, project, encoded, command}` |
+| `changelog` | `[{timestamp, tool, summary}]` |
+| `tool-calls` / `subagent-tools` | `[{timestamp, tool, summary, input}]` |
+| `file-edits` / `subagent-files` | `[{path, ops}]` |
+| `search` | `[{session, mtime_iso, role, where, timestamp, window}]` |
+| `count` | `{sessions, messages, matches}` |
+| `subagent-list` | `[{id, agentType, description, path, size_kb, mtime_iso}]` |
+| `subagent-finals` | `[{id, agentType, text}]` |
+| `resume-prev` | `{session, path, mtime_iso, messages}` |
+| `diff` | `{a, b, messages: [{source, role, timestamp, text}]}` |
+| `timeline` | see the `timeline` section above |
+
+Session-summary object fields: `path, uuid, mtime, mtime_iso, size, exists, title,
+first_prompt, last_assistant, last_activity, msg_count, edit_count, tool_counts,
+files_touched, subagent_count, subagent_types, has_compact, has_subagents, cwd,
+decoded_project, status, is_current`.
+
 ## Exit codes
 
 - `0`: success
-- `1`: missing required flag, no match, or file not found
+- `1`: missing required flag, no match (including `--project` with zero matches), or file not found
 - `2`: ambiguous result (e.g. UUID prefix matches multiple sessions)
-
-## Reserved flags
-
-- `--json` — reserved for a future structured output mode. Currently no-op.

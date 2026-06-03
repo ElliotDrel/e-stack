@@ -228,6 +228,23 @@ def epoch_to_display(epoch: float) -> datetime:
     return to_display(datetime.fromtimestamp(epoch, tz=timezone.utc))
 
 
+def display_to_epoch(dt: datetime) -> float:
+    """Interpret a naive display-timezone datetime as an epoch.
+
+    Inverse of epoch_to_display. Needed because naive_dt.timestamp() assumes
+    *local* time, which is wrong under a --tz override.
+    """
+    if dt.tzinfo is None and _TARGET_TZ is not None:
+        dt = dt.replace(tzinfo=_TARGET_TZ)
+    return dt.timestamp()
+
+
+def now_display() -> datetime:
+    """Current time as a naive datetime in the display timezone."""
+    import time as _time
+    return epoch_to_display(_time.time())
+
+
 def _parse_timestamp(ts) -> datetime | None:
     """Parse a JSONL timestamp → naive datetime in the display timezone."""
     if not ts:

@@ -6,7 +6,6 @@ import os
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Iterable
 
 
 CLAUDE_DIR = Path.home() / ".claude"
@@ -148,11 +147,14 @@ def list_transcripts(
     if not project_dir.exists():
         return []
     files = [f for f in project_dir.glob("*.jsonl") if not f.name.startswith("agent-")]
+    # display_to_epoch (not .timestamp()) — naive bounds are in the display
+    # timezone, which differs from local under a --tz override.
+    from . import parser as _parser
     if since is not None:
-        since_ts = since.timestamp()
+        since_ts = _parser.display_to_epoch(since)
         files = [f for f in files if f.stat().st_mtime >= since_ts]
     if until is not None:
-        until_ts = until.timestamp()
+        until_ts = _parser.display_to_epoch(until)
         files = [f for f in files if f.stat().st_mtime <= until_ts]
     files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
     return files
@@ -175,7 +177,8 @@ _RELATIVE_RE = re.compile(r"^(\d+)\s*(m|h|d|w|mo)$", re.IGNORECASE)
 
 
 def parse_timespec(s: str) -> datetime:
-    """Parse a time spec into a datetime (local time).
+    """Parse a time spec into a naive datetime in the display timezone
+    (system local time unless --tz overrides it).
 
     Accepts:
       - ISO date: "2026-05-01"
@@ -187,7 +190,10 @@ def parse_timespec(s: str) -> datetime:
         raise ValueError("Empty time spec")
     s = s.strip()
     lower = s.lower()
-    now = datetime.now()
+    # "now" in the display timezone (== datetime.now() unless --tz is set),
+    # so that named/relative specs stay consistent with displayed times.
+    from . import parser as _parser
+    now = _parser.now_display()
     if lower == "now":
         return now
     if lower == "today":

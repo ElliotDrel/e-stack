@@ -259,11 +259,19 @@ def _summary_json(s: dict) -> dict:
     return out
 
 
+def _ts_iso(raw) -> str | None:
+    """Raw JSONL timestamp (UTC) → display-timezone ISO string."""
+    ts = PR._parse_timestamp(raw)
+    if ts is not None:
+        return ts.isoformat()
+    return raw if isinstance(raw, str) else None
+
+
 def _messages_json(messages: list[dict]) -> list[dict]:
     return [
         {
             "role": m["role"],
-            "timestamp": m.get("timestamp"),
+            "timestamp": _ts_iso(m.get("timestamp")),
             "is_compact": m["is_compact"],
             "text": "\n".join(m["texts"]),
         }
@@ -583,6 +591,8 @@ def mode_search_v2(
     until: datetime | None,
     project: str | None = None,
     fmt: str = "text",
+    exclude_current: bool = False,
+    current_uuid: str | None = None,
 ):
     """Cross-scope search with role/in-channel filters."""
     matches: list = []
@@ -599,6 +609,9 @@ def mode_search_v2(
     else:
         return "Provide --file, --cwd, --project, or --all-projects"
 
+    if exclude_current and current_uuid:
+        matches = [m for m in matches if m.session_path.stem != current_uuid]
+
     if fmt == "json":
         return [
             {
@@ -606,7 +619,7 @@ def mode_search_v2(
                 "mtime_iso": _fmt_mtime(m.mtime),
                 "role": m.role,
                 "where": m.where,
-                "timestamp": m.timestamp,
+                "timestamp": _ts_iso(m.timestamp),
                 "window": m.window_text,
             }
             for m in matches
@@ -703,6 +716,8 @@ def mode_count(
     since: datetime | None,
     until: datetime | None,
     project: str | None = None,
+    exclude_current: bool = False,
+    current_uuid: str | None = None,
 ) -> dict:
     sessions = 0
     matches = 0
@@ -711,6 +726,8 @@ def mode_count(
     project_dirs = _scoped_project_dirs(root, cwd, all_projects, project)
     for pd in (project_dirs or []):
         sources.extend(P.list_transcripts(pd, since=since, until=until))
+    if exclude_current and current_uuid:
+        sources = [f for f in sources if f.stem != current_uuid]
     for f in sources:
         ms = S.search_session(f, query, role, in_channel, since, until)
         total_msgs += len(PR.get_messages(PR.parse_lines(f)))
@@ -729,6 +746,7 @@ def mode_journal(
     current_uuid: str | None,
     project: str | None = None,
     fmt: str = "text",
+    exclude_current: bool = False,
 ):
     pds = _scoped_project_dirs(root, cwd, all_projects, project)
     if pds is None:
@@ -737,7 +755,10 @@ def mode_journal(
     rows = []
     for pd in pds:
         for f in P.list_transcripts(pd, since=since, until=until):
-            rows.append(PR.session_summary(f, current_session_id=current_uuid))
+            summary = PR.session_summary(f, current_session_id=current_uuid)
+            if exclude_current and summary.get("is_current"):
+                continue
+            rows.append(summary)
     rows.sort(key=lambda s: s["mtime"], reverse=True)
     if fmt == "json":
         return [_summary_json(s) for s in rows]
@@ -776,7 +797,7 @@ def mode_diff(file_a: Path, file_b: Path, fmt: str = "text"):
                 {
                     "source": tag,
                     "role": m["role"],
-                    "timestamp": m.get("timestamp"),
+                    "timestamp": _ts_iso(m.get("timestamp")),
                     "text": " | ".join(m["texts"]),
                 }
                 for m, tag in combined
@@ -794,6 +815,240 @@ def mode_diff(file_a: Path, file_b: Path, fmt: str = "text"):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Timeline mode
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _fmt_dur(td: timedelta) -> str:
+    mins = int(td.total_seconds() // 60)
+    if mins < 1:
+        return "<1m"
+    h, m = divmod(mins, 60)
+    return f"{h}h{m:02d}m" if h else f"{m}m"
+
+
+_GAP_RE = re.compile(r"^(\d+)\s*(m|h)?$", re.IGNORECASE)
+
+
+def _parse_gap(spec: str | None) -> int:
+    """Parse a --gap spec ('15m', '1h', '20') into minutes. Default 15."""
+    if not spec:
+        return 15
+    m = _GAP_RE.match(spec.strip())
+    if not m:
+        raise ValueError(f"Unrecognized gap spec: {spec!r}. Use forms like 15m or 1h.")
+    n = int(m.group(1))
+    return n * 60 if (m.group(2) or "m").lower() == "h" else n
+
+
+def build_timeline(
+    project_dirs: list[Path],
+    since: datetime,
+    until: datetime,
+    gap_minutes: int,
+    current_uuid: str | None,
+    exclude_current: bool = False,
+) -> dict:
+    """Cross-session activity blocks for a time window.
+
+    Every signal-message timestamp in [since, until) is an activity event.
+    Events across all sessions are merged chronologically and grouped into
+    blocks separated by gaps > gap_minutes.
+    """
+    sessions: dict[Path, dict] = {}
+    events: list[tuple[datetime, Path]] = []
+    for pd in project_dirs:
+        # Filter by mtime >= since only; a session still active after `until`
+        # may contain events inside the window, so no upper mtime bound.
+        for f in P.list_transcripts(pd, since=since):
+            if exclude_current and current_uuid and f.stem == current_uuid:
+                continue
+            stamps = []
+            for m in PR.get_messages(PR.parse_lines(f)):
+                ts = PR._parse_timestamp(m.get("timestamp"))
+                if ts is None or ts < since or ts >= until:
+                    continue
+                stamps.append(ts)
+            if not stamps:
+                continue
+            sessions[f] = PR.session_summary(f, current_session_id=current_uuid)
+            events.extend((ts, f) for ts in stamps)
+    events.sort(key=lambda e: e[0])
+
+    blocks: list[dict] = []
+    cur: dict | None = None
+    gap = timedelta(minutes=gap_minutes)
+    for ts, f in events:
+        if cur is None or ts - cur["end"] > gap:
+            cur = {"start": ts, "end": ts, "counts": {}}
+            blocks.append(cur)
+        if ts > cur["end"]:
+            cur["end"] = ts
+        cur["counts"][f] = cur["counts"].get(f, 0) + 1
+    return {
+        "since": since,
+        "until": until,
+        "gap_minutes": gap_minutes,
+        "blocks": blocks,
+        "sessions": sessions,
+    }
+
+
+def _session_label(s: dict) -> str:
+    title = s.get("title") or s.get("first_prompt") or "(untitled)"
+    return f"{s['decoded_project']} · {title[:60]} [{s['uuid'][:8]}]"
+
+
+def render_timeline(data: dict, tz_label: str) -> str:
+    since, until = data["since"], data["until"]
+    blocks, sessions = data["blocks"], data["sessions"]
+    multi_day = (until - since) > timedelta(days=1)
+    tfmt = "%Y-%m-%d %H:%M" if multi_day else "%H:%M"
+    head = (
+        f"=== Timeline {since:%Y-%m-%d %H:%M} → {until:%Y-%m-%d %H:%M} "
+        f"(times: {tz_label}, gap={data['gap_minutes']}m) ==="
+    )
+    if not blocks:
+        return head + "\n\n(no activity in range)"
+    out = [head, ""]
+    active = timedelta()
+    prev_end: datetime | None = None
+    for b in blocks:
+        if prev_end is not None:
+            out.append(f"     ── idle {_fmt_dur(b['start'] - prev_end)} ──")
+        dur = b["end"] - b["start"]
+        active += dur
+        out.append(f"{b['start'].strftime(tfmt)}–{b['end'].strftime('%H:%M')}  ({_fmt_dur(dur)})")
+        for f, n in sorted(b["counts"].items(), key=lambda x: -x[1]):
+            out.append(f"   · {_session_label(sessions[f])} — {n} msgs")
+        prev_end = b["end"]
+    span = blocks[-1]["end"] - blocks[0]["start"]
+    out.append("")
+    out.append(
+        f"Total: {len(blocks)} active block(s), {_fmt_dur(active)} active "
+        f"within a {_fmt_dur(span)} span "
+        f"({blocks[0]['start'].strftime(tfmt)}–{blocks[-1]['end'].strftime('%H:%M')}), "
+        f"{len(sessions)} session(s)"
+    )
+    return "\n".join(out)
+
+
+def timeline_json(data: dict) -> dict:
+    sessions = data["sessions"]
+    blocks_out = []
+    active_min = 0
+    for b in data["blocks"]:
+        dur_min = int((b["end"] - b["start"]).total_seconds() // 60)
+        active_min += dur_min
+        blocks_out.append({
+            "start": b["start"].isoformat(),
+            "end": b["end"].isoformat(),
+            "duration_minutes": dur_min,
+            "sessions": [
+                {
+                    "uuid": sessions[f]["uuid"],
+                    "project": sessions[f]["decoded_project"],
+                    "title": sessions[f].get("title") or sessions[f].get("first_prompt") or "",
+                    "path": str(f),
+                    "events": n,
+                }
+                for f, n in sorted(b["counts"].items(), key=lambda x: -x[1])
+            ],
+        })
+    return {
+        "since": data["since"].isoformat(),
+        "until": data["until"].isoformat(),
+        "gap_minutes": data["gap_minutes"],
+        "blocks": blocks_out,
+        "totals": {
+            "blocks": len(blocks_out),
+            "active_minutes": active_min,
+            "sessions": len(sessions),
+        },
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JSON builders for legacy single-file modes
+# ─────────────────────────────────────────────────────────────────────────────
+
+def json_last(lines: list[dict], n: int) -> list[dict]:
+    messages = PR.get_messages(lines)
+    assistant_msgs = [m for m in messages if m["role"] == "assistant" and m["texts"]]
+    recent = assistant_msgs[-n:]
+    return [
+        {
+            "n_from_end": len(recent) - i,
+            "timestamp": _ts_iso(m.get("timestamp")),
+            "text": "\n".join(m["texts"]),
+        }
+        for i, m in enumerate(recent)
+    ]
+
+
+def json_advisor(lines: list[dict]) -> list[str]:
+    results = []
+    for obj in lines:
+        if obj.get("type") in PR.NOISE_TYPES:
+            continue
+        msg = obj.get("message", {})
+        if not isinstance(msg.get("content"), list):
+            continue
+        for block in msg["content"]:
+            if block.get("type") == "advisor_tool_result":
+                inner = block.get("content", {})
+                if isinstance(inner, dict) and inner.get("text"):
+                    results.append(inner["text"])
+    return results
+
+
+def json_pre_compact(lines: list[dict], window: int = 40) -> dict:
+    messages = PR.get_messages(lines)
+    compact_idx = None
+    for i, m in enumerate(messages):
+        if m["is_compact"]:
+            compact_idx = i
+    if compact_idx is None:
+        return {"found_compact": False, "messages": _messages_json(messages[-10:])}
+    start = max(0, compact_idx - window)
+    return {
+        "found_compact": True,
+        "messages": _messages_json(messages[start:compact_idx]),
+    }
+
+
+def json_dump(lines: list[dict], limit: int = 80) -> list[dict]:
+    messages = [m for m in PR.get_messages(lines) if m["texts"] or m["is_compact"]]
+    return _messages_json(messages[-limit:])
+
+
+def json_debug(lines: list[dict]) -> dict:
+    type_counts: dict[str, int] = {}
+    for obj in lines:
+        t = obj.get("type", "<missing>")
+        type_counts[t] = type_counts.get(t, 0) + 1
+    block_type_counts: dict[str, int] = {}
+    advisor_blocks = 0
+    for obj in lines:
+        if obj.get("type") in PR.NOISE_TYPES:
+            continue
+        content = obj.get("message", {}).get("content", [])
+        if isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict):
+                    bt = block.get("type", "<missing>")
+                    block_type_counts[bt] = block_type_counts.get(bt, 0) + 1
+                    if bt == "advisor_tool_result":
+                        advisor_blocks += 1
+    compact_markers = sum(1 for m in PR.get_messages(lines) if m["is_compact"])
+    return {
+        "entry_types": type_counts,
+        "block_types": block_type_counts,
+        "advisor_blocks": advisor_blocks,
+        "compact_markers": compact_markers,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # CLI dispatch
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -803,7 +1058,7 @@ NEW_MODES = {
     "list", "lookup", "find", "resume-cmd", "brief",
     "changelog", "file-edits", "tool-calls",
     "subagent-list", "subagent-finals", "subagent-tools", "subagent-files",
-    "resume-prev", "count", "journal", "diff",
+    "resume-prev", "count", "journal", "diff", "timeline",
 }
 
 ALL_MODES = LEGACY_MODES | NEW_MODES
@@ -818,6 +1073,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--file", help="Path to .jsonl transcript file")
     p.add_argument("--cwd", help="Project working directory (to auto-find transcripts)")
     p.add_argument("--all-projects", action="store_true", help="Walk every project under --root")
+    p.add_argument("--project", help="Filter projects by name substring (e.g. 'keel')")
 
     # Root selector
     p.add_argument(
@@ -828,6 +1084,13 @@ def build_parser() -> argparse.ArgumentParser:
     # Time bounds
     p.add_argument("--since", help="Lower time bound (ISO date / 7d / yesterday / now)")
     p.add_argument("--until", help="Upper time bound (same forms as --since)")
+    p.add_argument("--date", help="Single-day window for timeline mode (ISO date / yesterday / today)")
+    p.add_argument("--gap", help="Idle-gap threshold for timeline blocks (e.g. 15m, 1h; default 15m)")
+    p.add_argument(
+        "--tz", default=None,
+        help="Display timezone override: IANA name (America/New_York), UTC, or offset (+5, -4). "
+             "Default: system local time.",
+    )
 
     # Mode
     p.add_argument(
@@ -856,7 +1119,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Fold subagent finals into brief/last/dump output")
     p.add_argument("--force-dump", action="store_true",
                    help="Bypass the 5MB dump-size guard")
-    p.add_argument("--json", action="store_true", help="(reserved)")
+    p.add_argument("--format", default="text", choices=["text", "json"],
+                   help="Output format (json works on every mode except the legacy aliases)")
+    p.add_argument("--json", action="store_true", help="Alias for --format json")
     p.add_argument("-n", type=int, default=5, help="Count modifier (last/dump/resume-prev)")
 
     # Legacy alias flags
@@ -875,6 +1140,16 @@ def _resolve_time(spec: str | None) -> datetime | None:
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
+
+    # Display timezone: default is system local time; --tz overrides.
+    # Must run before anything formats a timestamp.
+    try:
+        PR.set_timezone(args.tz)
+    except ValueError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+
+    fmt = "json" if (args.format == "json" or args.json) else "text"
 
     # Legacy alias translation — do NOT modify output for these paths.
     if args.list:
@@ -907,6 +1182,7 @@ def main() -> int:
 
     # Legacy --mode search with --cwd (no --file) preserved byte-for-byte.
     if args.mode == "search" and args.cwd and not args.file and not args.all_projects \
+            and not args.project and fmt == "text" \
             and args.role == "both" and args.in_channel == "text":
         if not args.query:
             print("--query required with --mode search", file=sys.stderr)
@@ -942,58 +1218,103 @@ def main() -> int:
 
     # Discovery modes — don't need --file
     if mode == "list":
-        print(mode_list(root, args.cwd, args.all_projects, since, until,
-                        args.exclude_current, current_uuid))
+        _emit(mode_list(root, args.cwd, args.all_projects, since, until,
+                        args.exclude_current, current_uuid,
+                        project=args.project, fmt=fmt))
         return 0
     if mode == "lookup":
-        code, out = mode_lookup(args.uuid or "", root)
-        print(out)
+        code, out = mode_lookup(args.uuid or "", root, fmt=fmt)
+        _emit(out)
         return code
     if mode == "find":
-        print(mode_find(root, args.title, args.first_prompt, current_uuid))
+        _emit(mode_find(root, args.title, args.first_prompt, current_uuid,
+                        project=args.project, fmt=fmt))
         return 0
     if mode == "resume-cmd":
-        code, out = mode_resume_cmd(args.uuid or "", root)
-        print(out)
+        code, out = mode_resume_cmd(args.uuid or "", root, fmt=fmt)
+        _emit(out)
         return code
     if mode == "resume-prev":
         if not args.cwd:
             print("--cwd required for resume-prev", file=sys.stderr)
             return 1
-        print(mode_resume_prev(args.cwd, root, args.n))
+        _emit(mode_resume_prev(args.cwd, root, args.n, fmt=fmt))
         return 0
     if mode == "count":
         if not args.query:
             print("--query required for count", file=sys.stderr)
             return 1
-        code, out = mode_count(root, args.cwd, args.all_projects, args.query,
-                               args.role, args.in_channel, since, until)
-        print(out)
-        return code
+        counts = mode_count(root, args.cwd, args.all_projects, args.query,
+                            args.role, args.in_channel, since, until,
+                            project=args.project,
+                            exclude_current=args.exclude_current,
+                            current_uuid=current_uuid)
+        if fmt == "json":
+            _print_json(counts)
+        else:
+            print(
+                f"{counts['sessions']} sessions, {counts['messages']} total messages, "
+                f"{counts['matches']} matches",
+                file=sys.stderr,
+            )
+            print(counts["sessions"])
+        return 0
     if mode == "journal":
-        print(mode_journal(root, args.cwd, args.all_projects, since, until, current_uuid))
+        _emit(mode_journal(root, args.cwd, args.all_projects, since, until,
+                           current_uuid, project=args.project, fmt=fmt,
+                           exclude_current=args.exclude_current))
+        return 0
+    if mode == "timeline":
+        try:
+            if args.date:
+                day = P.parse_timespec(args.date).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+                t_since, t_until = day, day + timedelta(days=1)
+            else:
+                t_since = since or P.parse_timespec("today")
+                t_until = until or P.parse_timespec("now")
+            gap_minutes = _parse_gap(args.gap)
+        except ValueError as e:
+            print(str(e), file=sys.stderr)
+            return 1
+        # Timeline is inherently cross-project — default to all projects.
+        project_dirs = _scoped_project_dirs(
+            root, args.cwd, args.all_projects, args.project, default_all=True
+        )
+        data = build_timeline(project_dirs, t_since, t_until, gap_minutes, current_uuid,
+                              exclude_current=args.exclude_current)
+        if fmt == "json":
+            _print_json(timeline_json(data))
+        else:
+            print(render_timeline(data, tz_label=args.tz or "local"))
         return 0
     if mode == "diff":
-        if mode == "diff" and args.subagents_of:
+        if args.subagents_of:
             parent = Path(args.subagents_of)
             subs = P.list_subagents(parent)
             if len(subs) < 2:
                 print("Need ≥2 subagents to diff.")
                 return 1
-            print(mode_diff(subs[0], subs[1]))
+            _emit(mode_diff(subs[0], subs[1], fmt=fmt))
             return 0
         if not (args.file_a and args.file_b):
             print("--file-a and --file-b required for diff (or --subagents-of)", file=sys.stderr)
             return 1
-        print(mode_diff(Path(args.file_a), Path(args.file_b)))
+        _emit(mode_diff(Path(args.file_a), Path(args.file_b), fmt=fmt))
         return 0
-    if mode == "search" and (args.file or args.all_projects):
+    # (cwd-scoped searches with non-default role/in/json land here — the
+    # byte-compat legacy path above already handled the default-flag case.)
+    if mode == "search" and (args.file or args.all_projects or args.project or args.cwd):
         if not args.query:
             print("--query required", file=sys.stderr)
             return 1
         fp = Path(args.file) if args.file else None
-        print(mode_search_v2(root, args.cwd, args.all_projects, fp, args.query,
-                             args.role, args.in_channel, since, until))
+        _emit(mode_search_v2(root, args.cwd, args.all_projects, fp, args.query,
+                             args.role, args.in_channel, since, until,
+                             project=args.project, fmt=fmt,
+                             exclude_current=args.exclude_current,
+                             current_uuid=current_uuid))
         return 0
 
     # File-required modes
@@ -1002,14 +1323,14 @@ def main() -> int:
             print("--subagent required", file=sys.stderr)
             return 1
         sp = Path(args.subagent)
-        print(mode_tool_calls(sp, _split_tools(args.tool)))
+        _emit(mode_tool_calls(sp, _split_tools(args.tool), fmt=fmt))
         return 0
     if mode == "subagent-files":
         if not args.subagent:
             print("--subagent required", file=sys.stderr)
             return 1
         sp = Path(args.subagent)
-        print(mode_file_edits(sp))
+        _emit(mode_file_edits(sp, fmt=fmt))
         return 0
 
     if not args.file:
@@ -1022,26 +1343,40 @@ def main() -> int:
         return 1
 
     if mode == "brief":
-        print(mode_brief(path, args.include_subagents, current_uuid))
+        _emit(mode_brief(path, args.include_subagents, current_uuid, fmt=fmt))
         return 0
     if mode == "subagent-list":
-        print(mode_subagent_list(path))
+        _emit(mode_subagent_list(path, fmt=fmt))
         return 0
     if mode == "subagent-finals":
-        print(mode_subagent_finals(path))
+        _emit(mode_subagent_finals(path, fmt=fmt))
         return 0
     if mode == "changelog":
-        print(mode_changelog(path))
+        _emit(mode_changelog(path, fmt=fmt))
         return 0
     if mode == "file-edits":
-        print(mode_file_edits(path))
+        _emit(mode_file_edits(path, fmt=fmt))
         return 0
     if mode == "tool-calls":
-        print(mode_tool_calls(path, _split_tools(args.tool)))
+        _emit(mode_tool_calls(path, _split_tools(args.tool), fmt=fmt))
         return 0
 
     # Legacy single-file modes
     lines = PR.parse_lines(path)
+
+    if fmt == "json":
+        if mode == "last":
+            _print_json(json_last(lines, args.n))
+        elif mode == "advisor":
+            _print_json(json_advisor(lines))
+        elif mode == "pre-compact":
+            _print_json(json_pre_compact(lines))
+        elif mode == "dump":
+            _print_json(json_dump(lines, max(args.n, 80) if args.n != 5 else 80))
+        elif mode == "debug":
+            _print_json(json_debug(lines))
+        return 0
+
     print(f"[{path.name} — {len(lines)} entries]\n")
 
     if mode == "last":
@@ -1106,4 +1441,8 @@ def _append_subagents(parent_path: Path) -> str:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except FileNotFoundError as e:
+        print(str(e), file=sys.stderr)
+        sys.exit(1)
