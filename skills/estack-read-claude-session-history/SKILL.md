@@ -47,8 +47,11 @@ python "C:\Users\2supe\.claude\skills\read-transcript\scripts\read_transcript.py
 # Full readable conversation dump (last 80 text messages)
 python "C:\Users\2supe\.claude\skills\read-transcript\scripts\read_transcript.py" --file <path.jsonl> --mode dump
 
-# Search for a specific term
+# Search for a specific term in one session
 python "C:\Users\2supe\.claude\skills\read-transcript\scripts\read_transcript.py" --file <path.jsonl> --mode search --query "review"
+
+# Search across ALL sessions in a project directory
+python "C:\Users\2supe\.claude\skills\read-transcript\scripts\read_transcript.py" --cwd "C:\path\to\project" --mode search --query "notes.md"
 
 # List subagent files for a session
 python "C:\Users\2supe\.claude\skills\read-transcript\scripts\read_transcript.py" --file <path.jsonl> --list-subagents
