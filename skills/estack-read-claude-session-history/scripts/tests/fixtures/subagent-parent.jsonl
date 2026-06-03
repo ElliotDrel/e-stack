@@ -1,0 +1,4 @@
+{"type":"user","timestamp":"2026-05-01T10:00:00Z","message":{"role":"user","content":"Investigate the bug"}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:05Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_01abc","name":"Agent","input":{"description":"Find the bug","prompt":"Look at file X","subagent_type":"Explore"}}]}}
+{"type":"user","timestamp":"2026-05-01T10:00:30Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01abc","content":"Found it in foo.py:42"}]}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:35Z","message":{"role":"assistant","content":[{"type":"text","text":"Got the report, patching foo.py."}]}}

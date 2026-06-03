@@ -1,0 +1,10 @@
+{"type":"user","timestamp":"2026-05-01T10:00:00Z","message":{"role":"user","content":"Run all the tools"}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:01Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"ls -la /tmp"}}]}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:02Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t2","name":"PowerShell","input":{"command":"Get-ChildItem"}}]}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:03Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t3","name":"Read","input":{"file_path":"C:\\foo.py","offset":1,"limit":50}}]}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:04Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t4","name":"Edit","input":{"file_path":"C:\\foo.py","old_string":"a","new_string":"b"}}]}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:05Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t5","name":"Write","input":{"file_path":"C:\\bar.py","content":"print('hi')"}}]}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:06Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t6","name":"Agent","input":{"description":"Find X","subagent_type":"Explore"}}]}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:07Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t7","name":"Skill","input":{"skill":"using-superpowers"}}]}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:08Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t8","name":"Glob","input":{"pattern":"**/*.py"}}]}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:09Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t9","name":"Grep","input":{"pattern":"TODO"}}]}}

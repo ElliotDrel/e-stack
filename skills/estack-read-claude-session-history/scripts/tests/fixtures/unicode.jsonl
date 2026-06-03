@@ -1,0 +1,2 @@
+{"type":"user","timestamp":"2026-05-01T10:00:00Z","message":{"role":"user","content":"Hello 🌍, 你好"}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:05Z","message":{"role":"assistant","content":[{"type":"text","text":"Привет — 안녕하세요!"}]}}

@@ -1,0 +1,6 @@
+{"type":"user","timestamp":"2026-04-15T08:00:00Z","message":{"role":"user","content":"Apr 15 morning"}}
+{"type":"assistant","timestamp":"2026-04-15T08:00:05Z","message":{"role":"assistant","content":[{"type":"text","text":"Apr 15 reply"}]}}
+{"type":"user","timestamp":"2026-05-01T12:00:00Z","message":{"role":"user","content":"May 1 noon"}}
+{"type":"assistant","timestamp":"2026-05-01T12:00:05Z","message":{"role":"assistant","content":[{"type":"text","text":"May 1 reply"}]}}
+{"type":"user","timestamp":"2026-05-15T20:00:00Z","message":{"role":"user","content":"May 15 evening"}}
+{"type":"assistant","timestamp":"2026-05-15T20:00:05Z","message":{"role":"assistant","content":[{"type":"text","text":"May 15 reply"}]}}
