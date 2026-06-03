@@ -1,0 +1,4 @@
+{"type":"ai-title","aiTitle":"Test session"}
+{"type":"attachment","data":{"path":"foo.png"}}
+{"type":"permission-mode","mode":"plan"}
+{"type":"file-history-snapshot","content":{"file":"bar.py"}}

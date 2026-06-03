@@ -1,0 +1,8 @@
+{"type":"user","timestamp":"2026-05-01T10:00:00Z","message":{"role":"user","content":"First"}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:05Z","message":{"role":"assistant","content":[{"type":"text","text":"R1"}]}}
+{"type":"user","timestamp":"2026-05-01T10:30:00Z","message":{"role":"user","content":"This session is being continued from a previous conversation. Round 1"}}
+{"type":"user","timestamp":"2026-05-01T11:00:00Z","message":{"role":"user","content":"Mid"}}
+{"type":"assistant","timestamp":"2026-05-01T11:00:05Z","message":{"role":"assistant","content":[{"type":"text","text":"R2"}]}}
+{"type":"user","timestamp":"2026-05-01T11:30:00Z","message":{"role":"user","content":"This session is being continued from a previous conversation. Round 2"}}
+{"type":"user","timestamp":"2026-05-01T12:00:00Z","message":{"role":"user","content":"Last"}}
+{"type":"assistant","timestamp":"2026-05-01T12:00:05Z","message":{"role":"assistant","content":[{"type":"text","text":"R3"}]}}

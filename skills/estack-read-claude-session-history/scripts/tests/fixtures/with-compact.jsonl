@@ -1,0 +1,5 @@
+{"type":"user","timestamp":"2026-05-01T10:00:00Z","message":{"role":"user","content":"First question"}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:05Z","message":{"role":"assistant","content":[{"type":"text","text":"First answer"}]}}
+{"type":"user","timestamp":"2026-05-01T11:00:00Z","message":{"role":"user","content":"This session is being continued from a previous conversation. Summary follows..."}}
+{"type":"user","timestamp":"2026-05-01T11:00:10Z","message":{"role":"user","content":"After compact"}}
+{"type":"assistant","timestamp":"2026-05-01T11:00:15Z","message":{"role":"assistant","content":[{"type":"text","text":"Post-compact reply"}]}}

@@ -1,0 +1,2 @@
+{"type":"user","timestamp":"2026-05-01T10:00:10Z","message":{"role":"user","content":"Find the bug in foo.py"}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:20Z","message":{"role":"assistant","content":[{"type":"text","text":"Found it: foo.py line 42 — off-by-one in loop bound."}]}}
