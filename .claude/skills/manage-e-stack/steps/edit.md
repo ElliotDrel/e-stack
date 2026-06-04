@@ -44,13 +44,13 @@ After all edits are complete, show the user what will change:
 
 1. Run the diff for each changed skill:
    ```bash
-   diff -ru ~/.claude/skills/<name> skills/<name>
+   diff -ru ~/.agents/<name> skills/<name>
    ```
 2. Re-run preflight to verify frontmatter is valid:
    ```bash
    bash "${CLAUDE_SKILL_DIR}/scripts/preflight.sh"
    ```
-3. Ask: **"Ready to run the installer? This will overwrite your local skills in ~/.claude/skills/."**
+3. Ask: **"Ready to run the installer? This will update your local skills in ~/.agents/ and ~/.claude/skills/."**
 
 Only after they confirm, run the installer with `--install` (run from the repo it dry-runs by default and writes nothing):
 ```bash

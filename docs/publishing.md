@@ -2,7 +2,7 @@
 
 e-stack publishes to npm via GitHub Actions when a git tag matching `v*` is pushed (`.github/workflows/publish.yml`).
 
-The package ships both `skills/` and `hooks/` (whitelisted in `package.json`'s `files` field). Skills install to `~/.claude/skills/`; hooks install to `~/.claude/hooks/` and get registered in `~/.claude/settings.json` by `bin/install.cjs`.
+The package ships both `skills/` and `hooks/` (whitelisted in `package.json`'s `files` field). Skills install to `~/.agents/estack-*/` (symlinked from `~/.claude/skills/estack-*/`); hooks install to `~/.claude/hooks/` and get registered in `~/.claude/settings.json` by `bin/install.cjs`.
 
 ### How to publish
 

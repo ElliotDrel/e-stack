@@ -11,7 +11,7 @@ A curated set of Claude Code skills by Elliot Drel. One command installs them al
 npx elliot-stack@latest
 ```
 
-This copies skills to `~/.claude/skills/` and registers a `SessionStart` hook so your skills stay up to date automatically.
+This installs skills to `~/.agents/` and symlinks them into `~/.claude/skills/`, then registers a `SessionStart` hook so your skills stay up to date automatically.
 
 ## Skills
 
@@ -34,7 +34,7 @@ Hooks install to `~/.claude/hooks/` and are auto-registered in your `~/.claude/s
 
 ## How it works
 
-- Skills install to `~/.claude/skills/estack-*/`
+- Skills install to `~/.agents/estack-*/` (symlinked from `~/.claude/skills/estack-*/`)
 - Hooks install to `~/.claude/hooks/` and are registered in `~/.claude/settings.json`
 - A `SessionStart` hook auto-updates both each time you open Claude Code
 - If you've made local edits to a skill or hook, the installer detects the conflict and lets you choose: overwrite, skip, or merge
@@ -62,10 +62,10 @@ Run the installer straight from your checkout to preview what a real install wou
 
 ```bash
 node bin/install.cjs            # dry run — previews changes, writes nothing
-node bin/install.cjs --install  # actually sync your local edits to ~/.claude/skills/
+node bin/install.cjs --install  # actually sync your local edits to ~/.agents/ + ~/.claude/skills/
 ```
 
-Run from the repo, the installer **dry-runs by default** so testing never clobbers your live `~/.claude/skills/` install. Pass `--install` once the preview looks right. (`--dry-run` forces a preview even under `npx`.)
+Run from the repo, the installer **dry-runs by default** so testing never clobbers your live install. Pass `--install` once the preview looks right. (`--dry-run` forces a preview even under `npx`.)
 
 See [`docs/publishing.md`](docs/publishing.md) for the release flow and security model.
 

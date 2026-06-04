@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @version 1.0.0
 // PostToolUse hook: nudges toward the repo-search skill when GitHub is involved.
 // Fires on every WebFetch or WebSearch that touches a github.com URL.
 
