@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/elliot-stack)](https://www.npmjs.com/package/elliot-stack)
 [![license](https://img.shields.io/npm/l/elliot-stack)](LICENSE)
 
-A curated set of Claude Code and OpenClaw skills by Elliot Drel. One command installs them all.
+A curated set of Claude Code skills by Elliot Drel. One command installs them all.
 
 ## Install
 
@@ -11,7 +11,7 @@ A curated set of Claude Code and OpenClaw skills by Elliot Drel. One command ins
 npx elliot-stack@latest
 ```
 
-This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/skills/`, then registers a `SessionStart` hook so your skills stay up to date automatically. OpenClaw picks up `~/.agents/skills/` natively — no extra config needed.
+This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/skills/`, then registers a `SessionStart` hook so your skills stay up to date automatically. Any agent that reads from `~/.agents/skills/` (OpenClaw, Codex, ChatGPT, Cursor, and others) will pick them up automatically with no extra config.
 
 ## Skills
 
@@ -38,9 +38,9 @@ in Claude's config (`~/.claude/hooks/` and `~/.claude/settings.json`).
 
 ## How it works
 
-- Skills install to `~/.agents/skills/estack-*/` (symlinked from `~/.claude/skills/estack-*/`; auto-detected by OpenClaw)
+- Skills install to `~/.agents/skills/estack-*/` (symlinked from `~/.claude/skills/estack-*/`; auto-detected by any agent that reads `~/.agents/skills/`, including OpenClaw, Codex, ChatGPT, and Cursor)
 - Hooks are Claude Code-only: they install to `~/.claude/hooks/` and are registered in `~/.claude/settings.json`
-- A `SessionStart` hook auto-updates both each time you open Claude Code or OpenClaw
+- A `SessionStart` hook auto-updates skills each time you open Claude Code
 - If you've made local edits to a skill or hook, the installer detects the conflict and lets you choose: overwrite, skip, or merge
 - Every skill carries its own semver (`version:` in SKILL.md frontmatter; hooks use a `// @version` comment), independent of the package version — update messages show exactly what moved, e.g. `estack-chris-voss (1.0.0 → 1.1.0)`. Under the hood, updates are detected by content hash, so a change can never be missed; a release-time check (`scripts/check-versions.cjs`) guarantees every content change ships with a version bump.
 
@@ -54,7 +54,7 @@ npx elliot-stack@latest
 
 ## Requirements
 
-- [Claude Code](https://claude.ai/code) CLI installed (and/or OpenClaw)
+- [Claude Code](https://claude.ai/code) CLI installed (other agents that read `~/.agents/skills/` work too)
 - Node.js 18+
 
 ## Contributing
