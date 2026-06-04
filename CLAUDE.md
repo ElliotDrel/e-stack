@@ -31,6 +31,7 @@ docs/                    # Reference docs (publishing, skill authoring)
 ```
 
 - **Distribution:** `npx elliot-stack@latest` installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/skills/`
+- **What gets published to npm:** Only the directories listed in the `files` field of `package.json`: `bin/`, `skills/`, and `hooks/`. Everything else (docs, scripts, .claude, .planning, etc.) is excluded automatically — there is no `.npmignore`.
 - **Local preview / sync:** `node bin/install.cjs` run from the repo defaults to a **dry run** — it previews what would change in `~/.claude/` and writes nothing. Add `--install` to actually sync repo skills to the live location.
 - **Skills in the pack:** `estack-better-title`, `estack-chris-voss`, `estack-customer-discovery`, `estack-github-issue-tracker`, `estack-repo-search`
 
