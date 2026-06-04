@@ -1,6 +1,6 @@
 ---
 name: estack-prompt-builder-coach
-version: 1.0.0
+version: 1.0.1
 description: (prompt-builder-coach) Use whenever you or the user need to write, sharpen, audit, or scope a prompt or work request for an AI agent or model. This is a four-part kit covering shaping a fuzzy idea into a decided goal, building a prompt from scratch, auditing a draft request that feels vague, and defining what "done" looks like when the task is fuzzy. Trigger when the user says "help me write a prompt", "build me a prompt", "audit this prompt", "make this request better", "why is the AI giving me generic output", "I don't know what I want", "I have a rough idea", "what should done look like", or when handing a task to another agent and wanting it to land. Use it even when the user did not say the word "prompt" but is clearly trying to get an AI to do consequential work. Do not use for quick factual lookups or for executing an already well-defined task.
 ---
 
@@ -79,3 +79,34 @@ Every finished prompt or brief gets saved to a markdown file with a descriptive 
 - Do not run a part from memory. Always read its file on entry, per Rule 1.
 - Do not over-apply the kit. A quick ask gets a quick prompt, not a six-field brief.
 </guardrails>
+
+---
+
+## Skill Feedback
+
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+
+**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+
+```bash
+gh issue create \
+  --repo ElliotDrel/e-stack \
+  --title "estack-prompt-builder-coach: <concise summary>" \
+  --body "<description from user feedback — expected vs. actual behavior and context>"
+```
+
+**If `gh` is not installed**, build a pre-filled URL:
+
+```bash
+python3 -c "
+import urllib.parse
+title = 'estack-prompt-builder-coach: <concise summary>'
+body = '<description from user feedback — expected vs. actual behavior and context>'
+base = 'https://github.com/ElliotDrel/e-stack/issues/new'
+print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
+"
+```
+
+Share the printed URL with the user and offer to open it in their browser.
+
+They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
