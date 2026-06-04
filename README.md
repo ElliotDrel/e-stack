@@ -21,7 +21,10 @@ This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/sk
 | **Better Title** | `/estack-better-title` | Renames Claude Code chat sessions with descriptive titles |
 | **Chris Voss** | `/estack-chris-voss` | Applies negotiation principles from *Never Split the Difference* |
 | **Customer Discovery** | `/estack-customer-discovery` | Guides through customer discovery — validating ideas, outreach, interviews, and analysis |
+| **Flight Planner** | `/estack-flight-planner` | Finds and ranks flights between two airports with config-driven preferences and optional ground-shuttle pairing |
 | **GitHub Issue Tracker** | `/estack-github-issue-tracker` | Tracks and manages GitHub issues across repos |
+| **Prompt Builder Coach** | `/estack-prompt-builder-coach` | Four-part kit for shaping, building, auditing, and scoping prompts for AI agents |
+| **Read Claude Session History** | `/estack-read-claude-session-history` | Searches, reads, recovers, and compares Claude Code session history across sessions, projects, and backups |
 | **Repo Search** | `/estack-repo-search` | Clones and searches external GitHub repos to answer questions about their code |
 
 ## Hooks

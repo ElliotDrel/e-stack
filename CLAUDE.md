@@ -15,7 +15,9 @@
 | Task | Action |
 |---|---|
 | **Any change to e-stack** (add, edit, publish a skill) | Invoke `manage-e-stack` skill — it routes to the right step file |
+| **Add or edit a hook** (anything in `hooks/`) | Invoke `manage-e-stack` skill — routes to `steps/add-hook.md` |
 | **Skill authoring reference** | Read `docs/skill-authoring.md` |
+| **Hook authoring reference** | Read `docs/hook-authoring.md` |
 | **Publishing, OIDC, branch protection, or repo security settings** | Read `docs/publishing.md` |
 
 ## 2. Repo Structure
@@ -26,14 +28,17 @@ skills/<skill-name>/     # Each skill is a subfolder
   scripts/               # Optional supporting shell/node scripts
   references/            # Optional reference markdown files
   steps/                 # Optional step-by-step guides
+hooks/<name>.js          # Claude Code hooks (flat, no subfolders) — installed to ~/.claude/hooks/
 bin/install.cjs          # Installer: copies skills to ~/.agents/skills/, symlinks into ~/.claude/skills/
-docs/                    # Reference docs (publishing, skill authoring)
+scripts/                 # Repo maintenance scripts (check-versions, update-skill-feedback, install tests)
+docs/                    # Reference docs (publishing, skill authoring, hook authoring)
 ```
 
 - **Distribution:** `npx elliot-stack@latest` installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/skills/`
 - **What gets published to npm:** Only the directories listed in the `files` field of `package.json`: `bin/`, `skills/`, and `hooks/`. Everything else (docs, scripts, .claude, .planning, etc.) is excluded automatically — there is no `.npmignore`.
 - **Local preview / sync:** `node bin/install.cjs` run from the repo defaults to a **dry run** — it previews what would change in `~/.claude/` and writes nothing. Add `--install` to actually sync repo skills to the live location.
-- **Skills in the pack:** `estack-better-title`, `estack-chris-voss`, `estack-customer-discovery`, `estack-github-issue-tracker`, `estack-repo-search`
+- **Skills in the pack:** `estack-active-learning-tutor`, `estack-better-title`, `estack-chris-voss`, `estack-customer-discovery`, `estack-flight-planner`, `estack-github-issue-tracker`, `estack-prompt-builder-coach`, `estack-read-claude-session-history`, `estack-repo-search`
+- **Hooks in the pack:** `repo-search-nudge.js`
 
 ## 3. Hard Rules
 
