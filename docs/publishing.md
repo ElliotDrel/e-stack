@@ -2,7 +2,7 @@
 
 e-stack publishes to npm via GitHub Actions when a git tag matching `v*` is pushed (`.github/workflows/publish.yml`).
 
-The package ships both `skills/` and `hooks/` (whitelisted in `package.json`'s `files` field). Skills install to `~/.agents/skills/estack-*/` (symlinked from `~/.claude/skills/estack-*/`); hooks are Claude Code-only, so they install to `~/.claude/hooks/` and get registered in `~/.claude/settings.json` by `bin/install.cjs`. Do not try to route hooks through `~/.agents/`.
+The package ships both `skills/` and `hooks/` (whitelisted in `package.json`'s `files` field). Skills install to `~/.agents/skills/estack-*/` (symlinked from `~/.claude/skills/estack-*/`). OpenClaw reads `~/.agents/skills/` as a native load path, so skills are auto-detected by both Claude Code and OpenClaw with no extra config. Hooks are Claude Code-only: they install to `~/.claude/hooks/` and get registered in `~/.claude/settings.json` by `bin/install.cjs`. Do not try to route hooks through `~/.agents/`.
 
 ### How to publish
 
