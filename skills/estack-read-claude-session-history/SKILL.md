@@ -1,6 +1,6 @@
 ---
 name: estack-read-claude-session-history
-version: 1.0.0
+version: 1.0.1
 description: (read-claude-session-history) Invoke for ANY task involving Claude Code session history, transcripts, or .jsonl files — this is the only way to read, parse, or search them; do not attempt to use Bash or Read on .jsonl directly. Use for: recovering context after /compact ("what were we doing before compact"), advisor response retrieval ("what did the advisor say"), subagent output collection ("get all subagent finals"), cross-project session search by keyword, session listing and triage, UUID and title lookup, resume-command generation, file-edit and tool-call forensics, session diff between two sessions or subagents, weekly work journal, day timeline of activity blocks and idle gaps, engagement/attention-time accounting (active vs elapsed time, break detection, parallel-chat-safe totals), recovering from .claude-backups after data loss, session count queries, and reading the last agent message before a crash or interrupt. Trigger phrases: "session history", "before compact", "what did claude do", "what did I work on", "search my sessions", "find that session", "what did the advisor say", "what did the agent edit", "from the backup", "list my sessions", "subagent outputs", "session journal", "resume previous", "which files did claude touch", "go back and look", "what did I do yesterday", "where did my day go", "timeline of my day", "how much time on", "how long did that actually take", "how much did I actually work", "active time", "time I spent".
 ---
 
@@ -202,3 +202,34 @@ See `references/recipes.md` for fuller multi-step workflows.
 ## When the modes return empty
 
 If a mode returns empty/unexpected output, run `--mode debug` first. It prints the entry-type distribution, content-block types, and probes for advisor + compact markers — useful when the transcript schema has drifted or when a session was truncated.
+
+---
+
+## Skill Feedback
+
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+
+**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+
+```bash
+gh issue create \
+  --repo ElliotDrel/e-stack \
+  --title "estack-read-claude-session-history: <concise summary>" \
+  --body "<description from user feedback — expected vs. actual behavior and context>"
+```
+
+**If `gh` is not installed**, build a pre-filled URL:
+
+```bash
+python3 -c "
+import urllib.parse
+title = 'estack-read-claude-session-history: <concise summary>'
+body = '<description from user feedback — expected vs. actual behavior and context>'
+base = 'https://github.com/ElliotDrel/e-stack/issues/new'
+print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
+"
+```
+
+Share the printed URL with the user and offer to open it in their browser.
+
+They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
