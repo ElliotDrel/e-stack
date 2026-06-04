@@ -22,7 +22,17 @@ Both the folder and the `name` field use the `estack-` prefix. The `description`
 
 Add any supporting files (references, steps, scripts) in subfolders as needed.
 
-## 2. Show the diff (if migrating from an existing skill)
+## 2. Stamp the feedback section
+
+Run the feedback template script to add the standard `## Skill Feedback` section:
+
+```bash
+node scripts/update-skill-feedback.cjs
+```
+
+Every skill must have this section. The script writes it from `scripts/skill-feedback-template.md` — do not write or edit the feedback section manually.
+
+## 3. Show the diff (if migrating from an existing skill — optional)
 
 If the skill already exists somewhere (e.g. `~/.agents/skills/` or `~/.claude/skills/`), diff it:
 
@@ -32,7 +42,7 @@ diff -ru ~/.agents/skills/<skill-name> skills/estack-<skill-name>
 
 Show the output and ask for confirmation before proceeding.
 
-## 3. Delete the old copy (if migrating)
+## 4. Delete the old copy (if migrating)
 
 Remove both the real files and the symlink (if either exists):
 
@@ -41,7 +51,7 @@ rm -rf ~/.agents/skills/<old-skill-name>
 rm -rf ~/.claude/skills/<old-skill-name>
 ```
 
-## 4. Run the installer
+## 5. Run the installer
 
 ```bash
 node bin/install.cjs            # dry run — preview what would change, writes nothing
@@ -50,7 +60,7 @@ node bin/install.cjs --install  # actually copy skills to ~/.agents/skills/ + sy
 
 Run from the repo, the installer **dry-runs by default** — preview first, then pass `--install` to apply. The `--install` run copies all skills from `skills/` to `~/.agents/skills/` and symlinks each into `~/.claude/skills/`. Confirm the new skill appears in the output.
 
-## 5. Confirm with the user before committing
+## 6. Confirm with the user before committing
 
 NEVER commit or push without explicit confirmation from the user. Before touching git:
 
@@ -68,6 +78,6 @@ git push
 
 Committing alone does NOT publish. Publishing is triggered by pushing a `v*` git tag (see `steps/publish.md`).
 
-## 6. Route to publish (optional)
+## 7. Route to publish (optional)
 
 If the user wants this change released to npm, follow `steps/publish.md`.
