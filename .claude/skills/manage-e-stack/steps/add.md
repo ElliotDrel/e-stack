@@ -17,23 +17,26 @@ description: (<skill-name>) <one-line description — this shows up in the skill
 ---
 ```
 
-Both the folder and the `name` field use the `estack-` prefix. The `description` MUST start with `(<skill-name>)` (the short name without the prefix). This namespaces the skill correctly when installed to `~/.claude/skills/`.
+Both the folder and the `name` field use the `estack-` prefix. The `description` MUST start with `(<skill-name>)` (the short name without the prefix). This namespaces the skill correctly when installed to `~/.agents/` (symlinked into `~/.claude/skills/`).
 
 Add any supporting files (references, steps, scripts) in subfolders as needed.
 
 ## 2. Show the diff (if migrating from an existing skill)
 
-If the skill already exists somewhere (e.g. `~/.claude/skills/`), diff it:
+If the skill already exists somewhere (e.g. `~/.agents/` or `~/.claude/skills/`), diff it:
 
 ```bash
-diff -ru ~/.claude/skills/<skill-name> skills/estack-<skill-name>
+diff -ru ~/.agents/<skill-name> skills/estack-<skill-name>
 ```
 
 Show the output and ask for confirmation before proceeding.
 
 ## 3. Delete the old copy (if migrating)
 
+Remove both the real files and the symlink (if either exists):
+
 ```bash
+rm -rf ~/.agents/<old-skill-name>
 rm -rf ~/.claude/skills/<old-skill-name>
 ```
 
