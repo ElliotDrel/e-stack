@@ -79,7 +79,6 @@ Every finished prompt or brief gets saved to a markdown file with a descriptive 
 - Do not run a part from memory. Always read its file on entry, per Rule 1.
 - Do not over-apply the kit. A quick ask gets a quick prompt, not a six-field brief.
 </guardrails>
-
 ---
 
 ## Skill Feedback
