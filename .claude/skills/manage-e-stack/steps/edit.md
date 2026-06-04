@@ -10,7 +10,7 @@ Run the preflight script. It shows installed vs repo state, diffs, and frontmatt
 bash "${CLAUDE_SKILL_DIR}/scripts/preflight.sh"
 ```
 
-(The script lives at `.claude/skills/e-stack/scripts/preflight.sh` if `CLAUDE_SKILL_DIR` is not set.)
+(The script lives at `.claude/skills/manage-e-stack/scripts/preflight.sh` if `CLAUDE_SKILL_DIR` is not set.)
 
 Present the diagnostics to the user. If there are frontmatter issues, fix them before continuing.
 
@@ -37,7 +37,7 @@ const DEPRECATED_SKILLS = [
 ];
 ```
 
-On the next install (any mode), the installer deletes each listed folder from `~/.claude/skills/` and drops its checksum entry. Leave entries in the list permanently — they're cheap and protect users who update infrequently.
+On the next install (any mode), the installer deletes each listed folder from both `~/.agents/skills/` and `~/.claude/skills/` (real dir or symlink) and drops its checksum entry. Leave entries in the list permanently — they're cheap and protect users who update infrequently.
 
 ## Phase 3: Review — APPROVAL GATE
 

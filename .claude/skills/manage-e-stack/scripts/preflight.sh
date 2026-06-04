@@ -2,8 +2,13 @@
 # Pre-flight diagnostics for e-stack publishing
 # Read-only — does not modify anything
 
-echo "=== Current installed skills ==="
-for skill in ~/.claude/skills/estack-*/; do
+# Real skill files live in ~/.agents/skills/ (symlinked from ~/.claude/skills/).
+# Fall back to ~/.claude/skills/ for pre-migration installs.
+INSTALL_ROOT="$HOME/.agents/skills"
+[ -d "$INSTALL_ROOT" ] || INSTALL_ROOT="$HOME/.claude/skills"
+
+echo "=== Current installed skills (in $INSTALL_ROOT) ==="
+for skill in "$INSTALL_ROOT"/estack-*/; do
   [ -d "$skill" ] || continue
   echo "$(basename "$skill"): $(find "$skill" -type f | wc -l) files"
 done
@@ -19,11 +24,11 @@ echo "=== Diffs between repo and installed ==="
 diffs=0
 for skill in skills/estack-*/; do
   name=$(basename "$skill")
-  if [ ! -d ~/.claude/skills/$name ]; then
+  if [ ! -d "$INSTALL_ROOT/$name" ]; then
     echo "NEW: $name (not yet installed)"
     diffs=$((diffs + 1))
   else
-    diff_output=$(diff -rq "$skill" ~/.claude/skills/$name 2>&1)
+    diff_output=$(diff -rq "$skill" "$INSTALL_ROOT/$name" 2>&1)
     if [ -n "$diff_output" ]; then
       echo "CHANGED: $name"
       echo "$diff_output"
@@ -31,7 +36,7 @@ for skill in skills/estack-*/; do
     fi
   fi
 done
-for skill in ~/.claude/skills/estack-*/; do
+for skill in "$INSTALL_ROOT"/estack-*/; do
   [ -d "$skill" ] || continue
   name=$(basename "$skill")
   if [ ! -d "skills/$name" ]; then
