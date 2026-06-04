@@ -885,13 +885,13 @@ async function main() {
   // 11. Summary output
   if (DRY_RUN) {
     console.log('\n[dry run] No files were changed. Run with --install to apply.\n');
-    console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' would be installed/updated in ~/.agents/skills/ (linked from ~/.claude/skills/, auto-detected by OpenClaw)');
+    console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' would be installed/updated in ~/.agents/skills/ (linked from ~/.claude/skills/; auto-detected by any agent that reads ~/.agents/skills/)');
     if (installedHookCount > 0) {
       console.log('  ' + installedHookCount + ' hook' + (installedHookCount !== 1 ? 's' : '') + ' would be installed/updated in ~/.claude/hooks/');
     }
   } else {
     console.log('\nestack installed successfully!\n');
-    console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' installed to ~/.agents/skills/ (symlinked from ~/.claude/skills/, auto-detected by OpenClaw)');
+    console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' installed to ~/.agents/skills/ (symlinked from ~/.claude/skills/; auto-detected by any agent that reads ~/.agents/skills/)');
     if (installedHookCount > 0) {
       console.log('  ' + installedHookCount + ' hook' + (installedHookCount !== 1 ? 's' : '') + ' installed to ~/.claude/hooks/');
     }
@@ -930,7 +930,7 @@ async function main() {
   } else {
     if (hookInstalled) {
       console.log('\nAuto-update hook added to ~/.claude/settings.json');
-      console.log('Skills will update automatically when you start Claude Code or OpenClaw.');
+      console.log('Skills will update automatically when you start Claude Code.');
     } else {
       console.log('\nAuto-update hook already configured.');
     }
