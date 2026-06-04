@@ -16,7 +16,9 @@ const path = require('path');
 const REPO_ROOT = path.resolve(__dirname, '..');
 const TEMPLATE_PATH = path.join(__dirname, 'skill-feedback-template.md');
 const SKILLS_DIR = path.join(REPO_ROOT, 'skills');
-const SECTION_MARKER = '\n---\n\n## Skill Feedback\n';
+// Matches the feedback section start (with or without a preceding ---)
+// and everything after it, so duplicates are collapsed in one pass.
+const SECTION_REGEX = /\n+(?:---\s*\n+)?## Skill Feedback[\s\S]*/;
 
 const isCheck = process.argv.includes('--check');
 
@@ -46,11 +48,12 @@ for (const dirName of skillDirs) {
   // Template already includes "---\n\n## Skill Feedback" — just add a leading newline separator
   const renderedSection = '\n' + rendered.trimEnd() + '\n';
 
-  // Find existing feedback section: from "\n---\n\n## Skill Feedback" to EOF
-  const sectionStart = original.indexOf(SECTION_MARKER);
+  // Find existing feedback section (any format) and replace to EOF.
+  // Using a regex ensures duplicates are collapsed in one pass.
+  const sectionMatch = original.search(SECTION_REGEX);
   let updated;
-  if (sectionStart !== -1) {
-    updated = original.slice(0, sectionStart) + renderedSection;
+  if (sectionMatch !== -1) {
+    updated = original.slice(0, sectionMatch) + renderedSection;
   } else {
     // No section yet — append
     updated = original.trimEnd() + '\n' + renderedSection;

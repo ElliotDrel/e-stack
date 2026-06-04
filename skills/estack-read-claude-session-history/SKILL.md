@@ -202,7 +202,6 @@ See `references/recipes.md` for fuller multi-step workflows.
 ## When the modes return empty
 
 If a mode returns empty/unexpected output, run `--mode debug` first. It prints the entry-type distribution, content-block types, and probes for advisor + compact markers — useful when the transcript schema has drifted or when a session was truncated.
-
 ---
 
 ## Skill Feedback
