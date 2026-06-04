@@ -10,6 +10,7 @@ Verify the repo is ready to publish:
 2. Confirm everything intended for the release is committed and on `main` (or staged to be committed in this flow)
 3. Do NOT include unrelated files (e.g. `Untitled-1.md`)
 4. Run `node scripts/check-versions.cjs` — every skill/hook whose content changed since the last release must have a bumped version. If it reports FAILs, bump the versions (or run `node scripts/check-versions.cjs --fix` to auto-patch-bump) and commit before tagging. The publish workflow runs this same check as a hard gate, so a missed bump will fail the release in CI.
+5. Run `node scripts/update-skill-feedback.cjs --check` — every skill must have a feedback section matching the current template. If it reports DIFFs, run `node scripts/update-skill-feedback.cjs` to sync, then commit (and re-run step 4 to pick up any version bumps needed for the changed skills).
 
 ## Phase 2: Bump Version, Tag, and Push — APPROVAL GATE
 
