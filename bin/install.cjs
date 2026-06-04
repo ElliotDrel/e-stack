@@ -11,7 +11,8 @@ const readline = require('readline');
 const HOME = os.homedir();
 const CLAUDE_DIR = path.join(HOME, '.claude');
 const SKILLS_DIR = path.join(CLAUDE_DIR, 'skills');
-const AGENTS_DIR = path.join(HOME, '.agents');
+const AGENTS_ROOT = path.join(HOME, '.agents');
+const AGENTS_DIR = path.join(AGENTS_ROOT, 'skills');
 const BACKUP_DIR = path.join(HOME, '.estack-backup');
 const CHECKSUMS_FILE = path.join(CLAUDE_DIR, '.estack-checksums.json');
 const SETTINGS_FILE = path.join(CLAUDE_DIR, 'settings.json');
@@ -61,6 +62,67 @@ const PACKAGE_HOOKS_DIR = path.join(__dirname, '..', 'hooks');
   }
 })();
 
+// ── Migrate skills from ~/.agents/<name> (v1.0.23 layout) to ~/.agents/skills/ ──
+(function migrateAgentsLayout() {
+  let strays;
+  try {
+    // statSync guards against ~/.agents existing as a plain file
+    if (!fs.existsSync(AGENTS_ROOT) || !fs.statSync(AGENTS_ROOT).isDirectory()) return;
+    strays = fs.readdirSync(AGENTS_ROOT, { withFileTypes: true })
+      .filter((e) => e.isDirectory() && e.name.startsWith('estack-'));
+  } catch (_) {
+    return; // unreadable — let main() surface a real error if it matters
+  }
+  if (strays.length === 0) return;
+  const silent = process.argv.includes('--silent');
+  const isDryRun = process.argv.includes('--dry-run') ||
+    (!__dirname.includes('node_modules') && !process.argv.includes('--install'));
+  if (isDryRun) {
+    if (!silent) {
+      process.stderr.write(
+        'estack: [dry run] Would move ' + strays.length + ' skill(s) from ~/.agents/ to ~/.agents/skills/\n'
+      );
+    }
+    return;
+  }
+  try {
+    fs.mkdirSync(AGENTS_DIR, { recursive: true });
+  } catch (err) {
+    process.stderr.write(
+      'estack: WARNING — could not create ~/.agents/skills/: ' + err.message + '\n'
+    );
+    return;
+  }
+  for (const e of strays) {
+    const oldPath = path.join(AGENTS_ROOT, e.name);
+    const newPath = path.join(AGENTS_DIR, e.name);
+    try {
+      if (fs.existsSync(newPath)) {
+        // already migrated — drop the stale copy at the old location
+        fs.rmSync(oldPath, { recursive: true, force: true });
+      } else {
+        try {
+          fs.renameSync(oldPath, newPath);
+        } catch (_) {
+          copyDirRaw(oldPath, newPath);
+          removeDirRaw(oldPath);
+        }
+      }
+      // re-point the live symlink — the old junction now dangles
+      ensureSymlink(newPath, path.join(SKILLS_DIR, e.name));
+    } catch (err) {
+      process.stderr.write(
+        'estack: WARNING — could not migrate ' + e.name + ' to ~/.agents/skills/: ' + err.message + '\n'
+      );
+    }
+  }
+  if (!silent) {
+    process.stderr.write(
+      'estack: moved ' + strays.length + ' skill(s) from ~/.agents/ to ~/.agents/skills/\n'
+    );
+  }
+})();
+
 function copyDirRaw(src, dest) {
   fs.mkdirSync(dest, { recursive: true });
   for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
@@ -84,6 +146,16 @@ function isSymlink(p) {
   try { return fs.lstatSync(p).isSymbolicLink(); } catch (_) { return false; }
 }
 
+// True only for a real directory at p — not a symlink to one, not a file.
+function isRealDir(p) {
+  try {
+    const stat = fs.lstatSync(p);
+    return stat.isDirectory() && !stat.isSymbolicLink();
+  } catch (_) {
+    return false;
+  }
+}
+
 // Creates (or updates) a directory symlink at linkPath pointing to target.
 // On Windows uses 'junction' (no elevation required); on Unix uses 'dir'.
 function ensureSymlink(target, linkPath) {
@@ -92,10 +164,12 @@ function ensureSymlink(target, linkPath) {
     if (stat.isSymbolicLink()) {
       if (path.resolve(fs.readlinkSync(linkPath)) === path.resolve(target)) return;
       fs.unlinkSync(linkPath);
-    } else if (stat.isDirectory()) {
+    } else {
+      // real dir, plain file, or anything else occupying the link path
       fs.rmSync(linkPath, { recursive: true, force: true });
     }
   } catch (_) {}
+  fs.mkdirSync(path.dirname(linkPath), { recursive: true });
   const type = process.platform === 'win32' ? 'junction' : 'dir';
   fs.symlinkSync(target, linkPath, type);
 }
@@ -148,7 +222,12 @@ function computeFileHash(filePath) {
 }
 
 function computeSkillHash(skillDir) {
-  if (!fs.existsSync(skillDir)) return null;
+  // statSync (not lstat) so symlinked dirs hash their contents; plain files → null
+  try {
+    if (!fs.statSync(skillDir).isDirectory()) return null;
+  } catch (_) {
+    return null;
+  }
   const hash = crypto.createHash('sha256');
   const files = walkDir(skillDir, skillDir);
   for (const relPath of files) {
@@ -223,19 +302,54 @@ function getSkillDescription(skillDir) {
   const skillMd = path.join(skillDir, 'SKILL.md');
   if (!fs.existsSync(skillMd)) return '';
   const content = fs.readFileSync(skillMd, 'utf8');
-  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!frontmatterMatch) return '';
   const fm = frontmatterMatch[1];
-  const singleLine = fm.match(/^description:\s*(.+)$/m);
-  if (singleLine) return singleLine[1].trim();
-  const multiLine = fm.match(/^description:\s*>\n((?:\s+.+\n?)+)/m);
+  const singleLine = fm.match(/^description:\s*(\S.*)$/m);
+  if (singleLine && !/^[>|]/.test(singleLine[1])) return singleLine[1].trim();
+  const multiLine = fm.match(/^description:\s*[>|][->+]?\r?\n((?:[ \t]+.*\r?\n?)+)/m);
   if (multiLine) {
     return multiLine[1].replace(/\s+/g, ' ').trim();
   }
   return '';
 }
 
-// Copies a skill to ~/.agents/<name> and creates/updates the symlink at ~/.claude/skills/<name>.
+// Per-skill version from SKILL.md frontmatter (`version: x.y.z`).
+// Versions are the human-readable label; content hashes remain the
+// update-detection source of truth (scripts/check-versions.cjs keeps them in sync).
+function getSkillVersion(skillDir) {
+  const skillMd = path.join(skillDir, 'SKILL.md');
+  if (!fs.existsSync(skillMd)) return null;
+  const content = fs.readFileSync(skillMd, 'utf8');
+  const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!frontmatterMatch) return null;
+  const m = frontmatterMatch[1].match(/^version:\s*(\S+)\s*$/m);
+  return m ? m[1] : null;
+}
+
+// Version of the currently installed copy of a skill (agents dir, falling
+// back to the legacy skills dir for pre-migration installs).
+function getInstalledSkillVersion(name) {
+  const agentsDir = path.join(AGENTS_DIR, name);
+  if (fs.existsSync(agentsDir)) return getSkillVersion(agentsDir);
+  return getSkillVersion(path.join(SKILLS_DIR, name));
+}
+
+// Per-hook version from a `// @version x.y.z` comment near the top.
+function getHookVersion(filePath) {
+  if (!fs.existsSync(filePath)) return null;
+  const m = fs.readFileSync(filePath, 'utf8').match(/^\/\/ @version\s+(\S+)\s*$/m);
+  return m ? m[1] : null;
+}
+
+// "name (1.0.0 → 1.1.0)" for updates, "name (v1.1.0)" for fresh installs.
+function withVersion(name, oldV, newV) {
+  if (oldV && newV && oldV !== newV) return name + ' (' + oldV + ' → ' + newV + ')';
+  if (newV) return name + ' (v' + newV + ')';
+  return name;
+}
+
+// Copies a skill to ~/.agents/skills/<name> and creates/updates the symlink at ~/.claude/skills/<name>.
 // If a real (non-symlink) directory already exists at the skills path, it is removed first.
 function installSkillFiles(name) {
   const agentsSkillDir = path.join(AGENTS_DIR, name);
@@ -374,7 +488,10 @@ async function main() {
         changed = true;
       }
     }
-    if (changed && !DRY_RUN) fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums0, null, 2));
+    if (changed && !DRY_RUN) {
+      fs.mkdirSync(CLAUDE_DIR, { recursive: true });
+      fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums0, null, 2));
+    }
   }
 
   // 1. Scan package skills
@@ -432,7 +549,7 @@ async function main() {
       installedDir = agentsSkillDir;
     } else {
       const legacyDir = path.join(SKILLS_DIR, name);
-      if (fs.existsSync(legacyDir) && !isSymlink(legacyDir)) {
+      if (isRealDir(legacyDir)) {
         installedDir = legacyDir; // old-style install, will be migrated on next write
       }
     }
@@ -522,41 +639,51 @@ async function main() {
     fs.mkdirSync(AGENTS_DIR, { recursive: true });
     fs.mkdirSync(SKILLS_DIR, { recursive: true });
     const newChecksums = Object.assign({}, storedChecksums);
-    const updated = [];
-    const mergeNeeded = [];
+    const updated = [];            // display labels with version transitions
+    const mergeNeeded = [];        // plain names (used in merge instructions)
+    const mergeNeededLabels = [];  // display labels with version transitions
 
     for (const name of skillNames) {
+      const newV = getSkillVersion(path.join(PACKAGE_SKILLS_DIR, name));
       if (modifiedSkills.includes(name)) {
         // Backup local version, install new version
+        const oldV = getInstalledSkillVersion(name);
         backupSkill(name);
         installSkillFiles(name);
         newChecksums[name] = packageHashes[name];
         mergeNeeded.push(name);
+        mergeNeededLabels.push(withVersion(name, oldV, newV));
         continue;
       }
       if (!needsUpdate.includes(name) && fs.existsSync(path.join(AGENTS_DIR, name))) continue;
+      const oldV = getInstalledSkillVersion(name);
       installSkillFiles(name);
       newChecksums[name] = packageHashes[name];
-      updated.push(name);
+      updated.push(withVersion(name, oldV, newV));
     }
 
     // Install hooks
     fs.mkdirSync(HOOKS_DIR, { recursive: true });
     const updatedHooks = [];
     const mergeNeededHooks = [];
+    const mergeNeededHookLabels = [];
 
     for (const filename of hookFilenames) {
+      const newV = getHookVersion(path.join(PACKAGE_HOOKS_DIR, filename));
       if (modifiedHooks.includes(filename)) {
+        const oldV = getHookVersion(path.join(HOOKS_DIR, filename));
         backupHook(filename);
         fs.copyFileSync(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
         newChecksums['hook:' + filename] = packageHookHashes[filename];
         mergeNeededHooks.push(filename);
+        mergeNeededHookLabels.push(withVersion(filename, oldV, newV));
         continue;
       }
       if (!hooksNeedingUpdate.includes(filename) && fs.existsSync(path.join(HOOKS_DIR, filename))) continue;
+      const oldV = getHookVersion(path.join(HOOKS_DIR, filename));
       fs.copyFileSync(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
       newChecksums['hook:' + filename] = packageHookHashes[filename];
-      updatedHooks.push(filename);
+      updatedHooks.push(withVersion(filename, oldV, newV));
     }
 
     setupRepoSearchNudgeHook();
@@ -578,7 +705,7 @@ async function main() {
     if (mergeNeeded.length > 0) {
       const backupPath = BACKUP_DIR.replace(HOME, '~');
       msgParts.push(
-        'estack: updated ' + mergeNeeded.join(', ') +
+        'estack: updated ' + mergeNeededLabels.join(', ') +
         ' (local changes backed up to ' + backupPath + ')'
       );
       output.additionalContext =
@@ -595,7 +722,7 @@ async function main() {
     if (mergeNeededHooks.length > 0) {
       const backupPath = BACKUP_DIR.replace(HOME, '~');
       msgParts.push(
-        'estack: updated hooks ' + mergeNeededHooks.join(', ') +
+        'estack: updated hooks ' + mergeNeededHookLabels.join(', ') +
         ' (local changes backed up to ' + backupPath + '/hooks/)'
       );
       const existingContext = output.additionalContext ? output.additionalContext + ' ' : '';
@@ -694,16 +821,18 @@ async function main() {
       if (DRY_RUN) console.log('  [dry run] Up to date (no change): ' + name);
       continue;
     }
-    const skillsLegacyDir = path.join(SKILLS_DIR, name);
     const isUpdate = fs.existsSync(path.join(AGENTS_DIR, name)) ||
-                     (fs.existsSync(skillsLegacyDir) && !isSymlink(skillsLegacyDir));
+                     isRealDir(path.join(SKILLS_DIR, name));
+    const label = withVersion(name,
+      isUpdate ? getInstalledSkillVersion(name) : null,
+      getSkillVersion(path.join(PACKAGE_SKILLS_DIR, name)));
     if (!DRY_RUN) installSkillFiles(name);
     newChecksums[name] = packageHashes[name];
     installedCount++;
     if (DRY_RUN) {
-      console.log('  [dry run] Would ' + (isUpdate ? 'update ' : 'install ') + name);
+      console.log('  [dry run] Would ' + (isUpdate ? 'update ' : 'install ') + label);
     } else {
-      console.log('  Installed ' + name);
+      console.log('  Installed ' + label);
     }
   }
 
@@ -732,13 +861,16 @@ async function main() {
       continue;
     }
     const isHookUpdate = fs.existsSync(path.join(HOOKS_DIR, filename));
+    const hookLabel = withVersion(filename,
+      isHookUpdate ? getHookVersion(path.join(HOOKS_DIR, filename)) : null,
+      getHookVersion(path.join(PACKAGE_HOOKS_DIR, filename)));
     if (!DRY_RUN) fs.copyFileSync(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
     newChecksums['hook:' + filename] = packageHookHashes[filename];
     installedHookCount++;
     if (DRY_RUN) {
-      console.log('  [dry run] Would ' + (isHookUpdate ? 'update hook ' : 'install hook ') + filename);
+      console.log('  [dry run] Would ' + (isHookUpdate ? 'update hook ' : 'install hook ') + hookLabel);
     } else {
-      console.log('  Installed hook ' + filename);
+      console.log('  Installed hook ' + hookLabel);
     }
   }
 
@@ -753,13 +885,13 @@ async function main() {
   // 11. Summary output
   if (DRY_RUN) {
     console.log('\n[dry run] No files were changed. Run with --install to apply.\n');
-    console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' would be installed/updated in ~/.agents/ (linked from ~/.claude/skills/)');
+    console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' would be installed/updated in ~/.agents/skills/ (linked from ~/.claude/skills/)');
     if (installedHookCount > 0) {
       console.log('  ' + installedHookCount + ' hook' + (installedHookCount !== 1 ? 's' : '') + ' would be installed/updated in ~/.claude/hooks/');
     }
   } else {
     console.log('\nestack installed successfully!\n');
-    console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' installed to ~/.agents/ (symlinked from ~/.claude/skills/)');
+    console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' installed to ~/.agents/skills/ (symlinked from ~/.claude/skills/)');
     if (installedHookCount > 0) {
       console.log('  ' + installedHookCount + ' hook' + (installedHookCount !== 1 ? 's' : '') + ' installed to ~/.claude/hooks/');
     }
@@ -769,7 +901,8 @@ async function main() {
 
   for (const name of skillNames) {
     const desc = getSkillDescription(path.join(PACKAGE_SKILLS_DIR, name));
-    console.log('  /' + name + (desc ? ' — ' + desc : ''));
+    const ver = getSkillVersion(path.join(PACKAGE_SKILLS_DIR, name));
+    console.log('  /' + name + (ver ? ' v' + ver : '') + (desc ? ' — ' + desc : ''));
   }
 
   if (mergedSkills.length > 0) {

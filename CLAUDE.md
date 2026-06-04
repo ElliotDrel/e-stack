@@ -2,7 +2,7 @@
 
 ## What This Repo Is
 
-**E-Stack** (`elliot-stack` on npm) is an open-source collection of Claude Code skills by Elliot Drel. It's a curated skill pack — users run `npx elliot-stack@latest` to install all skills to `~/.agents/` (symlinked into `~/.claude/skills/`). Skills cover negotiation (Chris Voss), customer discovery, GitHub issue tracking, and repo search. The repo is the source of truth; npm is the distribution channel.
+**E-Stack** (`elliot-stack` on npm) is an open-source collection of Claude Code skills by Elliot Drel. It's a curated skill pack — users run `npx elliot-stack@latest` to install all skills to `~/.agents/skills/` (symlinked into `~/.claude/skills/`). Skills cover negotiation (Chris Voss), customer discovery, GitHub issue tracking, and repo search. The repo is the source of truth; npm is the distribution channel.
 
 ---
 
@@ -26,11 +26,11 @@ skills/<skill-name>/     # Each skill is a subfolder
   scripts/               # Optional supporting shell/node scripts
   references/            # Optional reference markdown files
   steps/                 # Optional step-by-step guides
-bin/install.cjs          # Installer: copies skills to ~/.agents/, symlinks into ~/.claude/skills/
+bin/install.cjs          # Installer: copies skills to ~/.agents/skills/, symlinks into ~/.claude/skills/
 docs/                    # Reference docs (publishing, skill authoring)
 ```
 
-- **Distribution:** `npx elliot-stack@latest` installs skills to `~/.agents/` and symlinks them into `~/.claude/skills/`
+- **Distribution:** `npx elliot-stack@latest` installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/skills/`
 - **Local preview / sync:** `node bin/install.cjs` run from the repo defaults to a **dry run** — it previews what would change in `~/.claude/` and writes nothing. Add `--install` to actually sync repo skills to the live location.
 - **Skills in the pack:** `estack-better-title`, `estack-chris-voss`, `estack-customer-discovery`, `estack-github-issue-tracker`, `estack-repo-search`
 
