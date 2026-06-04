@@ -142,6 +142,10 @@ echo "=== Version bump check (vs last release tag) ==="
 node scripts/check-versions.cjs || true
 
 echo ""
+echo "=== Docs sync check (README.md / CLAUDE.md lists) ==="
+node scripts/check-docs.cjs || true
+
+echo ""
 echo "=== Git status ==="
 git status --short
 echo ""

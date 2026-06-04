@@ -20,6 +20,17 @@ description: (example) ...
 
 ---
 
+### Doc Listings (README.md + CLAUDE.md)
+
+Every skill and hook must be listed in two places:
+
+- **README.md** — a row in the Skills table (`| **Title** | \`/estack-name\` | description |`) or the Hooks table
+- **CLAUDE.md** — the "Skills in the pack" / "Hooks in the pack" lines
+
+**Enforcement:** `node scripts/check-docs.cjs` verifies both files against `skills/` and `hooks/`, failing on missing entries AND stale ones (renamed/removed items still listed). The publish workflow (`.github/workflows/publish.yml`) runs it as a hard gate, so the docs cannot drift past a release. It only checks names — keep descriptions accurate manually when a skill's purpose changes.
+
+---
+
 ### Skill Feedback Section
 
 Every skill should include a `## Skill Feedback` section at the bottom. This is managed via a shared template — do not edit it manually in individual skill files.

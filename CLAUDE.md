@@ -30,7 +30,7 @@ skills/<skill-name>/     # Each skill is a subfolder
   steps/                 # Optional step-by-step guides
 hooks/<name>.js          # Claude Code hooks (flat, no subfolders) — installed to ~/.claude/hooks/
 bin/install.cjs          # Installer: copies skills to ~/.agents/skills/, symlinks into ~/.claude/skills/
-scripts/                 # Repo maintenance scripts (check-versions, update-skill-feedback, install tests)
+scripts/                 # Repo maintenance scripts (check-versions, check-docs, update-skill-feedback, install tests)
 docs/                    # Reference docs (publishing, skill authoring, hook authoring)
 ```
 

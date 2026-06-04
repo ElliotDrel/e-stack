@@ -43,5 +43,8 @@ jobs:
       - name: Verify per-skill versions bumped
         run: node scripts/check-versions.cjs
 
+      - name: Verify README and CLAUDE.md list every skill and hook
+        run: node scripts/check-docs.cjs
+
       - name: Publish to npm
         run: npm publish --access public

@@ -18,7 +18,7 @@ Use `npm version minor` or `npm version major` for non-patch bumps.
 1. `npm version patch` updates `package.json`, makes a commit (e.g. `1.0.16`), and creates a matching `v1.0.16` tag locally.
 2. `git push --follow-tags` pushes both the commit (to `main`) and the tag.
 3. The tag push triggers the workflow.
-4. Workflow verifies the tag matches `package.json` version, verifies per-skill/hook versions were bumped for any content that changed since the previous release (`node scripts/check-versions.cjs` — run it locally with `--fix` to auto-bump before tagging), then publishes to npm using OIDC Trusted Publishing.
+4. Workflow verifies the tag matches `package.json` version, verifies per-skill/hook versions were bumped for any content that changed since the previous release (`node scripts/check-versions.cjs` — run it locally with `--fix` to auto-bump before tagging), verifies README.md and CLAUDE.md list every skill and hook (`node scripts/check-docs.cjs`), then publishes to npm using OIDC Trusted Publishing.
 
 Regular commits to `main` (no tag) do NOT trigger a publish.
 

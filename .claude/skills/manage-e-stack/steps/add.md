@@ -32,7 +32,20 @@ node scripts/update-skill-feedback.cjs
 
 Every skill must have this section. The script writes it from `scripts/skill-feedback-template.md` — do not write or edit the feedback section manually.
 
-## 3. Show the diff (if migrating from an existing skill — optional)
+## 3. List the skill in the docs
+
+Add the new skill to both doc lists — the release gate (`node scripts/check-docs.cjs`) fails if either is missing it:
+
+1. **README.md** — add a row to the Skills table (alphabetical order): `| **<Title>** | \`/estack-<skill-name>\` | <one-line description> |`
+2. **CLAUDE.md** — add `estack-<skill-name>` to the "Skills in the pack" line (alphabetical order)
+
+Verify:
+
+```bash
+node scripts/check-docs.cjs
+```
+
+## 4. Show the diff (if migrating from an existing skill — optional)
 
 If the skill already exists somewhere (e.g. `~/.agents/skills/` or `~/.claude/skills/`), diff it:
 
@@ -42,7 +55,7 @@ diff -ru ~/.agents/skills/<skill-name> skills/estack-<skill-name>
 
 Show the output and ask for confirmation before proceeding.
 
-## 4. Delete the old copy (if migrating)
+## 5. Delete the old copy (if migrating)
 
 Remove both the real files and the symlink (if either exists):
 
@@ -51,7 +64,7 @@ rm -rf ~/.agents/skills/<old-skill-name>
 rm -rf ~/.claude/skills/<old-skill-name>
 ```
 
-## 5. Run the installer
+## 6. Run the installer
 
 ```bash
 node bin/install.cjs            # dry run — preview what would change, writes nothing
@@ -60,7 +73,7 @@ node bin/install.cjs --install  # actually copy skills to ~/.agents/skills/ + sy
 
 Run from the repo, the installer **dry-runs by default** — preview first, then pass `--install` to apply. The `--install` run copies all skills from `skills/` to `~/.agents/skills/` and symlinks each into `~/.claude/skills/`. Confirm the new skill appears in the output.
 
-## 6. Confirm with the user before committing
+## 7. Confirm with the user before committing
 
 NEVER commit or push without explicit confirmation from the user. Before touching git:
 
@@ -71,13 +84,13 @@ NEVER commit or push without explicit confirmation from the user. Before touchin
 
 ```bash
 git pull --rebase origin main
-git add skills/estack-<skill-name>/
+git add skills/estack-<skill-name>/ README.md CLAUDE.md
 git commit -m "add <skill-name> skill"
 git push
 ```
 
 Committing alone does NOT publish. Publishing is triggered by pushing a `v*` git tag (see `steps/publish.md`).
 
-## 7. Route to publish (optional)
+## 8. Route to publish (optional)
 
 If the user wants this change released to npm, follow `steps/publish.md`.

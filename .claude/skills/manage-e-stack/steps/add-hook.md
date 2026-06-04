@@ -33,6 +33,13 @@ Then register the hook in `bin/install.cjs`:
 
 See `hooks/repo-search-nudge.js` and `setupRepoSearchNudgeHook()` for the canonical example. See also `docs/hook-authoring.md` for deeper guidance.
 
+**For a new hook, list it in the docs** — the release gate (`node scripts/check-docs.cjs`) fails if either is missing it:
+
+1. **README.md** — add a row to the Hooks table: `| **<name>** | <one-line purpose> |`
+2. **CLAUDE.md** — add `<name>.js` to the "Hooks in the pack" line
+
+Verify with `node scripts/check-docs.cjs`.
+
 ## Phase 3: Review — APPROVAL GATE
 
 Show the user what will change:

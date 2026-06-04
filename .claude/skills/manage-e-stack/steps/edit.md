@@ -22,6 +22,7 @@ Edit the skill files in `skills/estack-*/` as needed. Conventions are in the mai
 - `name` field matches the folder name
 - `description` starts with `(<short-name>)`
 - **Bump the skill's `version:` field** as part of the edit — patch (`1.0.0` → `1.0.1`) for fixes/tweaks, minor (`1.0.0` → `1.1.0`) for new capabilities, major for rewrites/breaking changes. Every content change needs a bump; `scripts/check-versions.cjs` blocks the release otherwise.
+- **If the edit changes what the skill is or does**, update its row in the README.md Skills table and (for renames) the CLAUDE.md "Skills in the pack" line. `node scripts/check-docs.cjs` catches missing/stale names but not stale descriptions — keep those honest manually.
 - Do NOT bump `package.json` version as part of an edit — the PACKAGE version bumps during release (`npm version`), not while editing skills. Only the per-SKILL version bumps here.
 
 ### Renaming or removing a skill
@@ -39,6 +40,8 @@ const DEPRECATED_SKILLS = [
 
 On the next install (any mode), the installer deletes each listed folder from both `~/.agents/skills/` and `~/.claude/skills/` (real dir or symlink) and drops its checksum entry. Leave entries in the list permanently — they're cheap and protect users who update infrequently.
 
+A rename/remove also requires updating the docs: fix the skill's row in the README.md Skills table and the CLAUDE.md "Skills in the pack" line, then verify with `node scripts/check-docs.cjs` — it flags both missing and stale entries, and the publish workflow runs it as a hard gate.
+
 ## Phase 3: Review — APPROVAL GATE
 
 After all edits are complete, show the user what will change:
@@ -47,7 +50,7 @@ After all edits are complete, show the user what will change:
    ```bash
    diff -ru ~/.agents/skills/<name> skills/<name>
    ```
-2. Re-run preflight to verify frontmatter is valid and version bumps are in place (it runs `scripts/check-versions.cjs` — fix any `FAIL` lines, or run `node scripts/check-versions.cjs --fix` to auto-bump):
+2. Re-run preflight to verify frontmatter is valid, version bumps are in place, and the docs are in sync (it runs `scripts/check-versions.cjs` and `scripts/check-docs.cjs` — fix any `FAIL` lines, or run `node scripts/check-versions.cjs --fix` to auto-bump versions):
    ```bash
    bash "${CLAUDE_SKILL_DIR}/scripts/preflight.sh"
    ```
