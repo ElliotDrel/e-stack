@@ -13,20 +13,21 @@ The folder MUST be prefixed with `estack-`. The `SKILL.md` needs frontmatter wit
 ```markdown
 ---
 name: estack-<skill-name>
+version: 1.0.0
 description: (<skill-name>) <one-line description — this shows up in the skill list>
 ---
 ```
 
-Both the folder and the `name` field use the `estack-` prefix. The `description` MUST start with `(<skill-name>)` (the short name without the prefix). This namespaces the skill correctly when installed to `~/.agents/` (symlinked into `~/.claude/skills/`).
+Both the folder and the `name` field use the `estack-` prefix. The `description` MUST start with `(<skill-name>)` (the short name without the prefix). This namespaces the skill correctly when installed to `~/.agents/skills/` (symlinked into `~/.claude/skills/`). New skills always start at `version: 1.0.0` — this per-skill version is independent of the package version and gets bumped whenever the skill is later edited (see `steps/edit.md`).
 
 Add any supporting files (references, steps, scripts) in subfolders as needed.
 
 ## 2. Show the diff (if migrating from an existing skill)
 
-If the skill already exists somewhere (e.g. `~/.agents/` or `~/.claude/skills/`), diff it:
+If the skill already exists somewhere (e.g. `~/.agents/skills/` or `~/.claude/skills/`), diff it:
 
 ```bash
-diff -ru ~/.agents/<skill-name> skills/estack-<skill-name>
+diff -ru ~/.agents/skills/<skill-name> skills/estack-<skill-name>
 ```
 
 Show the output and ask for confirmation before proceeding.
@@ -36,7 +37,7 @@ Show the output and ask for confirmation before proceeding.
 Remove both the real files and the symlink (if either exists):
 
 ```bash
-rm -rf ~/.agents/<old-skill-name>
+rm -rf ~/.agents/skills/<old-skill-name>
 rm -rf ~/.claude/skills/<old-skill-name>
 ```
 
@@ -44,10 +45,10 @@ rm -rf ~/.claude/skills/<old-skill-name>
 
 ```bash
 node bin/install.cjs            # dry run — preview what would change, writes nothing
-node bin/install.cjs --install  # actually copy skills to ~/.claude/skills/
+node bin/install.cjs --install  # actually copy skills to ~/.agents/skills/ + symlink into ~/.claude/skills/
 ```
 
-Run from the repo, the installer **dry-runs by default** — preview first, then pass `--install` to apply. The `--install` run copies all skills from `skills/` to `~/.claude/skills/`. Confirm the new skill appears in the output.
+Run from the repo, the installer **dry-runs by default** — preview first, then pass `--install` to apply. The `--install` run copies all skills from `skills/` to `~/.agents/skills/` and symlinks each into `~/.claude/skills/`. Confirm the new skill appears in the output.
 
 ## 5. Confirm with the user before committing
 

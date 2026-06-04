@@ -21,7 +21,8 @@ Edit the skill files in `skills/estack-*/` as needed. Conventions are in the mai
 - Skill folders prefixed with `estack-`
 - `name` field matches the folder name
 - `description` starts with `(<short-name>)`
-- Do NOT bump `package.json` version as part of an edit — version bumps happen during release (`npm version`), not while editing skills
+- **Bump the skill's `version:` field** as part of the edit — patch (`1.0.0` → `1.0.1`) for fixes/tweaks, minor (`1.0.0` → `1.1.0`) for new capabilities, major for rewrites/breaking changes. Every content change needs a bump; `scripts/check-versions.cjs` blocks the release otherwise.
+- Do NOT bump `package.json` version as part of an edit — the PACKAGE version bumps during release (`npm version`), not while editing skills. Only the per-SKILL version bumps here.
 
 ### Renaming or removing a skill
 
@@ -44,13 +45,13 @@ After all edits are complete, show the user what will change:
 
 1. Run the diff for each changed skill:
    ```bash
-   diff -ru ~/.agents/<name> skills/<name>
+   diff -ru ~/.agents/skills/<name> skills/<name>
    ```
-2. Re-run preflight to verify frontmatter is valid:
+2. Re-run preflight to verify frontmatter is valid and version bumps are in place (it runs `scripts/check-versions.cjs` — fix any `FAIL` lines, or run `node scripts/check-versions.cjs --fix` to auto-bump):
    ```bash
    bash "${CLAUDE_SKILL_DIR}/scripts/preflight.sh"
    ```
-3. Ask: **"Ready to run the installer? This will update your local skills in ~/.agents/ and ~/.claude/skills/."**
+3. Ask: **"Ready to run the installer? This will update your local skills in ~/.agents/skills/ and ~/.claude/skills/."**
 
 Only after they confirm, run the installer with `--install` (run from the repo it dry-runs by default and writes nothing):
 ```bash
