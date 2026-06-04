@@ -1,5 +1,25 @@
 ## Skill Authoring
 
+### Per-Skill Versioning
+
+Every skill carries its own semver in SKILL.md frontmatter, independent of the package version in `package.json`:
+
+```yaml
+---
+name: estack-example
+version: 1.2.0
+description: (example) ...
+---
+```
+
+- **New skills start at `1.0.0`.**
+- **Bump on every content change** to the skill folder (SKILL.md, scripts, references, steps): patch for fixes/tweaks, minor for new capabilities, major for rewrites or breaking changes.
+- Hooks use a `// @version x.y.z` comment near the top of the file instead.
+- **Enforcement:** `node scripts/check-versions.cjs` diffs every skill/hook against the last `v*` release tag and fails if content changed without a version bump. Run `--fix` to auto-patch-bump stale items. The publish workflow (`.github/workflows/publish.yml`) runs this check as a hard gate, so a release cannot ship a content change with a stale version.
+- **Division of labor:** the installer detects updates via content hashes (deterministic, can't miss a change); versions are the trustworthy human-readable label — the installer shows `name (1.0.0 → 1.1.0)` transitions in its update messages, and the version travels with the installed copy so any machine can self-report what it has.
+
+---
+
 ### Skill Feedback Section
 
 Every skill should include a `## Skill Feedback` section at the bottom. This is managed via a shared template — do not edit it manually in individual skill files.

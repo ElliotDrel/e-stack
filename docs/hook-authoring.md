@@ -6,6 +6,7 @@ A hook is a Node script in `hooks/<name>.js` that runs in response to a Claude C
 
 ```js
 #!/usr/bin/env node
+// @version 1.0.0
 // One-line purpose.
 // Tunables at the top — change these to adjust behavior.
 
@@ -38,6 +39,7 @@ Key rules:
 - Stdin is JSON: `{ session_id, tool_name, tool_input, tool_response }` (PostToolUse) — fields vary by event type
 - Always wrap the body in try/catch and exit 0 — a crash must NEVER break the underlying tool call
 - Tunables (constants users might want to change) go at the top
+- A `// @version x.y.z` comment near the top — new hooks start at `1.0.0`; bump it on every edit (patch for fixes, minor for new behavior). `node scripts/check-versions.cjs` blocks the release if a hook's content changed since the last tag without a bump.
 
 ### Output contract
 
