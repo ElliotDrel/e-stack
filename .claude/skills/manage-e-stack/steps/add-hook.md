@@ -1,6 +1,6 @@
 # Adding or Editing an E-Stack Hook
 
-Hooks are single Node scripts in `hooks/` that the installer copies to `~/.claude/hooks/` and registers in `~/.claude/settings.json`. Follow each phase in order. Do not skip phases.
+Hooks are single Node scripts in `hooks/` that the installer copies to `~/.claude/hooks/` and registers in `~/.claude/settings.json`. Hooks are Claude Code-only; do not install them into `~/.agents/` or try to expose them through skill symlinks. Follow each phase in order. Do not skip phases.
 
 ## Phase 1: Pre-flight Diagnostics
 

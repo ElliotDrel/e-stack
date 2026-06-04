@@ -32,10 +32,14 @@ This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/sk
 
 Hooks install to `~/.claude/hooks/` and are auto-registered in your `~/.claude/settings.json`.
 
+Important: hooks are a Claude Code feature. Skills are stored in `~/.agents/skills/`
+and linked into Claude, but hook scripts and hook registration can only be installed
+in Claude's config (`~/.claude/hooks/` and `~/.claude/settings.json`).
+
 ## How it works
 
 - Skills install to `~/.agents/skills/estack-*/` (symlinked from `~/.claude/skills/estack-*/`)
-- Hooks install to `~/.claude/hooks/` and are registered in `~/.claude/settings.json`
+- Hooks are Claude Code-only: they install to `~/.claude/hooks/` and are registered in `~/.claude/settings.json`
 - A `SessionStart` hook auto-updates both each time you open Claude Code
 - If you've made local edits to a skill or hook, the installer detects the conflict and lets you choose: overwrite, skip, or merge
 - Every skill carries its own semver (`version:` in SKILL.md frontmatter; hooks use a `// @version` comment), independent of the package version — update messages show exactly what moved, e.g. `estack-chris-voss (1.0.0 → 1.1.0)`. Under the hood, updates are detected by content hash, so a change can never be missed; a release-time check (`scripts/check-versions.cjs`) guarantees every content change ships with a version bump.

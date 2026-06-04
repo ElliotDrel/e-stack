@@ -1,6 +1,6 @@
 ## Hook Authoring
 
-A hook is a Node script in `hooks/<name>.js` that runs in response to a Claude Code lifecycle event (PostToolUse, PreToolUse, SessionStart, etc.). It reads a JSON payload from stdin, optionally writes JSON to stdout to inject context back to the model, and exits 0. The installer copies it to `~/.claude/hooks/<name>.js` and registers it in `~/.claude/settings.json`.
+A hook is a Node script in `hooks/<name>.js` that runs in response to a Claude Code lifecycle event (PostToolUse, PreToolUse, SessionStart, etc.). It reads a JSON payload from stdin, optionally writes JSON to stdout to inject context back to the model, and exits 0. Hooks are Claude Code-only: unlike skills, they cannot be installed into `~/.agents/` and discovered from there. The installer must copy each hook to `~/.claude/hooks/<name>.js` and register it in `~/.claude/settings.json`.
 
 ### Hook script shape
 
