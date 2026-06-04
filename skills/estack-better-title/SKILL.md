@@ -1,6 +1,6 @@
 ---
 name: estack-better-title
-version: 1.0.1
+version: 1.0.2
 description: (better-title) Suggest better chat session titles and rename the session
 disable-model-invocation: true
 allowed-tools: Bash, AskUserQuestion

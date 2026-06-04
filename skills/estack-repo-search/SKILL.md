@@ -1,6 +1,6 @@
 ---
 name: estack-repo-search
-version: 1.0.1
+version: 1.0.2
 description: >-
   (repo-search) Clone and search external GitHub repositories to answer questions about their
   code. Use this skill whenever the user references a repo you don't have local
