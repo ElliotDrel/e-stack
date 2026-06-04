@@ -108,6 +108,10 @@ for skill in skills/estack-*/; do
     echo "FAIL: MISSING description field in $name"
     fm_errors=$((fm_errors + 1))
   fi
+  if ! grep -q "^version:" "$skillmd"; then
+    echo "FAIL: MISSING version field in $name"
+    fm_errors=$((fm_errors + 1))
+  fi
   short_name="${name#estack-}"
   desc_line=$(grep -A1 "^description:" "$skillmd" | tail -1)
   if ! echo "$desc_line" | grep -q "($short_name)"; then
@@ -117,9 +121,20 @@ for skill in skills/estack-*/; do
     fi
   fi
 done
+for hook in hooks/*.js; do
+  [ -f "$hook" ] || continue
+  if ! grep -q "^// @version" "$hook"; then
+    echo "FAIL: MISSING // @version comment in $(basename "$hook")"
+    fm_errors=$((fm_errors + 1))
+  fi
+done
 if [ "$fm_errors" -eq 0 ]; then
   echo "(all valid)"
 fi
+
+echo ""
+echo "=== Version bump check (vs last release tag) ==="
+node scripts/check-versions.cjs || true
 
 echo ""
 echo "=== Git status ==="

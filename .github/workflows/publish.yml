@@ -22,6 +22,8 @@ jobs:
         uses: actions/checkout@v6
         with:
           persist-credentials: false
+          # Full history + tags so check-versions.cjs can diff against the previous release
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -37,6 +39,9 @@ jobs:
             echo "Tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION"
             exit 1
           fi
+
+      - name: Verify per-skill versions bumped
+        run: node scripts/check-versions.cjs
 
       - name: Publish to npm
         run: npm publish --access public

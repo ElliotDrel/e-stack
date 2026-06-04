@@ -23,6 +23,7 @@ Required shape:
 - Optionally write a JSON object to stdout to inject `additionalContext` back to the model
 - Wrap the body in `try { ... } catch { /* never break the tool */ }` and exit 0 — a hook crash MUST NOT break the underlying tool call
 - Tunables (skill name, thresholds, timeouts) go as `const` at the top
+- A `// @version x.y.z` comment near the top (new hooks start at `1.0.0`; **bump it on every edit** — `scripts/check-versions.cjs` blocks the release otherwise)
 
 Then register the hook in `bin/install.cjs`:
 - Add a `setup<Name>Hook(dryRun)` function modeled on the existing `setupStartupHook(dryRun)` and `setupRepoSearchNudgeHook(dryRun)`

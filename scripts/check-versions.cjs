@@ -64,12 +64,33 @@ function parseHookVersion(content) {
   return m ? m[1] : null;
 }
 
+function isValidSemver(version) {
+  return /^\d+\.\d+\.\d+$/.test(String(version));
+}
+
+// Returns -1 / 0 / 1 comparing a to b numerically per semver part.
+function compareSemver(a, b) {
+  const pa = String(a).split('.').map(Number);
+  const pb = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) < (pb[i] || 0)) return -1;
+    if ((pa[i] || 0) > (pb[i] || 0)) return 1;
+  }
+  return 0;
+}
+
 function bumpPatch(version) {
+  if (!isValidSemver(version)) return null;
   const parts = String(version).split('.').map((n) => parseInt(n, 10));
-  while (parts.length < 3) parts.push(0);
-  if (parts.some(isNaN)) return null;
   parts[2] += 1;
   return parts.join('.');
+}
+
+// True if the path (file or dir) has untracked files — `git diff <ref>` can't
+// see those, so without this a brand-new script inside a skill folder would
+// slip past the changed-content check on local runs.
+function hasUntracked(relPath) {
+  return git(['ls-files', '--others', '--exclude-standard', '--', relPath]).length > 0;
 }
 
 function writeSkillVersion(file, newVersion) {
@@ -103,23 +124,49 @@ if (!BASE) {
   }
 }
 
+// Validate the base ref exists before diffing against it (clear error instead
+// of a git stack trace on e.g. a typo'd --base value).
+if (!gitOk(['rev-parse', '--verify', '--quiet', BASE + '^{commit}'])) {
+  console.error('check-versions: base ref "' + BASE + '" does not resolve to a commit.');
+  process.exit(1);
+}
+
 console.log('check-versions: comparing against ' + BASE + '\n');
 
 let failures = 0;
 let fixed = 0;
 
-function check(label, repoPath, changed, baseVersion, currVersion, fixFn) {
+function check(label, existedAtBase, changed, baseVersion, currVersion, fixFn) {
   if (!currVersion) {
     console.log('  FAIL  ' + label + ' — missing version field entirely');
     failures++;
     return;
   }
-  if (baseVersion === null) {
+  if (!isValidSemver(currVersion)) {
+    console.log('  FAIL  ' + label + ' — version "' + currVersion + '" is not x.y.z semver');
+    failures++;
+    return;
+  }
+  if (!existedAtBase) {
     console.log('  ok    ' + label + ' — new since ' + BASE + ' (v' + currVersion + ')');
     return;
   }
+  if (baseVersion === null) {
+    // Existed at base but had no version field — adding the field counts as the bump.
+    console.log('  ok    ' + label + ' — version field added since ' + BASE + ' (v' + currVersion + ')');
+    return;
+  }
   if (!changed) {
-    console.log('  ok    ' + label + ' — unchanged (v' + currVersion + ')');
+    if (baseVersion !== currVersion) {
+      console.log('  warn  ' + label + ' — version changed (' + baseVersion + ' -> ' + currVersion + ') but content is identical to ' + BASE);
+    } else {
+      console.log('  ok    ' + label + ' — unchanged (v' + currVersion + ')');
+    }
+    return;
+  }
+  if (isValidSemver(baseVersion) && compareSemver(currVersion, baseVersion) < 0) {
+    console.log('  FAIL  ' + label + ' — version went BACKWARD (' + baseVersion + ' -> ' + currVersion + ')');
+    failures++;
     return;
   }
   if (baseVersion !== currVersion) {
@@ -151,10 +198,12 @@ const skillNames = fs.readdirSync(skillsDir, { withFileTypes: true })
 for (const name of skillNames) {
   const relDir = 'skills/' + name;
   const skillMd = path.join(skillsDir, name, 'SKILL.md');
-  const changed = !gitOk(['diff', '--quiet', BASE, '--', relDir]);
-  const baseVersion = parseSkillVersion(gitShow(BASE, relDir + '/SKILL.md'));
+  const changed = !gitOk(['diff', '--quiet', BASE, '--', relDir]) || hasUntracked(relDir);
+  const baseContent = gitShow(BASE, relDir + '/SKILL.md');
+  const existedAtBase = baseContent !== null;
+  const baseVersion = parseSkillVersion(baseContent);
   const currVersion = fs.existsSync(skillMd) ? parseSkillVersion(fs.readFileSync(skillMd, 'utf8')) : null;
-  check(name, relDir, changed, baseVersion, currVersion, (v) => writeSkillVersion(skillMd, v));
+  check(name, existedAtBase, changed, baseVersion, currVersion, (v) => writeSkillVersion(skillMd, v));
 }
 
 // ── Hooks ───────────────────────────────────────────────────────────────────
@@ -168,10 +217,12 @@ if (hookFiles.length > 0) {
   for (const filename of hookFiles) {
     const relFile = 'hooks/' + filename;
     const full = path.join(hooksDir, filename);
-    const changed = !gitOk(['diff', '--quiet', BASE, '--', relFile]);
-    const baseVersion = parseHookVersion(gitShow(BASE, relFile));
+    const changed = !gitOk(['diff', '--quiet', BASE, '--', relFile]) || hasUntracked(relFile);
+    const baseContent = gitShow(BASE, relFile);
+    const existedAtBase = baseContent !== null;
+    const baseVersion = parseHookVersion(baseContent);
     const currVersion = parseHookVersion(fs.readFileSync(full, 'utf8'));
-    check(filename, relFile, changed, baseVersion, currVersion, (v) => writeHookVersion(full, v));
+    check(filename, existedAtBase, changed, baseVersion, currVersion, (v) => writeHookVersion(full, v));
   }
 }
 
