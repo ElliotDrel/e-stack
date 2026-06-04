@@ -11,12 +11,73 @@ const readline = require('readline');
 const HOME = os.homedir();
 const CLAUDE_DIR = path.join(HOME, '.claude');
 const SKILLS_DIR = path.join(CLAUDE_DIR, 'skills');
-const BACKUP_DIR = path.join(CLAUDE_DIR, '.estack-backup');
+const BACKUP_DIR = path.join(HOME, '.estack-backup');
 const CHECKSUMS_FILE = path.join(CLAUDE_DIR, '.estack-checksums.json');
 const SETTINGS_FILE = path.join(CLAUDE_DIR, 'settings.json');
 const PACKAGE_SKILLS_DIR = path.join(__dirname, '..', 'skills');
 const HOOKS_DIR = path.join(CLAUDE_DIR, 'hooks');
 const PACKAGE_HOOKS_DIR = path.join(__dirname, '..', 'hooks');
+
+// ── Migrate backup dir from old location (inside .claude) to user root ──────
+(function migrateBackupDir() {
+  const OLD_BACKUP_DIR = path.join(CLAUDE_DIR, '.estack-backup');
+  if (!fs.existsSync(OLD_BACKUP_DIR)) return;
+  if (fs.existsSync(BACKUP_DIR)) return; // new location already exists, leave both alone
+  const silent = process.argv.includes('--silent');
+  const isDryRun = process.argv.includes('--dry-run') ||
+    (!__dirname.includes('node_modules') && !process.argv.includes('--install'));
+  if (isDryRun) {
+    if (!silent) {
+      process.stderr.write(
+        'estack: [dry run] Would move backup dir from ~/.claude/.estack-backup/ to ~/.estack-backup/\n'
+      );
+    }
+    return;
+  }
+  try {
+    fs.renameSync(OLD_BACKUP_DIR, BACKUP_DIR);
+    if (!silent) {
+      process.stderr.write(
+        'estack: moved backup dir from ~/.claude/.estack-backup/ to ~/.estack-backup/\n'
+      );
+    }
+  } catch (e) {
+    // rename across drives/filesystems — fall back to copy+delete
+    try {
+      copyDirRaw(OLD_BACKUP_DIR, BACKUP_DIR);
+      removeDirRaw(OLD_BACKUP_DIR);
+      if (!silent) {
+        process.stderr.write(
+          'estack: migrated backup dir from ~/.claude/.estack-backup/ to ~/.estack-backup/\n'
+        );
+      }
+    } catch (e2) {
+      process.stderr.write(
+        'estack: WARNING — could not migrate backup dir from ' + OLD_BACKUP_DIR +
+        ' to ' + BACKUP_DIR + ': ' + e2.message + '\n'
+      );
+    }
+  }
+})();
+
+function copyDirRaw(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const s = path.join(src, entry.name);
+    const d = path.join(dest, entry.name);
+    if (entry.isDirectory()) copyDirRaw(s, d);
+    else fs.copyFileSync(s, d);
+  }
+}
+
+function removeDirRaw(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) removeDirRaw(full);
+    else fs.unlinkSync(full);
+  }
+  fs.rmdirSync(dir);
+}
 
 // ── Flags ──────────────────────────────────────────────────────────────────
 const SILENT = process.argv.includes('--silent');
@@ -560,7 +621,7 @@ async function main() {
       if (modifiedAction === 'merge') {
         if (!DRY_RUN) backupSkill(name);
         mergedSkills.push(name);
-        console.log((DRY_RUN ? '  [dry run] Would back up ' : '  Backed up ') + name + ' → ~/.claude/.estack-backup/' + name);
+        console.log((DRY_RUN ? '  [dry run] Would back up ' : '  Backed up ') + name + ' → ~/.estack-backup/' + name);
       }
       // overwrite or merge — fall through to install
     } else if (!needsUpdate.includes(name) && fs.existsSync(path.join(SKILLS_DIR, name))) {
@@ -595,7 +656,7 @@ async function main() {
       if (modifiedAction === 'merge') {
         if (!DRY_RUN) backupHook(filename);
         mergedHooks.push(filename);
-        console.log((DRY_RUN ? '  [dry run] Would back up hook ' : '  Backed up hook ') + filename + ' → ~/.claude/.estack-backup/hooks/' + filename);
+        console.log((DRY_RUN ? '  [dry run] Would back up hook ' : '  Backed up hook ') + filename + ' → ~/.estack-backup/hooks/' + filename);
       }
       // overwrite or merge — fall through to install
     } else if (!hooksNeedingUpdate.includes(filename) && fs.existsSync(path.join(HOOKS_DIR, filename))) {
@@ -647,12 +708,12 @@ async function main() {
   if (mergedSkills.length > 0) {
     console.log('\nLocal changes backed up for: ' + mergedSkills.join(', '));
     console.log('Ask Claude to merge your changes:');
-    console.log('  "Merge my estack changes from ~/.claude/.estack-backup/"');
+    console.log('  "Merge my estack changes from ~/.estack-backup/"');
   }
 
   if (mergedHooks.length > 0) {
     console.log('\nLocal hook changes backed up for: ' + mergedHooks.join(', '));
-    console.log('Backed up to ~/.claude/.estack-backup/hooks/');
+    console.log('Backed up to ~/.estack-backup/hooks/');
   }
 
   if (DRY_RUN) {
