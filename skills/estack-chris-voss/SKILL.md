@@ -1,6 +1,6 @@
 ---
 name: estack-chris-voss
-version: 1.0.1
+version: 1.0.2
 description: >
   (chris-voss) Applies Chris Voss negotiation principles from *Never Split the Difference* to any situation
   where understanding human psychology, persuasion, or influence would improve the output. Use
