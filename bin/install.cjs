@@ -98,6 +98,9 @@ const DEPRECATED_SKILLS = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+const HASH_IGNORE_DIRS = new Set(['__pycache__', '.git', 'node_modules']);
+const HASH_IGNORE_EXTS = new Set(['.pyc', '.pyo']);
+
 function walkDir(dir, base) {
   base = base || dir;
   const entries = fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
@@ -107,8 +110,8 @@ function walkDir(dir, base) {
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      files.push(...walkDir(full, base));
-    } else {
+      if (!HASH_IGNORE_DIRS.has(entry.name)) files.push(...walkDir(full, base));
+    } else if (!HASH_IGNORE_EXTS.has(path.extname(entry.name))) {
       files.push(path.relative(base, full));
     }
   }
