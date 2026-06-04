@@ -1,5 +1,6 @@
 ---
 name: estack-flight-planner
+version: 1.0.0
 description: (flight-planner) Find and rank flights between any two airports with config-driven preferences (budget, airlines, nonstop, time-of-day) and optional ground-shuttle pairing. Uses SerpAPI Google Flights (or WebSearch fallback). Saves preferences to `~/.flight-planner/config.json` and logs every search.
 disable-model-invocation: true
 ---

@@ -1,5 +1,6 @@
 ---
 name: estack-active-learning-tutor
+version: 1.0.0
 description: (active-learning-tutor) Tutors a student through exam preparation using active learning — questioning, gap diagnosis, and concept mastery tracking. Use when the student says they want to study, learn, prep for an exam, be quizzed on a chapter, work through a practice test together, or be taught a topic conceptually rather than lectured.
 disable-model-invocation: true
 ---
