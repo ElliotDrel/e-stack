@@ -46,5 +46,8 @@ jobs:
       - name: Verify README and CLAUDE.md list every skill and hook
         run: node scripts/check-docs.cjs
 
+      - name: Verify skill names are converted correctly (estack- prefix, description, self-references)
+        run: node scripts/check-skill-name.cjs --all
+
       - name: Publish to npm
         run: npm publish --access public
