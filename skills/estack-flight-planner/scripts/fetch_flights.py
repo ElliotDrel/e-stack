@@ -35,7 +35,7 @@ BASE_PARAMS = {
 
 
 def default_output_dir() -> Path:
-    base = Path(tempfile.gettempdir()) / "flight-planner"
+    base = Path(tempfile.gettempdir()) / "estack-flight-planner"
     base.mkdir(parents=True, exist_ok=True)
     return base
 

@@ -13,10 +13,10 @@ price distribution. The skill uses this to propose specific relaxations when
 hard filters return zero results.
 
 Usage:
-    python filter_flights.py --json-dir /tmp/flight-planner/ --max-price 200 --from IND --to EWR
-    python filter_flights.py --json-dir /tmp/flight-planner/ --max-price 200 \\
+    python filter_flights.py --json-dir /tmp/estack-flight-planner/ --max-price 200 --from IND --to EWR
+    python filter_flights.py --json-dir /tmp/estack-flight-planner/ --max-price 200 \\
         --soft-filters max-price,time-priority
-    python filter_flights.py --json-dir /tmp/flight-planner/ --cluster-analysis
+    python filter_flights.py --json-dir /tmp/estack-flight-planner/ --cluster-analysis
 
 All filter args (--max-price, --time-priority, --from, --to, --airlines, --nonstop)
 are required for normal filter mode (no defaults — caller passes config values).
@@ -192,7 +192,7 @@ def cluster_analysis(flights, max_price, bands, origins, dests, airlines, nonsto
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    default_dir = Path(tempfile.gettempdir()) / "flight-planner"
+    default_dir = Path(tempfile.gettempdir()) / "estack-flight-planner"
     p.add_argument("--json-dir", default=str(default_dir))
     p.add_argument("--max-price", type=int, default=None,
                    help="Max price in USD. Omit for no price filter.")

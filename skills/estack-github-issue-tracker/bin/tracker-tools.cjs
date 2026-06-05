@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * tracker-tools.cjs — Data service layer for github-issue-tracker skill.
+ * tracker-tools.cjs — Data service layer for estack-github-issue-tracker skill.
  *
  * Commands:
  *   startup --tracker <path>              Auth, parse tracker + config, create temp dir, discover issues

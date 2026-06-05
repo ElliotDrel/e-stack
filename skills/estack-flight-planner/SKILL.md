@@ -1,6 +1,6 @@
 ---
 name: estack-flight-planner
-version: 1.0.2
+version: 1.0.3
 description: (flight-planner) Find and rank flights between any two airports with config-driven preferences (budget, airlines, nonstop, time-of-day) and optional ground-shuttle pairing. Uses SerpAPI Google Flights (or WebSearch fallback). Saves preferences to `~/.flight-planner/config.json` and logs every search.
 disable-model-invocation: true
 ---
@@ -312,7 +312,7 @@ If the user doesn't have a SerpAPI key and asks for help getting one:
 2. Walk them to https://serpapi.com/users/sign_up — sign up with email.
 3. After signup, the API key is at https://serpapi.com/manage-api-key.
 4. To set it permanently, walk them through either:
-   - Saving it in their flight-planner config (`serpapi_key` field), or
+   - Saving it in their `~/.flight-planner/config.json` (`serpapi_key` field), or
    - Setting `SERPAPI_KEY` as an environment variable in their shell profile.
 5. If they don't want a key: confirm they want the WebSearch fallback. Set `serpapi_key: null` in config. Tell them: "I'll use WebSearch each run. Results won't be as complete and prices may be approximations."
 

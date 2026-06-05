@@ -4,7 +4,7 @@ Multi-step workflows. For per-mode flag reference, see `modes.md`. For schema, s
 
 In all examples, `$PY` refers to:
 ```
-C:\Users\2supe\.claude\skills\read-claude-session-history\scripts\read_transcript.py
+~/.claude/skills/estack-read-claude-session-history/scripts/read_transcript.py
 ```
 
 ---

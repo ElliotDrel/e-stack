@@ -1,6 +1,6 @@
 ---
 name: estack-better-title
-version: 1.0.2
+version: 1.0.3
 description: (better-title) Suggest better chat session titles and rename the session
 disable-model-invocation: true
 allowed-tools: Bash, AskUserQuestion
@@ -30,7 +30,7 @@ Write the title from those answers, NOT from a chronological recap of the chat.
 - **Title the outputs, not the journey** — exclude mistakes, dead ends, and abandoned approaches. They're not searchable and not useful context for future-you.
 - **Use plain language a future-you would search for.** Avoid jargon like "passthrough," "edge cases," "toggle logic," "auto-cd," "refactored," "overhaul." Say what it does in normal words.
 - **Weight by long-term reference value.** If something will stop mattering in weeks or months (temporary fixes, current-state notes, "until X is available" workarounds), mention it briefly but don't lead with it.
-- List key outputs separated by dashes, commas, or similar (e.g. "Reverse-Engineering /rename, PR #33165 Comment, and Building /better-title Skill")
+- List key outputs separated by dashes, commas, or similar (e.g. "Reverse-Engineering /rename, PR #33165 Comment, and Building /estack-better-title Skill")
 - Cover 2-4 main outputs. Resist cramming everything in — first-pass attempts tend to over-include.
 - Are detailed enough that someone skimming a session list can tell exactly what they'd find inside
 - Typically 8-20 words — longer is fine if it adds useful detail
