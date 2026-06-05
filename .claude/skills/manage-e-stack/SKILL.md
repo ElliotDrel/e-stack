@@ -35,7 +35,7 @@ These apply to every route. Violating them breaks the install or publish.
 - **Hooks** live in `hooks/<name>.js` at the repo root (flat — no subfolders). They are Claude Code-only: unlike skills, hooks cannot be installed into `~/.agents/` and discovered from there. The installer copies them to `~/.claude/hooks/` and registers each via a dedicated `setup<Name>Hook(dryRun)` function in `bin/install.cjs` that idempotently patches `~/.claude/settings.json` (and honors `dryRun` by returning before writing). Hook scripts MUST wrap their body in `try { ... } catch { /* never break the tool */ }` and exit 0 — a hook crash must never break the underlying tool call. See `docs/hook-authoring.md`.
 - **Installer:** `node bin/install.cjs` from repo root **dry-runs by default** (previews changes, writes nothing); add `--install` to actually sync. `--dry-run` forces a preview even under `npx`.
 - **Always `git pull --rebase origin main`** before committing or pushing. The user wants a linear commit history, so never plain `git pull` or `git merge` (those create merge commits).
-- **`CHANGELOG.md` must stay in sync.** Every add/edit/hook step writes an entry to `[Unreleased]`; publish promotes that section to a versioned block. See `docs/changelog.md` for the full format and before/after examples.
+- **`CHANGELOG.md` must stay in sync.** Every add/edit/hook step writes an entry to `[Unreleased]`; publish promotes that section to a versioned block. See `docs/changelog-maintenance.md` for the full format and before/after examples.
 
 ## Skill Map
 

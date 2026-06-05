@@ -19,7 +19,7 @@ Verify the repo is ready to publish:
    - Update the comparison links at the bottom: change `[Unreleased]` to start from the new tag, and add `[X.Y.Z]: .../compare/vPREV...vX.Y.Z`.
    - Commit: `git add CHANGELOG.md && git commit -m "update CHANGELOG for X.Y.Z"`
    - If `[Unreleased]` was already empty (no user-visible changes since last release), still add the empty block and update the links — skip nothing.
-   - See `docs/changelog.md` for full format rules and a before/after example.
+   - See `docs/changelog-maintenance.md` for full format rules and a before/after example.
 
 ## Phase 2: Bump Version, Tag, and Push — APPROVAL GATE
 

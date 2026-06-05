@@ -45,7 +45,7 @@ Verify with `node scripts/check-docs.cjs`.
 - New hook: `### Added` — `` `<hook-name>` hook — <one-line user-facing description> ``
 - Hook edit: `### Changed` or `### Fixed` as appropriate
 
-See `docs/changelog.md` for format rules. Skip only for changes with zero user-visible effect.
+See `docs/changelog-maintenance.md` for format rules. Skip only for changes with zero user-visible effect.
 
 ## Phase 3: Review — APPROVAL GATE
 

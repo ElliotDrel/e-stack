@@ -24,7 +24,7 @@ Edit the skill files in `skills/estack-*/` as needed. Conventions are in the mai
 - **Bump the skill's `version:` field** as part of the edit — patch (`1.0.0` → `1.0.1`) for fixes/tweaks, minor (`1.0.0` → `1.1.0`) for new capabilities, major for rewrites/breaking changes. Every content change needs a bump; `scripts/check-versions.cjs` blocks the release otherwise.
 - **If the edit changes what the skill is or does**, update its row in the README.md Skills table and (for renames) the CLAUDE.md "Skills in the pack" line. `node scripts/check-docs.cjs` catches missing/stale names but not stale descriptions — keep those honest manually.
 - Do NOT bump `package.json` version as part of an edit — the PACKAGE version bumps during release (`npm version`), not while editing skills. Only the per-SKILL version bumps here.
-- **Update `CHANGELOG.md`** — add an entry under `## [Unreleased]` describing the user-visible change. Use `### Changed` for behavior updates, `### Fixed` for bug fixes, `### Removed` for anything removed. See `docs/changelog.md` for format rules. Skip this only for changes with zero user-visible effect (e.g. fixing a comment or internal refactor).
+- **Update `CHANGELOG.md`** — add an entry under `## [Unreleased]` describing the user-visible change. Use `### Changed` for behavior updates, `### Fixed` for bug fixes, `### Removed` for anything removed. See `docs/changelog-maintenance.md` for format rules. Skip this only for changes with zero user-visible effect (e.g. fixing a comment or internal refactor).
 
 ### Renaming or removing a skill
 

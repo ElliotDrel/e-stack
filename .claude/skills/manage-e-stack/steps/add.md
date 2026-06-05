@@ -54,7 +54,7 @@ Add an entry to the `## [Unreleased]` section at the top of `CHANGELOG.md`:
 - `estack-<skill-name>` skill — <one-line user-facing description of what it does>
 ```
 
-Write from the installer's perspective — what does the user gain? See `docs/changelog.md` for format rules and examples. Do not write internal implementation details.
+Write from the installer's perspective — what does the user gain? See `docs/changelog-maintenance.md` for format rules and examples. Do not write internal implementation details.
 
 ## 5. Show the diff (if migrating from an existing skill — optional)
 
