@@ -1,6 +1,6 @@
 ---
 name: estack-claude-md-optimizer
-version: 1.1.1
+version: 1.1.2
 description: >-
   (claude-md-optimizer) Create, refine, and maintain CLAUDE.md / AGENTS.md files
   as short hand-authored letters of intent. Use whenever the user asks to create,
@@ -21,37 +21,59 @@ triage below, then read exactly one route file and follow it.
 ## Opening message — welcome and teach first
 
 Assume the user has never used this skill before. Your first message of any run
-opens with a warm greeting — "Hey, welcome to the CLAUDE.md Optimizer" — and
-then teaches the core ideas at a high level before the triage announcement.
-One tight passage (5–8 sentences), plain language, then move on. Cover:
+opens with a warm greeting — **"Hey, welcome to the CLAUDE.md Optimizer!"** —
+then a brief orientation formatted as markdown with headers and bullets (not
+prose paragraphs). Then move into the triage announcement.
 
-- **What it is:** a tool for writing and maintaining a CLAUDE.md as a short
-  letter — prose that transfers your intent and "why" to the agent.
-- **Why a letter:** intent transfers better than rules. A model handed the "why"
-  generalizes to cases no rule anticipated; a model handed a rulebook follows it
-  off a cliff. That's also why the human authors and the skill only transcribes
-  — the file's job is to carry *your* thinking.
-- **Why short:** bloated context files measurably make models worse — the model
-  isn't dumb, it's drowning. Every line competes with the actual task for
-  attention, so every line must be earned by your stated intent or a mistake
-  that actually recurred — never padded.
-- **Why letter first, router only when earned:** a short letter plus model
-  intelligence covers most projects. Routing structure (pointers to skills,
-  docs, directories) gets appended only when the project's scale demands it —
-  added early, it's bloat wearing a uniform.
-- **Why no commands, paths, or stack details:** the agent finds those itself,
-  faster and more current than the file can stay. Stale ones actively mislead.
-- **How this run works:** diagnose the file's state → name the route(s) →
-  interview or proposals → nothing touches disk without your approval.
+Structure the opening exactly like this:
 
-Two exceptions to the full welcome: quick capture (triage #3) skips the opening
-entirely, and a mid-session invocation with a specific ask ("add X to the
-CLAUDE.md") gets a one-line greeting at most — they're working, not onboarding;
-get to the work.
+---
+
+**Hey, welcome to the CLAUDE.md Optimizer!**
+
+Here's what this skill does and why it works the way it does:
+
+### What it is
+A tool for writing and keeping a `CLAUDE.md` — a short letter from you to the
+agent. Prose that transfers your intent and the "why", not a rulebook.
+
+### Why a letter beats a rulebook
+- A model handed the **why** generalizes to cases no rule anticipated
+- A model handed a rulebook follows it off a cliff
+- The file's job is to carry *your* thinking — so you author it, and this skill
+  only transcribes
+
+### Why it must stay short
+- Every line in the file competes with your actual task for the model's attention
+- Bloated context files measurably make models worse — the model isn't dumb,
+  it's drowning
+- Every line must be earned by your stated intent or a mistake that actually
+  recurred — never padded
+
+### Why letter first, routing only when earned
+- A short letter plus model intelligence covers most projects
+- Routing structure (pointers to skills, docs, directories) is appended only
+  when the project's scale demands it
+- Added early, it's bloat wearing a uniform
+
+### Why no commands, paths, or stack details
+- The agent finds those itself, faster and more accurate than a file can stay
+- Stale paths actively mislead
+
+### How this run works
+1. Diagnose the file's state
+2. Name the route(s)
+3. Interview or proposals
+4. Nothing touches disk without your approval
+
+---
+
+Two exceptions skip the full welcome: quick capture (triage #3) skips the
+opening entirely, and a mid-session "add X to my CLAUDE.md" gets a one-line
+greeting at most — they're working, not onboarding.
 
 This intro exists so the process (interviews, proposed deletions, refusing to
-add lines) reads as the method working, not as friction. Don't lecture; one
-tight passage, then the triage announcement.
+add lines) reads as the method working, not as friction.
 
 ## Progress header — every message, every step
 

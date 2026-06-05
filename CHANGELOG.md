@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `estack-claude-md-optimizer` skill for auditing and improving CLAUDE.md files — opens every run with a first-time-user welcome that teaches the format's why (letter over rulebook, short over bloated, router only when earned), and coaches through pushback instead of enforcing rules, routing skill-level suggestions to the feedback flow; per-turn progress headers render in a drawn box so status reads as separate from the message
+- `estack-claude-md-optimizer` skill for auditing and improving CLAUDE.md files — opens every run with a first-time-user welcome that teaches the format's why (letter over rulebook, short over bloated, router only when earned), and coaches through pushback instead of enforcing rules, routing skill-level suggestions to the feedback flow; per-turn progress headers render in a drawn box so status reads as separate from the message; opening welcome uses markdown headers and bullets instead of a prose paragraph so the orientation is easy to scan
 - `check-skill-name.cjs` release gate — blocks publishing if any skill still carries a stale, un-prefixed self-reference
 - `check-docs.cjs` release gate — blocks publishing if the README and CLAUDE.md skill lists drift out of sync
 - `CHANGELOG.md` — full release history following Keep a Changelog format
