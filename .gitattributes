@@ -1,0 +1,12 @@
+# Normalize all text files to LF in the repo AND the working copy, on every
+# platform. Repo scripts (e.g. update-skill-feedback.cjs) write LF; without
+# this, Windows checkouts with core.autocrlf=true expect CRLF and every script
+# run leaves phantom "modified" files with zero-byte content diffs.
+* text=auto eol=lf
+
+# Binary assets — never normalize
+*.png binary
+*.jpg binary
+*.gif binary
+*.pdf binary
+*.xlsx binary
