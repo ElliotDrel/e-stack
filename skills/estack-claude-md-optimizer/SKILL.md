@@ -152,7 +152,7 @@ demand, not by default:
 
 - `references/theo_claude_md_mentality.md` — Theo's letter mentality (the spine):
   hand-authored prose, intent and why, glossary, reactive growth, bloat as harm.
-- `references/gary_claude_md_mentality.md` — Gary's resolver discipline: route
+- `references/gary_tan_router_claude_md_mentality.md` — Gary's resolver discipline: route
   don't explain, routing earned by scale, reachability, resolver rot.
 
 Read the relevant one when the user asks about the philosophy or "why does the
