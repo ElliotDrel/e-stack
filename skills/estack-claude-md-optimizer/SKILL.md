@@ -1,6 +1,6 @@
 ---
 name: estack-claude-md-optimizer
-version: 1.1.0
+version: 1.1.1
 description: >-
   (claude-md-optimizer) Create, refine, and maintain CLAUDE.md / AGENTS.md files
   as short hand-authored letters of intent. Use whenever the user asks to create,
@@ -55,11 +55,20 @@ tight passage, then the triage announcement.
 
 ## Progress header — every message, every step
 
-After the opening message, start every subsequent output with a one-line header:
-where we are in the flow, roughly what's left, and — most important — whether
-the flow is DONE or NOT DONE. Format:
+After the opening message, start every subsequent output with a one-line status
+header: where we are in the flow, roughly what's left, and — most important —
+whether the flow is DONE or NOT DONE. Render it inside a fenced code block
+drawn as a box, so it reads as a status instrument visually separate from the
+message itself, verbatim format:
 
-> **Create · step 2 of 4 (interview) · ~2 steps left · NOT DONE — next: draft**
+```
+┌──────────────────────────────────────────────────────────────
+│ Create · step 2 of 4 (interview) · ~2 steps left · NOT DONE — next: draft
+└──────────────────────────────────────────────────────────────
+```
+
+(The right edge stays open — never fiddle with padding to close the box. Keep
+the border lines exactly that width regardless of the status text's length.)
 
 Estimates are allowed to be rough (an incomplete answer can keep a step alive an
 extra turn — fine, don't apologize, just keep the count honest). What is not
