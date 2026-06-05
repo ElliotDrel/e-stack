@@ -40,6 +40,13 @@ See `hooks/repo-search-nudge.js` and `setupRepoSearchNudgeHook()` for the canoni
 
 Verify with `node scripts/check-docs.cjs`.
 
+**Update `CHANGELOG.md`** — add an entry under `## [Unreleased]`:
+
+- New hook: `### Added` — `` `<hook-name>` hook — <one-line user-facing description> ``
+- Hook edit: `### Changed` or `### Fixed` as appropriate
+
+See `docs/changelog.md` for format rules. Skip only for changes with zero user-visible effect.
+
 ## Phase 3: Review — APPROVAL GATE
 
 Show the user what will change:

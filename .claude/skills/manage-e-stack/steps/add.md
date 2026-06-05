@@ -45,7 +45,18 @@ Verify:
 node scripts/check-docs.cjs
 ```
 
-## 4. Show the diff (if migrating from an existing skill — optional)
+## 4. Update the CHANGELOG
+
+Add an entry to the `## [Unreleased]` section at the top of `CHANGELOG.md`:
+
+```markdown
+### Added
+- `estack-<skill-name>` skill — <one-line user-facing description of what it does>
+```
+
+Write from the installer's perspective — what does the user gain? See `docs/changelog.md` for format rules and examples. Do not write internal implementation details.
+
+## 5. Show the diff (if migrating from an existing skill — optional)
 
 If the skill already exists somewhere (e.g. `~/.agents/skills/` or `~/.claude/skills/`), diff it:
 
@@ -55,7 +66,7 @@ diff -ru ~/.agents/skills/<skill-name> skills/estack-<skill-name>
 
 Show the output and ask for confirmation before proceeding.
 
-## 5. Delete the old copy (if migrating)
+## 6. Delete the old copy (if migrating)
 
 Remove both the real files and the symlink (if either exists):
 
@@ -64,7 +75,7 @@ rm -rf ~/.agents/skills/<old-skill-name>
 rm -rf ~/.claude/skills/<old-skill-name>
 ```
 
-## 6. Run the installer
+## 7. Run the installer
 
 ```bash
 node bin/install.cjs            # dry run — preview what would change, writes nothing
@@ -73,7 +84,7 @@ node bin/install.cjs --install  # actually copy skills to ~/.agents/skills/ + sy
 
 Run from the repo, the installer **dry-runs by default** — preview first, then pass `--install` to apply. The `--install` run copies all skills from `skills/` to `~/.agents/skills/` and symlinks each into `~/.claude/skills/`. Confirm the new skill appears in the output.
 
-## 7. Confirm with the user before committing
+## 8. Confirm with the user before committing
 
 NEVER commit or push without explicit confirmation from the user. Before touching git:
 
@@ -84,13 +95,13 @@ NEVER commit or push without explicit confirmation from the user. Before touchin
 
 ```bash
 git pull --rebase origin main
-git add skills/estack-<skill-name>/ README.md CLAUDE.md
+git add skills/estack-<skill-name>/ README.md CLAUDE.md CHANGELOG.md
 git commit -m "add <skill-name> skill"
 git push
 ```
 
 Committing alone does NOT publish. Publishing is triggered by pushing a `v*` git tag (see `steps/publish.md`).
 
-## 8. Route to publish (optional)
+## 9. Route to publish (optional)
 
 If the user wants this change released to npm, follow `steps/publish.md`.

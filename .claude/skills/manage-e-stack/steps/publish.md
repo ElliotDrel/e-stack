@@ -12,6 +12,14 @@ Verify the repo is ready to publish:
 4. Run `node scripts/check-versions.cjs` — every skill/hook whose content changed since the last release must have a bumped version. If it reports FAILs, bump the versions (or run `node scripts/check-versions.cjs --fix` to auto-patch-bump) and commit before tagging. The publish workflow runs this same check as a hard gate, so a missed bump will fail the release in CI.
 5. Run `node scripts/update-skill-feedback.cjs --check` — every skill must have a feedback section matching the current template. If it reports DIFFs, run `node scripts/update-skill-feedback.cjs` to sync, then commit (and re-run step 4 to pick up any version bumps needed for the changed skills).
 6. Run `node scripts/check-docs.cjs` — README.md and CLAUDE.md must list every skill and hook (and nothing that no longer exists). If it reports FAILs, update the README Skills/Hooks tables and the CLAUDE.md "Skills in the pack" / "Hooks in the pack" lines and commit. The publish workflow runs this same check as a hard gate.
+7. **Promote `CHANGELOG.md`** — move all entries from `[Unreleased]` into a new versioned section. Do this BEFORE `npm version` so the CHANGELOG commit is separate from the version-bump commit:
+   - Determine the next version: read `"version"` in `package.json` and apply the planned bump (patch / minor / major).
+   - Rename `## [Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD` (today's date).
+   - Add a fresh empty `## [Unreleased]` block above the new section.
+   - Update the comparison links at the bottom: change `[Unreleased]` to start from the new tag, and add `[X.Y.Z]: .../compare/vPREV...vX.Y.Z`.
+   - Commit: `git add CHANGELOG.md && git commit -m "update CHANGELOG for X.Y.Z"`
+   - If `[Unreleased]` was already empty (no user-visible changes since last release), still add the empty block and update the links — skip nothing.
+   - See `docs/changelog.md` for full format rules and a before/after example.
 
 ## Phase 2: Bump Version, Tag, and Push — APPROVAL GATE
 
