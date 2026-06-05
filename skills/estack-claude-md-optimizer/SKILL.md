@@ -1,6 +1,6 @@
 ---
 name: estack-claude-md-optimizer
-version: 1.0.0
+version: 1.0.1
 description: >-
   (claude-md-optimizer) Create, refine, and maintain CLAUDE.md / AGENTS.md files
   as short hand-authored letters of intent. Use whenever the user asks to create,
@@ -95,9 +95,12 @@ session-capture first.
    smoother. Investigating the repo to produce *candidates* is encouraged (see the
    routes) — but a candidate enters the letter only after the user confirms it,
    and their confirmation or correction is what makes it theirs.
-2. **Nothing touches disk without approval.** Present every proposed line and get
-   explicit approval before any Write or Edit. Line-by-line review for new letters;
-   per-change review for edits.
+2. **Nothing touches disk without approval — but the file is the deliverable.**
+   Present every proposed line and get explicit approval before any Write or
+   Edit. Line-by-line review for new letters; per-change review for edits. Once
+   approved, you make the changes to the CLAUDE.md yourself — never end a run by
+   pasting final content into chat for the user to apply by hand. Chat is for
+   proposals and approvals; the result lands on disk.
 3. **Every line must trace.** Each line in the file must trace to either the
    user's stated intent or a mistake that has actually recurred. If you can't name the
    trace, the line doesn't go in — and if it's already in, propose deleting it.
@@ -165,7 +168,6 @@ sources would land better than asserting the rule.
 Not a template generator, not an A–F grader, not a skill/resolver manager. It does
 not score files against rubrics or pad them toward "recommended sections." It
 targets ordinary project codebases and runs only when invoked.
-
 ---
 
 ## Skill Feedback
