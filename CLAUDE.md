@@ -6,11 +6,11 @@ When you're working in this repo, you're doing one of two things: improving an e
 
 One naming note: "the skill folder" means `~/.agents/skills/` — that's where Codex and OpenClaw read from. Claude reads from `~/.claude/skills/`, which is just a symlink into the agents folder. The agents folder is the source of truth; don't edit the claude copy directly.
 
-Two things I care enough about to name explicitly: publishing and syncing. Publishing is tag-triggered — any version tag kicks off a real npm release, so never push one without intent. Syncing skills to the live location is destructive — always show me the diff and wait for my go-ahead before running the install.
+Two things I care enough about to name explicitly: publishing and syncing. Publishing is tag-triggered — any version tag kicks off a real npm release, so never push one without intent. Syncing skills to the live location is destructive — always show me the diff and wait for my go-ahead before running the install. Before any publish, update all relevant docs to reflect what changed — README descriptions, CLAUDE.md listing, and any docs/ reference files.
 
 | Task | Action |
 |---|---|
-| Any change to a skill or hook | Invoke `manage-e-stack` |
+| Any change to a skill or hook | Invoke `manage-e-stack` (project-local skill at `.claude/skills/manage-e-stack/`) |
 | Skill authoring reference | Read `docs/skill-authoring.md` |
 | Hook authoring reference | Read `docs/hook-authoring.md` |
 | Publishing, OIDC, or repo security | Read `docs/publishing.md` |
