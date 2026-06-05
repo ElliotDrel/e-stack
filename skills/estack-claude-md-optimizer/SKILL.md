@@ -1,6 +1,6 @@
 ---
 name: estack-claude-md-optimizer
-version: 1.0.1
+version: 1.1.0
 description: >-
   (claude-md-optimizer) Create, refine, and maintain CLAUDE.md / AGENTS.md files
   as short hand-authored letters of intent. Use whenever the user asks to create,
@@ -18,25 +18,40 @@ their intent, mental model, and the "why" — not a spec, not a rulebook, not an
 encyclopedia. This skill helps them write and keep that letter. It is a router:
 triage below, then read exactly one route file and follow it.
 
-## Opening message — buy the user in first
+## Opening message — welcome and teach first
 
-Your first message of any run, before the triage announcement, briefly explains
-the skill so the user knows what's happening and why (3–5 sentences, plain
-language, then move on):
+Assume the user has never used this skill before. Your first message of any run
+opens with a warm greeting — "Hey, welcome to the CLAUDE.md Optimizer" — and
+then teaches the core ideas at a high level before the triage announcement.
+One tight passage (5–8 sentences), plain language, then move on. Cover:
 
 - **What it is:** a tool for writing and maintaining a CLAUDE.md as a short
   letter — prose that transfers your intent and "why" to the agent.
-- **Why it works that way:** bloated context files measurably make models worse
-  — the model isn't dumb, it's drowning. Intent transfers better than rules,
-  which is also why the human authors the letter and the skill only transcribes:
-  the file's job is to carry *your* thinking, and every line is earned by your
-  stated intent or a mistake that actually recurred — never padded.
+- **Why a letter:** intent transfers better than rules. A model handed the "why"
+  generalizes to cases no rule anticipated; a model handed a rulebook follows it
+  off a cliff. That's also why the human authors and the skill only transcribes
+  — the file's job is to carry *your* thinking.
+- **Why short:** bloated context files measurably make models worse — the model
+  isn't dumb, it's drowning. Every line competes with the actual task for
+  attention, so every line must be earned by your stated intent or a mistake
+  that actually recurred — never padded.
+- **Why letter first, router only when earned:** a short letter plus model
+  intelligence covers most projects. Routing structure (pointers to skills,
+  docs, directories) gets appended only when the project's scale demands it —
+  added early, it's bloat wearing a uniform.
+- **Why no commands, paths, or stack details:** the agent finds those itself,
+  faster and more current than the file can stay. Stale ones actively mislead.
 - **How this run works:** diagnose the file's state → name the route(s) →
   interview or proposals → nothing touches disk without your approval.
 
+Two exceptions to the full welcome: quick capture (triage #3) skips the opening
+entirely, and a mid-session invocation with a specific ask ("add X to the
+CLAUDE.md") gets a one-line greeting at most — they're working, not onboarding;
+get to the work.
+
 This intro exists so the process (interviews, proposed deletions, refusing to
 add lines) reads as the method working, not as friction. Don't lecture; one
-tight paragraph, then the triage announcement.
+tight passage, then the triage announcement.
 
 ## Progress header — every message, every step
 
@@ -147,6 +162,31 @@ session-capture first.
    path pointer and will go read CLAUDE.md — but Claude only reads CLAUDE.md
    and won't follow a pointer into AGENTS.md, so that direction is the only one
    that works for every tool.
+
+## Coaching on pushback — teach, don't enforce
+
+When the user pushes back at any point — questioning a deletion, wanting to
+keep commands or file paths, arguing the cap is arbitrary, wanting routing
+structure up front — treat it as a coaching moment, never a rule violation.
+Read the relevant reference in `references/` and explain the why behind the
+principle in plain language, grounded in the source mentality, not just
+restated as the rule. Then genuinely weigh their point — they might be right:
+
+1. **Their point is about their file** and they state a live reason after
+   hearing the why (e.g. a path the agent genuinely can't find, a rule earned
+   by real recurring pain): that stated reason *is* a trace under hard rule 3.
+   Their call wins — note the trace and apply it. The user authors; you
+   transcribe.
+2. **Their point indicts the skill itself** — a principle that seems wrong, a
+   flow that fights them, a missing capability: say so plainly ("that's
+   feedback on the skill, and it's worth filing") and run the Skill Feedback
+   flow at the bottom of this file to capture it, then continue the run.
+3. **The pushback dissolves once the why lands** — most do. Explain once, then
+   defer to their decision. Never lecture twice on the same point.
+
+The hard rules still hold their shape — the cap, approval before disk, the
+footer — but the path through them is persuasion and traced exceptions, not
+refusal.
 
 ## References — the source mentalities
 

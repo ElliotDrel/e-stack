@@ -8,17 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `estack-claude-md-optimizer` skill for auditing and improving CLAUDE.md files
+- `estack-claude-md-optimizer` skill for auditing and improving CLAUDE.md files — opens every run with a first-time-user welcome that teaches the format's why (letter over rulebook, short over bloated, router only when earned), and coaches through pushback instead of enforcing rules, routing skill-level suggestions to the feedback flow
 - `check-skill-name.cjs` release gate — blocks publishing if any skill still carries a stale, un-prefixed self-reference
 - `check-docs.cjs` release gate — blocks publishing if the README and CLAUDE.md skill lists drift out of sync
+- `CHANGELOG.md` — full release history following Keep a Changelog format
+- `docs/changelog-maintenance.md` — reference doc explaining when and how to write and promote changelog entries
 
 ### Fixed
 - Stale un-prefixed self-references in four skills
 - Broken `gary` reference pointer after file rename
-
-### Added
-- `CHANGELOG.md` — full release history following Keep a Changelog format
-- `docs/changelog.md` — reference doc explaining when and how to write and promote changelog entries
 
 ### Changed
 - CLAUDE.md rewritten with lean routing tables

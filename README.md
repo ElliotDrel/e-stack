@@ -20,7 +20,7 @@ This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/sk
 | **Active Learning Tutor** | `/estack-active-learning-tutor` | Tutors a student through exam preparation using active learning — questioning, gap diagnosis, and concept mastery tracking |
 | **Better Title** | `/estack-better-title` | Renames Claude Code chat sessions with descriptive titles |
 | **Chris Voss** | `/estack-chris-voss` | Applies negotiation principles from *Never Split the Difference* |
-| **CLAUDE.md Optimizer** | `/estack-claude-md-optimizer` | Creates, refines, and maintains CLAUDE.md / AGENTS.md files as short hand-authored letters of intent |
+| **CLAUDE.md Optimizer** | `/estack-claude-md-optimizer` | Creates, refines, and maintains CLAUDE.md / AGENTS.md files as short hand-authored letters of intent — welcomes first-time users with the why behind the format and coaches through pushback instead of enforcing rules |
 | **Customer Discovery** | `/estack-customer-discovery` | Guides through customer discovery — validating ideas, outreach, interviews, and analysis |
 | **Flight Planner** | `/estack-flight-planner` | Finds and ranks flights between two airports with config-driven preferences and optional ground-shuttle pairing |
 | **GitHub Issue Tracker** | `/estack-github-issue-tracker` | Tracks and manages GitHub issues across repos |
