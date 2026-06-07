@@ -156,7 +156,6 @@ Get-Content "C:\Users\2supe\AppData\Roaming\Code\User\History\-6e228c75\dtgz.md"
 # Restore
 # (Use Write tool to recreate the file at original path)
 ```
-
 ---
 
 ## Skill Feedback
