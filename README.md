@@ -27,7 +27,7 @@ This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/sk
 | **Prompt Builder Coach** | `/estack-prompt-builder-coach` | Four-part kit for shaping, building, auditing, and scoping prompts for AI agents |
 | **Read Claude Session History** | `/estack-read-claude-session-history` | Searches, reads, recovers, and compares Claude Code session history across sessions, projects, and backups |
 | **Repo Search** | `/estack-repo-search` | Clones and searches external GitHub repos to answer questions about their code |
-| **VS Code File Recovery** | `/estack-vscode-file-recovery` | Recovers permanently deleted files from VS Code Local History snapshots when git and the Recycle Bin can't help |
+| **VS Code File Recovery** | `/estack-vscode-file-recovery` | Recovers permanently deleted files from VS Code or Cursor Local History, Claude session transcripts, or Windows Shadow Copies |
 
 ## Hooks
 

@@ -1,24 +1,35 @@
 ---
 name: estack-vscode-file-recovery
-version: 1.0.0
+version: 1.1.0
 description: >
-  (vscode-file-recovery) Recover files that were permanently deleted (via rm, bash delete, or any method that bypasses the Recycle Bin) using VS Code's Local History snapshots.
+  (vscode-file-recovery) Recover files that were permanently deleted (via rm, bash delete, or any method that bypasses the Recycle Bin) using VS Code's or Cursor's Local History snapshots, or from Claude session transcripts.
   Use this skill immediately whenever: a file was deleted and git can't recover it (untracked or not committed), the user says "get it back", "restore that file", "I lost that file", "can you undo that delete", or any variation of wanting a deleted file recovered. Also use proactively after any rm or bash delete of files that weren't committed to git.
-  VS Code silently saves a snapshot every time you open or edit a file in the editor — this is often the only recovery path when git and Recycle Bin both fail.
+  VS Code and Cursor silently save a snapshot every time you open or edit a file in the editor — this is often the only recovery path when git and Recycle Bin both fail.
 ---
 
-# VS Code File Recovery
+# VS Code / Cursor File Recovery
 
-When a file is deleted outside of git (with `rm`, bash, or any method that bypasses the Recycle Bin), and it was previously opened in VS Code, this skill recovers it from VS Code's Local History.
+When a file is deleted outside of git (with `rm`, bash, or any method that bypasses the Recycle Bin), this skill recovers it from editor Local History or Claude session transcripts.
 
-## How VS Code Local History Works
+## Recovery Sources — Try in Order
 
-VS Code automatically saves timestamped snapshots of every file opened in the editor. These live at:
+1. **Editor Local History** (VS Code or Cursor) — covered below
+2. **Claude session transcript** — if Claude read the file in a prior session, its content may be in the JSONL. Use `/read-transcript` to search session history.
+3. **Git** — only if the file was ever committed
+4. **Cloud sync** (OneDrive, Dropbox) — check the cloud recycle bin / version history
+
+---
+
+## How Editor Local History Works
+
+VS Code and Cursor automatically save timestamped snapshots of every file opened in the editor. These live at:
 
 ```
-Windows: C:\Users\[username]\AppData\Roaming\Code\User\History\
-Mac:     ~/Library/Application Support/Code/User/History/
-Linux:   ~/.config/Code/User/History/
+VS Code  (Windows): C:\Users\[username]\AppData\Roaming\Code\User\History\
+Cursor   (Windows): C:\Users\[username]\AppData\Roaming\Cursor\User\History\
+VS Code  (Mac):     ~/Library/Application Support/Code/User/History/
+Cursor   (Mac):     ~/Library/Application Support/Cursor/User/History/
+VS Code  (Linux):   ~/.config/Code/User/History/
 ```
 
 Each file gets a hash-named folder containing:
@@ -38,28 +49,35 @@ Collect from the user (or from the deletion event):
 - The full path if known (e.g., `C:\Users\2supe\All Coding\akiflow-mcp\Untitled-1.md`)
 - Any partial path segments (folder name, project name)
 
-### Step 2: Search VS Code history for the file
+### Step 2: Search editor history for the file
 
-Search all `entries.json` files in the History directory for filename/path matches.
+Search `entries.json` files in both VS Code and Cursor History directories.
 
-**Windows (PowerShell):**
+**Windows (PowerShell) — searches both editors:**
 ```powershell
-Get-ChildItem "$env:APPDATA\Code\User\History" -Recurse |
-  Where-Object { $_.Name -eq "entries.json" } |
-  ForEach-Object {
-    $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue
-    if ($content -match "FILENAME_OR_PATH_PATTERN") {
-      $_.FullName
-      $content
-    }
+@("Code", "Cursor") | ForEach-Object {
+  $histPath = "$env:APPDATA\$_\User\History"
+  if (Test-Path $histPath) {
+    Get-ChildItem $histPath -Recurse |
+      Where-Object { $_.Name -eq "entries.json" } |
+      ForEach-Object {
+        $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue
+        if ($content -match "FILENAME_OR_PATH_PATTERN") {
+          $_.FullName
+          $content
+        }
+      }
   }
+}
 ```
 
-Replace `FILENAME_OR_PATH_PATTERN` with the filename or path fragment. URL-encode spaces as `%20` in the pattern if you're matching a path (VS Code stores paths URL-encoded in entries.json).
+Replace `FILENAME_OR_PATH_PATTERN` with the filename or path fragment. URL-encode spaces as `%20` in the pattern if matching a full path (editors store paths URL-encoded in entries.json).
 
-**Mac/Linux (bash):**
+**Mac (bash) — searches both editors:**
 ```bash
-grep -rl "FILENAME_OR_PATH_PATTERN" ~/.config/Code/User/History/ 2>/dev/null
+for app in "Code" "Cursor"; do
+  grep -rl "FILENAME_OR_PATH_PATTERN" "$HOME/Library/Application Support/$app/User/History/" 2>/dev/null
+done
 ```
 
 ### Step 3: Read the entries.json to find the latest snapshot
@@ -93,15 +111,23 @@ Write the content back to the original location using the Write tool.
 
 ---
 
-## When VS Code History Won't Help
+## When Editor History Won't Help
 
-- **File was never opened as a VS Code editor tab** — only visible in the sidebar Explorer won't produce a snapshot.
-- **VS Code wasn't installed or wasn't used** — obvious, but worth confirming.
-- **History was cleared** — VS Code's local history can be manually cleared or has a configurable retention limit (default: 30 days, 50 entries per file).
+- **File was never opened as an editor tab** — files only visible in the sidebar Explorer are not snapshotted.
+- **History was cleared** — default retention is 30 days / 50 entries per file.
 
-If VS Code history doesn't have the file, tell the user and suggest:
-1. Check cloud sync version history (OneDrive, Dropbox, iCloud)
-2. File recovery software (Recuva on Windows, PhotoRec on Mac/Linux) — only works if disk hasn't been overwritten
+If editor history doesn't have the file, fall back to:
+1. **`/read-transcript`** — if Claude read the file in a prior session, the content is in the session JSONL. Use `--mode search --query "filename"` to find it. Note: you need to point it at the right project's sessions — if the file lived in a different project folder, search that project's transcript directory instead.
+2. **Windows Shadow Copies** (last resort, requires admin) — Windows VSS may have a snapshot of the volume. Check if any exist first:
+   ```powershell
+   vssadmin list shadows
+   ```
+   If a shadow copy exists, mount it and browse:
+   ```powershell
+   cmd /c mklink /d C:\shadow \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy3\
+   ```
+   Replace the device path with the one from `vssadmin list shadows`. Browse `C:\shadow\` like a normal drive to find and copy the file back. Clean up after: `cmd /c rmdir C:\shadow`.
+3. **File recovery software** (Recuva on Windows) — only works if the disk blocks haven't been overwritten yet.
 
 ---
 
