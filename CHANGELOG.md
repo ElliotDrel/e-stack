@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `estack-leadership-coach` skill — delegation coaching that walks through a complete structured handoff: the right person, brief, authority level, and monitoring plan, while catching common failure patterns in real time
+
+### Changed
+- `estack-leadership-coach` 1.1.0 — added Enrollment phase: coaches leaders on framing the handoff before the brief, converting task assignment into ownership invitation using self-determination theory and Gallup engagement principles; brief now includes "Why this person" field and enrollment talking points
 - `estack-vscode-file-recovery` skill — recover permanently deleted files from VS Code Local History snapshots when git and the Recycle Bin can't help
 
 ### Changed
