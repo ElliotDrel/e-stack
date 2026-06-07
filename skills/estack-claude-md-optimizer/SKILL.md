@@ -1,6 +1,6 @@
 ---
 name: estack-claude-md-optimizer
-version: 1.1.2
+version: 1.2.0
 description: >-
   (claude-md-optimizer) Create, refine, and maintain CLAUDE.md / AGENTS.md files
   as short hand-authored letters of intent. Use whenever the user asks to create,
@@ -20,60 +20,63 @@ triage below, then read exactly one route file and follow it.
 
 ## Opening message — welcome and teach first
 
-Assume the user has never used this skill before. Your first message of any run
-opens with a warm greeting — **"Hey, welcome to the CLAUDE.md Optimizer!"** —
-then a brief orientation formatted as markdown with headers and bullets (not
-prose paragraphs). Then move into the triage announcement.
+Assume the user has never used this skill before. Your first message is a
+letter addressed directly to the user — warm, second-person, personal — not
+a doc page, not a feature list. It teaches the same core ideas but reads like
+someone explaining something they care about, not a manual. After the letter,
+a routing table shows exactly what's happening in this session.
 
-Structure the opening exactly like this:
+Structure the opening exactly like this (fill in the session plan table based
+on your triage — see the Triage section below for how to pick routes):
 
 ---
 
-**Hey, welcome to the CLAUDE.md Optimizer!**
+Hey — welcome to the CLAUDE.md Optimizer.
 
-Here's what this skill does and why it works the way it does:
+Before we start, here's what you should know about how this works and why.
 
-### What it is
-A tool for writing and keeping a `CLAUDE.md` — a short letter from you to the
-agent. Prose that transfers your intent and the "why", not a rulebook.
+**Your `CLAUDE.md` is a letter, not a rulebook.** When you hand an agent
+the *why* behind your decisions, it can generalize to situations no rule
+anticipated. When you hand it a rulebook, it follows the rules off a cliff.
+The file's only job is to carry your thinking — so you author it, and I
+transcribe.
 
-### Why a letter beats a rulebook
-- A model handed the **why** generalizes to cases no rule anticipated
-- A model handed a rulebook follows it off a cliff
-- The file's job is to carry *your* thinking — so you author it, and this skill
-  only transcribes
+**It has to stay short.** Every line in that file competes with your actual
+task for the model's attention. Bloated context files measurably make models
+worse — not because the model is dumb, but because it's drowning. Every line
+has to be earned: either by something you've told me you care about, or by a
+mistake that actually recurred. Never padded.
 
-### Why it must stay short
-- Every line in the file competes with your actual task for the model's attention
-- Bloated context files measurably make models worse — the model isn't dumb,
-  it's drowning
-- Every line must be earned by your stated intent or a mistake that actually
-  recurred — never padded
+**You start with a letter. Routing comes later, only if it's earned.** Most
+projects don't need a routing section — a tight letter plus model intelligence
+gets there. Structure added before the project demands it is just bloat with
+good posture.
 
-### Why letter first, routing only when earned
-- A short letter plus model intelligence covers most projects
-- Routing structure (pointers to skills, docs, directories) is appended only
-  when the project's scale demands it
-- Added early, it's bloat wearing a uniform
+**No commands, paths, or stack details in the file.** The agent finds those
+itself, faster and more accurately than a file can stay current. Stale paths
+don't just not help — they actively mislead.
 
-### Why no commands, paths, or stack details
-- The agent finds those itself, faster and more accurate than a file can stay
-- Stale paths actively mislead
+Here's what we're doing today:
 
-### How this run works
-1. Diagnose the file's state
-2. Name the route(s)
-3. Interview or proposals
-4. Nothing touches disk without your approval
+| Step | What's happening | Why |
+|------|-----------------|-----|
+| **Diagnose** | I read your current file (or confirm there isn't one) | Can't plan without knowing where we're starting |
+| **Route** | I name which flow(s) apply and tell you why | So you can correct me before anything starts |
+| **[Route-specific steps]** | Interview, proposals, line-by-line review — depends on the route | See below |
+| **Approve & write** | Nothing touches disk until you've signed off on every line | The file is yours |
+
+*(I'll replace [Route-specific steps] with the actual steps once I've triaged
+the file and named the route — usually 2–3 more rows.)*
 
 ---
 
 Two exceptions skip the full welcome: quick capture (triage #3) skips the
 opening entirely, and a mid-session "add X to my CLAUDE.md" gets a one-line
-greeting at most — they're working, not onboarding.
+greeting at most — they're in the middle of work, not onboarding.
 
-This intro exists so the process (interviews, proposed deletions, refusing to
-add lines) reads as the method working, not as friction.
+After writing the letter and table above, immediately move into the triage
+announcement — one or two sentences naming which route(s) you're entering and
+why, then pause for them to correct you.
 
 ## Progress header — every message, every step
 
