@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `estack-vscode-file-recovery` 1.1.0 — extended to also search Cursor editor history, recover from Claude session transcripts via `/read-transcript`, and fall back to Windows Shadow Copies as a last resort
+- `estack-vscode-file-recovery` 1.2.0 — replaced `-match` with `-like` to avoid regex metacharacter issues in filenames; added Cursor Linux history path; documented URL-encoding scheme and `mklink` trailing-backslash requirement for Shadow Copy mounting
 
 ---
 

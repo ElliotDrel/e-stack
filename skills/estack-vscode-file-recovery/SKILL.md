@@ -1,6 +1,6 @@
 ---
 name: estack-vscode-file-recovery
-version: 1.1.0
+version: 1.2.0
 description: >
   (vscode-file-recovery) Recover files that were permanently deleted (via rm, bash delete, or any method that bypasses the Recycle Bin) using VS Code's or Cursor's Local History snapshots, or from Claude session transcripts.
   Use this skill immediately whenever: a file was deleted and git can't recover it (untracked or not committed), the user says "get it back", "restore that file", "I lost that file", "can you undo that delete", or any variation of wanting a deleted file recovered. Also use proactively after any rm or bash delete of files that weren't committed to git.
@@ -30,6 +30,7 @@ Cursor   (Windows): C:\Users\[username]\AppData\Roaming\Cursor\User\History\
 VS Code  (Mac):     ~/Library/Application Support/Code/User/History/
 Cursor   (Mac):     ~/Library/Application Support/Cursor/User/History/
 VS Code  (Linux):   ~/.config/Code/User/History/
+Cursor   (Linux):   ~/.config/Cursor/User/History/
 ```
 
 Each file gets a hash-named folder containing:
@@ -62,7 +63,7 @@ Search `entries.json` files in both VS Code and Cursor History directories.
       Where-Object { $_.Name -eq "entries.json" } |
       ForEach-Object {
         $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue
-        if ($content -match "FILENAME_OR_PATH_PATTERN") {
+        if ($content -like "*FILENAME_OR_PATH_PATTERN*") {
           $_.FullName
           $content
         }
@@ -71,7 +72,9 @@ Search `entries.json` files in both VS Code and Cursor History directories.
 }
 ```
 
-Replace `FILENAME_OR_PATH_PATTERN` with the filename or path fragment. URL-encode spaces as `%20` in the pattern if matching a full path (editors store paths URL-encoded in entries.json).
+Replace `FILENAME_OR_PATH_PATTERN` with the filename or path fragment. **Use `-like "*filename*"` rather than `-match "filename"` to avoid regex metacharacter issues** (`.`, `(`, `)`, `+` in filenames break `-match`).
+
+If matching a full path, note that editors URL-encode it in `entries.json`: drive colons become `%3A`, backslashes become `/`, and spaces become `%20`. Example: `C:\Users\2supe\My App (v2).md` → `file:///c%3A/Users/2supe/My%20App%20%28v2%29.md`. **Searching by filename alone is simpler and usually sufficient.**
 
 **Mac (bash) — searches both editors:**
 ```bash
@@ -122,7 +125,7 @@ If editor history doesn't have the file, fall back to:
    ```powershell
    vssadmin list shadows
    ```
-   If a shadow copy exists, mount it and browse:
+   If a shadow copy exists, mount it and browse (**requires an elevated/admin shell**; the trailing backslash on the device path is required or `mklink` fails silently):
    ```powershell
    cmd /c mklink /d C:\shadow \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy3\
    ```
@@ -141,7 +144,7 @@ Get-ChildItem "$env:APPDATA\Code\User\History" -Recurse |
   Where-Object { $_.Name -eq "entries.json" } |
   ForEach-Object {
     $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue
-    if ($content -match "Untitled-1") { $_.FullName; $content }
+    if ($content -like "*Untitled-1*") { $_.FullName; $content }
   }
 
 # Result shows: C:\...\History\-6e228c75\entries.json
