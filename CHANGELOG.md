@@ -9,17 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.31] - 2026-06-07
+## [1.0.32] - 2026-06-07
 
 ### Added
-- `estack-leadership-coach` skill — delegation coaching that walks through a complete structured handoff: the right person, brief, authority level, and monitoring plan, while catching common failure patterns in real time
+- **`estack-leadership-coach`** — A structured leadership coaching skill that walks through real decisions and produces a concrete artifact every session — a delegation brief, feedback script, or gap diagnosis — that you can act on immediately. Not a brainstorm partner; a coach that teaches proven principles (Grove, SDT, Gallup, delegation frameworks) in the moment your situation calls for them, then applies them to your actual people and context.
 
-### Changed
-- `estack-leadership-coach` 1.1.0 — added Enrollment phase: coaches leaders on framing the handoff before the brief, converting task assignment into ownership invitation using self-determination theory and Gallup engagement principles; brief now includes "Why this person" field and enrollment talking points
-- `estack-leadership-coach` 1.1.1 — brief output now formatted as a shareable markdown artifact; enrollment talking points rendered as styled blockquote with bold labels
-- `estack-leadership-coach` 2.0.0 — full flat-team support: negotiated authority levels, reciprocal commitment tracking in brief, accountability diffusion diagnosis, and flat-team-aware coaching notes throughout every phase (TRM calibration, enrollment framing, monitoring sync points)
-- `estack-leadership-coach` 3.0.0 — major rewrite as Leadership Coach: modular framework files (delegation phases, flows, and curated reference vault), framework router for multi-topic expansion, per-turn progress headers, four-step coaching protocol, compressed-path heuristic for low-stakes handoffs, and knowledge vault with 11 curated reference files across Grove, SDT, Gallup, and delegation frameworks
-- `estack-leadership-coach` 3.1.0 — three explicit question modes (A/B/C) replacing the open-ended "ask 1–3 questions" rule; structured PROGRESS format (`Pre-delegation — Phase N of M: Name`); team mode locked in Phase 1 intake; compressed path now explicitly includes "why you" in one sentence; Hormozi reference updated to STAR framework (#2: define done by behavior or outcome); post-mortem resume-at table mapping each gap to the phase where re-entry happens
+  **Delegation** is live now with two flows:
+
+  - **Pre-delegation** (6 phases) — Intake → Task scoping → TRM calibration (right person for this task?) → Enrollment coaching (convert assignment into ownership) → Brief-writing → Monitoring plan. Ends with a formatted, shareable delegation brief. Supports flat teams: negotiated authority levels (1–5 scale), accountability diffusion diagnosis, and flat-team-aware coaching notes throughout.
+  - **Post-mortem** — Diagnoses a delegation that already went wrong. Surfaces which phase broke down and maps each gap to a re-entry point so you can correct the handoff, not just understand it.
+
+  Compressed path available for low-stakes handoffs with a trusted peer. Knowledge vault with 11 curated reference files across four frameworks. Per-turn progress header (`Pre-delegation — Phase N of M: Name`) keeps you oriented at every phase. Three explicit question modes (single question / numbered list / structured choice) mean you always know exactly what you're being asked.
+
+  Feedback, hiring, OKRs, conflict resolution, and performance reviews are on the roadmap.
 
 ---
 
@@ -285,8 +287,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.31...HEAD
-[1.0.31]: https://github.com/ElliotDrel/e-stack/compare/v1.0.30...v1.0.31
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.32...HEAD
+[1.0.32]: https://github.com/ElliotDrel/e-stack/compare/v1.0.30...v1.0.32
 [1.0.30]: https://github.com/ElliotDrel/e-stack/compare/v1.0.29...v1.0.30
 [1.0.29]: https://github.com/ElliotDrel/e-stack/compare/v1.0.28...v1.0.29
 [1.0.28]: https://github.com/ElliotDrel/e-stack/compare/v1.0.27...v1.0.28
