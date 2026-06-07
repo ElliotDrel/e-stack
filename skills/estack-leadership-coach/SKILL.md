@@ -1,6 +1,6 @@
 ---
 name: estack-leadership-coach
-version: 1.1.0
+version: 1.1.1
 description: (leadership-coach) Interactive delegation coaching — builds a complete structured handoff covering the right person, enrollment conversation, brief, authority level, and monitoring plan, catching failure patterns in real time. Use when working through a delegation, diagnosing one that went wrong, or getting coached on letting go of work you've been holding.
 metadata:
   disable_model_invocation: true
@@ -357,7 +357,7 @@ Name the gap, explain the principle, then offer to run a corrected brief from th
 
 ## Close Every Session With a Brief
 
-After Phase 6 (or after diagnosing in Phase 7), output a clean Delegation Brief the user can use verbatim or share directly:
+After Phase 6 (or after diagnosing in Phase 7), output a clean Delegation Brief as a markdown file the user can share directly:
 
 ```
 DELEGATION BRIEF
@@ -373,13 +373,12 @@ Check-in schedule:
 ```
 
 **Enrollment talking points** (for the leader to use in the sit-down before sharing the brief):
-```
-The problem we're solving:
-Why it matters right now:
-Why I chose you:
-What part of this energizes you? [ask and listen]
-What would help you do your best work? [ask and listen]
-```
+
+> **The problem we're solving:**
+> **Why it matters right now:**
+> **Why I chose you:**
+> **What part of this energizes you?** *[ask and listen]*
+> **What would help you do your best work?** *[ask and listen]*
 
 ---
 
