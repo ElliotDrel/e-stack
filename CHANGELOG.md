@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `estack-leadership-coach` 1.1.0 — added Enrollment phase: coaches leaders on framing the handoff before the brief, converting task assignment into ownership invitation using self-determination theory and Gallup engagement principles; brief now includes "Why this person" field and enrollment talking points
 - `estack-leadership-coach` 1.1.1 — brief output now formatted as a shareable markdown artifact; enrollment talking points rendered as styled blockquote with bold labels
+- `estack-leadership-coach` 2.0.0 — full flat-team support: negotiated authority levels, reciprocal commitment tracking in brief, accountability diffusion diagnosis, and flat-team-aware coaching notes throughout every phase (TRM calibration, enrollment framing, monitoring sync points)
 - `estack-vscode-file-recovery` skill — recover permanently deleted files from VS Code Local History snapshots when git and the Recycle Bin can't help
 
 ### Changed
