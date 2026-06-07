@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-vscode-file-recovery` skill — recover permanently deleted files from VS Code Local History snapshots when git and the Recycle Bin can't help
+
 ---
 
 ## [1.0.29] - 2026-06-07
