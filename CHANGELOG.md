@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `estack-leadership-coach` skill — delegation coaching that walks through a complete structured handoff: the right person, brief, authority level, and monitoring plan, while catching common failure patterns in real time
 - `estack-vscode-file-recovery` skill — recover permanently deleted files from VS Code Local History snapshots when git and the Recycle Bin can't help
 
 ### Changed
