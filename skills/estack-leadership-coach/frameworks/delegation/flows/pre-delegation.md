@@ -38,13 +38,14 @@ After Phase 6, deliver the artifact using the template below. Do not declare the
 
 ## Compressed path
 
-If all four conditions are true (trusted peer or proven high-TRM teammate, low public visibility, short timeline, low cost of failure), run a three-step compressed path instead:
+If all four conditions are true (trusted peer or proven high-TRM teammate, low public visibility, short timeline, low cost of failure), run a four-step compressed path instead:
 
 1. Confirm the deliverable in one sentence (Phase 1 + 4 condensed)
-2. Name the authority level out loud (Phase 4, element ⑤)
-3. Set one check-in (Phase 5)
+2. Name "why you" in one sentence (Phase 3 Move 2 only — the other three moves are skipped)
+3. Name the authority level out loud (Phase 4, element 5)
+4. Set one check-in (Phase 5)
 
-Then deliver a shortened brief with What / Authority Level / One Check-In filled in, and skip enrollment + full reciprocal commitments. Mention briefly that the compressed path is being used and why.
+Then deliver a shortened brief with What / Why You / Authority Level / One Check-In filled in. Skip Moves 1, 3, 4 of enrollment and skip full reciprocal commitments. Mention briefly that the compressed path is being used and why.
 
 If at any point a condition turns out to be false (the timeline grew, the visibility expanded), drop back to the full flow.
 

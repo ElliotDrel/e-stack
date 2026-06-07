@@ -80,7 +80,7 @@ The user knew what good looked like; the owner didn't. The standard lived in the
 - "I'd want it more [adjective] — but I never said that"
 - "The format/tone/length is wrong"
 
-**Principle:** Hormozi's scorecard / Sullivan's Impact Filter. If the standard wasn't written down before work began, the user was the only one who knew it.
+**Principle:** Hormozi's STAR #2 ("define what done looks like by behavior or outcome") / Sullivan's Impact Filter. If the standard wasn't externalized as a specific behavior or outcome before work began, the user was the only one who knew it.
 
 ---
 
@@ -127,7 +127,7 @@ Once the primary gap is named, the corrective move is the structural fix. **Don'
 | Enrollment | Run the four-move enrollment conversation (Phase 3) before the brief is shared next time. Specifically, name "why you" with concrete evidence. |
 | Authority | Name the authority level explicitly using the 1–5 scale (Phase 4 ⑤). Write it in the brief. State it in the sit-down conversation. |
 | Context | Fill in the brief's ② (Why this matters) in writing. Deliver it as part of the enrollment conversation. |
-| Success criteria | Write the Hormozi scorecard or run the Sullivan Impact Filter. Externalize the standard *before* work begins. |
+| Success criteria | Name the specific behavior or outcome that defines done (Hormozi STAR #2), or run the Sullivan Impact Filter. Externalize the standard *before* work begins. |
 | Accountability diffusion *(flat)* | One owner. One outcome. Stated out loud. Reciprocal commitments named (Phase 4 ⑥). |
 
 ---

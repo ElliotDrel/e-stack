@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `estack-leadership-coach` 1.1.1 — brief output now formatted as a shareable markdown artifact; enrollment talking points rendered as styled blockquote with bold labels
 - `estack-leadership-coach` 2.0.0 — full flat-team support: negotiated authority levels, reciprocal commitment tracking in brief, accountability diffusion diagnosis, and flat-team-aware coaching notes throughout every phase (TRM calibration, enrollment framing, monitoring sync points)
 - `estack-leadership-coach` 3.0.0 — major rewrite as Leadership Coach: modular framework files (delegation phases, flows, and curated reference vault), framework router for multi-topic expansion, per-turn progress headers, four-step coaching protocol, compressed-path heuristic for low-stakes handoffs, and knowledge vault with 11 curated reference files across Grove, SDT, Gallup, and delegation frameworks
+- `estack-leadership-coach` 3.1.0 — three explicit question modes (A/B/C) replacing the open-ended "ask 1–3 questions" rule; structured PROGRESS format (`Pre-delegation — Phase N of M: Name`); team mode locked in Phase 1 intake; compressed path now explicitly includes "why you" in one sentence; Hormozi reference updated to STAR framework (#2: define done by behavior or outcome); post-mortem resume-at table mapping each gap to the phase where re-entry happens
 
 ---
 

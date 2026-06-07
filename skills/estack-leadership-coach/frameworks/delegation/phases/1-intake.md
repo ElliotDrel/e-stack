@@ -1,7 +1,7 @@
 # Phase 1 — Intake
 
 <primary_outcome>
-By the end of this phase you have: (1) a specific named task, (2) a named owner (or, in flat teams, owner-selection logic if not yet decided), (3) a timeline, (4) a filter decision (Eliminate / Automate / Delegate / hold), and (5) a resistance pattern named if one is present. No fuzz allowed: "marketing stuff" is not a task; "I think Sarah probably" is not an owner.
+By the end of this phase you have: (1) a specific named task, (2) a named owner (or, in flat teams, owner-selection logic if not yet decided), (3) a timeline, (4) the team mode locked in (hierarchical or flat/peer — this calibrates every downstream phase), (5) a filter decision (Eliminate / Automate / Delegate / hold), and (6) a resistance pattern named if one is present. No fuzz allowed: "marketing stuff" is not a task; "I think Sarah probably" is not an owner; "we kinda all work together" is not a team mode.
 </primary_outcome>
 
 This is the first phase of the pre-delegation flow. Your job here is to understand what is actually being handed off, to whom, and on what timeline — and to catch the cases where the work shouldn't be delegated at all (because it should be eliminated, automated, or kept with the user).
@@ -10,11 +10,18 @@ This is the first phase of the pre-delegation flow. Your job here is to understa
 
 ## Ask 1–3 questions, then wait
 
-Start with these three. Ask them at the rate the user is moving — sometimes one at a time, sometimes together if the user is comfortable.
+Intake locks in four things before any phase can produce output: the task, the owner, the timeline, and the team mode (hierarchical vs flat/peer). Ask at the rate the user is moving — sometimes one question at a time, sometimes grouped if the user is comfortable.
 
 1. What's the task or project being handed off? (push for specifics)
-2. Who is the person receiving it?
+2. Who is the person receiving it — and what's your working relationship with them (direct report, peer, co-founder, cross-functional)?
 3. What's the timeline?
+
+Question 2 is doing double duty: it surfaces the owner *and* the team mode in one move. Most users answer the relationship part naturally ("she's on my team," "my co-founder," "a peer in product"). Listen for the signals from SKILL.md:
+
+- **Hierarchical:** "my report," "I'm assigning," "I manage them," org-chart references
+- **Flat/peer:** "my co-founder," "we're peers," "nobody reports to anyone," "we just divide work"
+
+If the relationship is still ambiguous after the user answers, ask one focused follow-up before moving on: *"Quick check — is this person a direct report, or more of a peer/co-founder situation?"* Lock it in. Every downstream phase has flat-team adaptations that won't fire correctly without it.
 
 If the user says "marketing stuff" or "the whole onboarding thing," push: *"Walk me through the actual deliverable. What does done look like?"*
 
@@ -122,6 +129,7 @@ What makes this case useful for Phase 1 is the *order* Ferriss eventually codifi
 - The task is specific (deliverable describable in one sentence)
 - The owner is named (or, in flat teams, owner-selection logic is in motion)
 - The timeline is on the table
+- The team mode is locked in (Hierarchical or Flat/peer) — not "kind of both"
 - A filter decision is made — proceed to delegate, eliminate, automate, or hold
 - If resistance was present, it has been named and the user has acknowledged it
 

@@ -94,7 +94,17 @@ After the diagnosis is delivered, ask the user:
 
 > *Want to run the pre-delegation flow now, starting from the corrected gap? We'll skip what you already know about the situation and focus on building the brief / authority level / check-in structure that wasn't there last time.*
 
-If the user accepts: load `pre-delegation.md` and run it, but skip the parts of Phase 1 that re-cover ground already established (the task, the owner, the timeline). Use the existing context.
+If the user accepts: load `pre-delegation.md` and resume at the phase that maps to the diagnosed gap, carrying forward the task / owner / timeline / team-mode already established:
+
+| Primary gap | Resume at |
+|---|---|
+| Enrollment | Phase 3 (run all four moves) |
+| Authority | Phase 4, element 5 (then continue to 5 and 6) |
+| Context | Phase 3 Move 1 → Phase 4, element 2 (then continue) |
+| Success criteria | Phase 4, element 3 (then continue to 5 and 6) |
+| Accountability diffusion | Phase 1 (owner-selection) → Phase 4, element 6 |
+
+After resuming at the gap's phase, run forward to the end of the flow. Don't skip the artifact assembly — the corrected brief is the point.
 
 If the user declines: deliver the diagnosis and stop. Do not push.
 

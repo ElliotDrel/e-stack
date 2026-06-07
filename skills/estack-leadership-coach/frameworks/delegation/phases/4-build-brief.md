@@ -44,7 +44,7 @@ Prompt them to share examples of past work they've liked. **Examples beat descri
 
 ### Two frameworks for externalizing the standard
 
-**Alex Hormozi's scorecard:** A measurable definition of success written down before work begins. If the user can't write the scorecard, they don't understand the task well enough to hand it off. Push them to name the metrics or specific criteria a finished version would meet — even imperfect ones beat "I'll know it when I see it."
+**Alex Hormozi — "define what done looks like by behavior or outcome"** (Reason #2 in his STAR follow-through framework — the five reasons people fail to execute). Hormozi's verbatim rule: *"You want to define what you're asking someone to do in terms of behavior or outcomes."* Push the user to name the specific behavior or observable outcome that would make a finished version recognizable as done — printed format, email subject line, a number hit, a specific artifact on a specific desk by a specific time. Vague adjectives ("polished," "professional") are not behaviors or outcomes. If the user can't name one, they don't understand the task well enough to hand it off — even imperfect specifics beat *"I'll know it when I see it."*
 
 **Dan Sullivan's Impact Filter:** Before delegating, articulate four things:
 - What's the **purpose** of this work?
@@ -143,7 +143,7 @@ Source: [Sullivan — *Who Not How*](../../../references/sullivan_who-not-how.md
 
 ## Pre-empted shortcuts
 
-- **Don't fill in any element from your assumptions.** If the user couldn't articulate Success Looks Like, the brief is not done. Ask the question again, or surface the Impact Filter / scorecard frameworks to help them.
+- **Don't fill in any element from your assumptions.** If the user couldn't articulate Success Looks Like, the brief is not done. Ask the question again, or surface the Impact Filter / Hormozi's "behavior or outcome" rule to help them.
 - **Don't use adjectives in element ③.** "Polished," "professional," "high-quality," "tight" — these don't externalize the standard. Push for examples, formats, lengths, audiences, what specifically the user doesn't want.
 - **Don't skip element ⑤ because "they know."** They don't. Or — they think they know, and they're at a different level than the user thinks. Name it.
 - **Don't skip element ⑥ in a flat team.** If the user is in a flat team and you didn't surface reciprocal commitments, the brief is structurally incomplete.
@@ -155,7 +155,7 @@ Source: [Sullivan — *Who Not How*](../../../references/sullivan_who-not-how.md
 
 - ① What: deliverable named in one specific sentence (with the "so that we can" clause)
 - ② Why: context articulated — what's at stake, who it's for, what goes wrong if it misses
-- ③ Success Looks Like: externalized standard with concrete criteria, examples, or scorecard
+- ③ Success Looks Like: externalized standard named as a specific behavior or outcome (Hormozi STAR #2), with concrete criteria or examples
 - ④ Constraints: non-negotiables named (timeline, budget, stakeholders, decisions the owner can't make alone)
 - ⑤ Authority Level: number 1–5 named with the matching level name
 - ⑥ Reciprocal Commitments (flat teams only): specific items the user / team owes the owner
