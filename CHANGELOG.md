@@ -9,13 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `estack-leadership-coach` skill — delegation coaching that walks through a complete structured handoff: the right person, brief, authority level, and monitoring plan, while catching common failure patterns in real time
-- `estack-vscode-file-recovery` skill — recover permanently deleted files from VS Code Local History snapshots when git and the Recycle Bin can't help
 
 ### Changed
 - `estack-leadership-coach` 1.1.0 — added Enrollment phase: coaches leaders on framing the handoff before the brief, converting task assignment into ownership invitation using self-determination theory and Gallup engagement principles; brief now includes "Why this person" field and enrollment talking points
 - `estack-leadership-coach` 1.1.1 — brief output now formatted as a shareable markdown artifact; enrollment talking points rendered as styled blockquote with bold labels
 - `estack-leadership-coach` 2.0.0 — full flat-team support: negotiated authority levels, reciprocal commitment tracking in brief, accountability diffusion diagnosis, and flat-team-aware coaching notes throughout every phase (TRM calibration, enrollment framing, monitoring sync points)
 - `estack-leadership-coach` 3.0.0 — major rewrite as Leadership Coach: modular framework files (delegation phases, flows, and curated reference vault), framework router for multi-topic expansion, per-turn progress headers, four-step coaching protocol, compressed-path heuristic for low-stakes handoffs, and knowledge vault with 11 curated reference files across Grove, SDT, Gallup, and delegation frameworks
+
+---
+
+## [1.0.30] - 2026-06-07
+
+### Added
+- `estack-vscode-file-recovery` skill — recover permanently deleted files from VS Code Local History snapshots when git and the Recycle Bin can't help
+
+### Changed
 - `estack-vscode-file-recovery` 1.1.0 — extended to also search Cursor editor history, recover from Claude session transcripts via `/read-transcript`, and fall back to Windows Shadow Copies as a last resort
 - `estack-vscode-file-recovery` 1.2.0 — replaced `-match` with `-like` to avoid regex metacharacter issues in filenames; added Cursor Linux history path; documented URL-encoding scheme and `mklink` trailing-backslash requirement for Shadow Copy mounting
 
@@ -272,7 +280,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.29...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.30...HEAD
+[1.0.30]: https://github.com/ElliotDrel/e-stack/compare/v1.0.29...v1.0.30
 [1.0.29]: https://github.com/ElliotDrel/e-stack/compare/v1.0.28...v1.0.29
 [1.0.28]: https://github.com/ElliotDrel/e-stack/compare/v1.0.27...v1.0.28
 [1.0.27]: https://github.com/ElliotDrel/e-stack/compare/v1.0.26...v1.0.27
