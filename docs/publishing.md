@@ -78,3 +78,6 @@ These are the settings that make the model above hold. If something here drifts,
 - npm's "Trusted Publishing" handles both auth AND provenance — no `--provenance` flag or `NODE_AUTH_TOKEN` env var needed.
 - YAML values containing colons (e.g. `"chore: bump"`) must be quoted or they break GitHub Actions parsing.
 - The previous flow (commit-message `[publish]` → CI bumps version → CI pushes back) required the workflow to have write access to `main`, which is incompatible with strict branch protection. Tag-triggered publish removes that requirement entirely.
+- GitHub Actions can be disabled at the account level. When disabled, the API returns HTTP 422: "Actions has been disabled for this user" on any workflow trigger, and zero runs appear in history — even for workflows that previously ran successfully. There is no self-service toggle (`github.com/settings/actions` 404s for personal accounts). Fix: contact GitHub Support (reinstatement request form).
+- Re-enabling Actions does not replay missed tag events. If tags were pushed while Actions was disabled, delete and re-push only the latest tag after re-enabling: `git push origin :refs/tags/vX.Y.Z && git push origin refs/tags/vX.Y.Z`
+- Fastest Actions health check: run `gh workflow run publish.yml --repo ElliotDrel/e-stack`. HTTP 422 = disabled at account level. A run appearing = Actions is working.
