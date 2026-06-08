@@ -34,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.31] - 2026-06-07
+
+### Added
+- `estack-leadership-coach` skill — delegation coaching that walks through a complete structured handoff: the right person, brief, authority level, and monitoring plan, while catching common failure patterns in real time
+
+---
+
 ## [1.0.30] - 2026-06-07
 
 ### Added
@@ -298,7 +305,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.33...HEAD
 [1.0.33]: https://github.com/ElliotDrel/e-stack/compare/v1.0.32...v1.0.33
-[1.0.32]: https://github.com/ElliotDrel/e-stack/compare/v1.0.30...v1.0.32
+[1.0.32]: https://github.com/ElliotDrel/e-stack/compare/v1.0.31...v1.0.32
+[1.0.31]: https://github.com/ElliotDrel/e-stack/compare/v1.0.30...v1.0.31
 [1.0.30]: https://github.com/ElliotDrel/e-stack/compare/v1.0.29...v1.0.30
 [1.0.29]: https://github.com/ElliotDrel/e-stack/compare/v1.0.28...v1.0.29
 [1.0.28]: https://github.com/ElliotDrel/e-stack/compare/v1.0.27...v1.0.28
