@@ -25,6 +25,7 @@ This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/sk
 | **Flight Planner** | `/estack-flight-planner` | Finds and ranks flights between two airports with config-driven preferences and optional ground-shuttle pairing |
 | **GitHub Issue Tracker** | `/estack-github-issue-tracker` | Tracks and manages GitHub issues across repos |
 | **Leadership Coach** | `/estack-leadership-coach` | Interactive delegation coaching that builds a complete structured handoff — brief, authority level, monitoring plan — while catching failure patterns in real time |
+| **Productivity Prioritization Coach** | `/estack-productivity-prioritization-coach` | Coaches you through outcome-focused planning using RPM (Result, Purpose, Massive Action Plan) and leverage filters to cut your task list to what actually matters |
 | **Prompt Builder Coach** | `/estack-prompt-builder-coach` | Four-part kit for shaping, building, auditing, and scoping prompts for AI agents |
 | **Read Claude Session History** | `/estack-read-claude-session-history` | Searches, reads, recovers, and compares Claude Code session history across sessions, projects, and backups |
 | **Repo Search** | `/estack-repo-search` | Clones and searches external GitHub repos to answer questions about their code |
