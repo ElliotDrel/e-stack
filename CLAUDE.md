@@ -22,5 +22,5 @@ Two things I care enough about to name explicitly: publishing and syncing. Publi
 | `docs/publishing.md` | Releasing to npm or auditing repo security — publish flow, branch protection, OIDC configuration |
 | `docs/changelog-maintenance.md` | Updating `CHANGELOG.md` — when and how to write unreleased entries, how to promote them on publish |
 
-- **Skills in the pack:** `estack-active-learning-tutor`, `estack-better-title`, `estack-chris-voss`, `estack-claude-md-optimizer`, `estack-customer-discovery`, `estack-flight-planner`, `estack-github-issue-tracker`, `estack-leadership-coach`, `estack-migrate-claude-session-history`, `estack-productivity-prioritization-coach`, `estack-prompt-builder-coach`, `estack-read-claude-session-history`, `estack-repo-search`, `estack-vscode-file-recovery`
+- **Skills in the pack:** `estack-active-learning-tutor`, `estack-better-title`, `estack-chris-voss`, `estack-claude-md-optimizer`, `estack-customer-discovery`, `estack-flight-planner`, `estack-github-issue-tracker`, `estack-leadership-coach`, `estack-migrate-claude-session-history`, `estack-pdf-to-md`, `estack-productivity-prioritization-coach`, `estack-prompt-builder-coach`, `estack-read-claude-session-history`, `estack-repo-search`, `estack-vscode-file-recovery`
 - **Hooks in the pack:** `repo-search-nudge.js`

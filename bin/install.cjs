@@ -196,6 +196,11 @@ const DEPRECATED_SKILLS = [
 const HASH_IGNORE_DIRS = new Set(['__pycache__', '.git', 'node_modules']);
 const HASH_IGNORE_EXTS = new Set(['.pyc', '.pyo']);
 
+// Files placed by the user inside a skill folder that must never be overwritten
+// by an update. The installer saves their contents before wiping and restores
+// them after the copy.
+const USER_DATA_FILENAMES = new Set(['.env']);
+
 function walkDir(dir, base) {
   base = base || dir;
   const entries = fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
@@ -349,15 +354,41 @@ function withVersion(name, oldV, newV) {
   return name;
 }
 
+// Collect user-owned files (e.g. .env) from an installed skill dir so they can
+// be restored after a fresh copy wipes the directory.
+function collectUserDataFiles(dir) {
+  const saved = new Map();
+  if (!fs.existsSync(dir)) return saved;
+  function walk(cur) {
+    for (const entry of fs.readdirSync(cur, { withFileTypes: true })) {
+      const full = path.join(cur, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (USER_DATA_FILENAMES.has(entry.name)) {
+        saved.set(path.relative(dir, full), fs.readFileSync(full));
+      }
+    }
+  }
+  walk(dir);
+  return saved;
+}
+
 // Copies a skill to ~/.agents/skills/<name> and creates/updates the symlink at ~/.claude/skills/<name>.
 // If a real (non-symlink) directory already exists at the skills path, it is removed first.
+// User-owned files (e.g. .env) present in the installed copy are preserved across the update.
 function installSkillFiles(name) {
   const agentsSkillDir = path.join(AGENTS_DIR, name);
   const skillsLinkDir = path.join(SKILLS_DIR, name);
   if (!isSymlink(skillsLinkDir) && fs.existsSync(skillsLinkDir)) {
     fs.rmSync(skillsLinkDir, { recursive: true, force: true });
   }
+  const userDataFiles = collectUserDataFiles(agentsSkillDir);
   copyDir(path.join(PACKAGE_SKILLS_DIR, name), agentsSkillDir);
+  for (const [rel, content] of userDataFiles) {
+    const dest = path.join(agentsSkillDir, rel);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, content);
+  }
   ensureSymlink(agentsSkillDir, skillsLinkDir);
 }
 

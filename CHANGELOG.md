@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `estack-migrate-claude-session-history` skill — moves a Claude Code session (transcript + subagent sidecars) from one project to another, rewriting all 9 path-encoding variants so `/resume` works correctly under the new project
+- `estack-pdf-to-md` skill — converts PDFs to Markdown or plain text using the RunPulse API; parallel page batching, cost-saving blank-page filter, scanned-PDF OCR support (`--no-skip`), high-quality mode for tables/math/charts, and transparent encrypted-PDF handling
 - `estack-productivity-prioritization-coach` skill — coaches you through outcome-focused planning using RPM (Result, Purpose, Massive Action Plan) and leverage filters to cut your task list to what actually matters
 
 ---
