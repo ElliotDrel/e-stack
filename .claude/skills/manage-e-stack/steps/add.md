@@ -4,6 +4,8 @@ Follow these steps in order. Adding a skill is separate from releasing it — ve
 
 ## 1. Create the skill folder
 
+> **Migrating an existing skill?** Apply the universal "prefer deterministic changes" convention: copy the folder with `cp -r` / `xcopy /E /I` / `robocopy /E`, then use the Edit tool for targeted changes only (frontmatter `name:`, `description:` prefix, etc.).
+
 ```
 skills/estack-<skill-name>/SKILL.md
 ```

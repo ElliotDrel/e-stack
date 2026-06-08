@@ -34,6 +34,13 @@ These apply to every route. Violating them breaks the install or publish.
 - **Renaming/removing a skill** requires adding the old folder name to `DEPRECATED_SKILLS` in `bin/install.cjs` — the installer only adds/updates, never deletes, so without this users keep the old folder *and* the new one. See `steps/edit.md`.
 - **Hooks** live in `hooks/<name>.js` at the repo root (flat — no subfolders). They are Claude Code-only: unlike skills, hooks cannot be installed into `~/.agents/` and discovered from there. The installer copies them to `~/.claude/hooks/` and registers each via a dedicated `setup<Name>Hook(dryRun)` function in `bin/install.cjs` that idempotently patches `~/.claude/settings.json` (and honors `dryRun` by returning before writing). Hook scripts MUST wrap their body in `try { ... } catch { /* never break the tool */ }` and exit 0 — a hook crash must never break the underlying tool call. See `docs/hook-authoring.md`.
 - **Installer:** `node bin/install.cjs` from repo root **dry-runs by default** (previews changes, writes nothing); add `--install` to actually sync. `--dry-run` forces a preview even under `npx`.
+- **Prefer deterministic changes.** Any time a change can be made exactly and reproducibly — via a shell command, an existing repo script, or a targeted diff (Edit tool) — use that instead of reading content and regenerating it. AI-generated output is never byte-for-byte identical to the source; transcription errors accumulate even on "trivial" tasks. Apply this to everything:
+  - **File copies**: `cp -r` / `xcopy /E /I` / `robocopy /E`, not Read+Write
+  - **File moves/renames**: `mv` / `Rename-Item`, not Read+Write+Delete
+  - **Small edits to existing files**: Edit tool (diff patch), not Read+full Write
+  - **Structured data changes**: `jq`, `yq`, `sed`, or a repo script, not manual reconstruction
+  - **Anything a repo script already handles**: run it (`node scripts/check-versions.cjs --fix`, `node scripts/update-skill-feedback.cjs`, etc.) — don't reproduce its output by hand
+  Reserve AI-generated content for what genuinely requires judgment: writing new prose, synthesizing information, making decisions.
 - **Always `git pull --rebase origin main`** before committing or pushing. The user wants a linear commit history, so never plain `git pull` or `git merge` (those create merge commits).
 - **`CHANGELOG.md` must stay in sync.** Every add/edit/hook step writes an entry to `[Unreleased]`; publish promotes that section to a versioned block. See `docs/changelog-maintenance.md` for the full format and before/after examples.
 
