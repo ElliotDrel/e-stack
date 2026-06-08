@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.33] - 2026-06-08
+
 ### Added
 - `estack-migrate-claude-session-history` skill — moves a Claude Code session (transcript + subagent sidecars) from one project to another, rewriting all 9 path-encoding variants so `/resume` works correctly under the new project
 - `estack-pdf-to-md` skill — converts PDFs to Markdown or plain text using the RunPulse API; parallel page batching, cost-saving blank-page filter, scanned-PDF OCR support (`--no-skip`), high-quality mode for tables/math/charts, and transparent encrypted-PDF handling
@@ -292,7 +296,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.32...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.33...HEAD
+[1.0.33]: https://github.com/ElliotDrel/e-stack/compare/v1.0.32...v1.0.33
 [1.0.32]: https://github.com/ElliotDrel/e-stack/compare/v1.0.30...v1.0.32
 [1.0.30]: https://github.com/ElliotDrel/e-stack/compare/v1.0.29...v1.0.30
 [1.0.29]: https://github.com/ElliotDrel/e-stack/compare/v1.0.28...v1.0.29
