@@ -17,7 +17,7 @@ This part runs two ways. Standalone: SKILL.md routes the user here because they 
 
 5. Rebuild the prompt, re-reading the builder first. Before producing the corrected version, re-read prompt-builder.md in full. This is SKILL.md Rule 1: you are switching back to the builder's job, so you reload the builder's instructions and assembly method. Do not patch the prompt from memory. Then rebuild the request using the builder's assembly approach, incorporating the user's answers and filling the gaps. Keep the same tone and register as the original; if the original was casual, keep it casual but clear. Do not inflate the request beyond what the task requires.
 
-6. Show before and after, then save. Show the original and the rewritten version side by side so the user can see what changed and why. Save the rewritten prompt to a new markdown file in the current working directory, a new file rather than overwriting the original, so the before and after are both kept. Present it if present_files is available.
+6. Show before and after, then ask to save. Show the original and the rewritten version side by side in chat so the user can see what changed and why. Then ask: "Would you like me to save this as a file?" Only save if they say yes — and if so, save the rewritten version as a new file with a descriptive name, not overwriting any original.
 </instructions>
 
 <output>

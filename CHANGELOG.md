@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.35] - 2026-06-12
+
+### Changed
+- `estack-prompt-builder-coach`: finished prompts and briefs are now output in chat first; the skill then asks "Would you like me to save this as a file?" and only saves if the user confirms (previously auto-saved to a markdown file without asking)
+
+---
+
 ## [1.0.34] - 2026-06-12
 
 ### Fixed
@@ -310,7 +317,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.34...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.35...HEAD
+[1.0.35]: https://github.com/ElliotDrel/e-stack/compare/v1.0.34...v1.0.35
 [1.0.34]: https://github.com/ElliotDrel/e-stack/compare/v1.0.33...v1.0.34
 [1.0.33]: https://github.com/ElliotDrel/e-stack/compare/v1.0.32...v1.0.33
 [1.0.32]: https://github.com/ElliotDrel/e-stack/compare/v1.0.31...v1.0.32

@@ -23,7 +23,7 @@ This part runs two ways. Standalone: SKILL.md routes the user here because they 
 
 4. Deliver in two forms. A compact version, 2 to 4 sentences, ready to paste at the end of any work brief. An expanded version with the labeled breakdown above, for reference. Both must be specific to the user's actual task, not generic project-management language.
 
-5. Confirm and route. Ask: "Does this match what you'd consider done? Anything I should adjust?" If running standalone, save the definition of done to a markdown file in the current working directory and present it if possible. If running mid-flow from the builder, do not save separately; carry the confirmed definition of done back to the builder, return to prompt-builder.md, re-read it per SKILL.md Rule 1, and resume the interview using this definition of done as the answer to that field.
+5. Confirm and route. Ask: "Does this match what you'd consider done? Anything I should adjust?" If running standalone, output the definition of done in full in chat, then ask: "Would you like me to save this as a file?" Only save if they say yes. If running mid-flow from the builder, do not save or ask; carry the confirmed definition of done back to the builder, return to prompt-builder.md, re-read it per SKILL.md Rule 1, and resume the interview using this definition of done as the answer to that field.
 </instructions>
 
 <output>
