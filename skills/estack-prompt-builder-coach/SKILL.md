@@ -1,6 +1,6 @@
 ---
 name: estack-prompt-builder-coach
-version: 1.0.2
+version: 1.0.3
 description: (prompt-builder-coach) Use whenever you or the user need to write, sharpen, audit, or scope a prompt or work request for an AI agent or model. This is a four-part kit covering shaping a fuzzy idea into a decided goal, building a prompt from scratch, auditing a draft request that feels vague, and defining what "done" looks like when the task is fuzzy. Trigger when the user says "help me write a prompt", "build me a prompt", "audit this prompt", "make this request better", "why is the AI giving me generic output", "I don't know what I want", "I have a rough idea", "what should done look like", or when handing a task to another agent and wanting it to land. Use it even when the user did not say the word "prompt" but is clearly trying to get an AI to do consequential work. Do not use for quick factual lookups or for executing an already well-defined task.
 ---
 
@@ -71,7 +71,7 @@ A separate file, examples.md, holds annotated examples of strong prompts: thin a
 </examples>
 
 <output>
-Every finished prompt or brief gets saved to a markdown file with a descriptive snake_case name. In this environment, save to /mnt/user-data/outputs/. If present_files is available, present the file. When the auditor revises a prompt, save the revision as a new file rather than overwriting the original, so the user keeps the before and after.
+Every finished prompt or brief gets saved to a markdown file with a descriptive snake_case name in the current working directory. If present_files is available, present the file. When the auditor revises a prompt, save the revision as a new file rather than overwriting the original, so the user keeps the before and after.
 </output>
 
 <guardrails>
