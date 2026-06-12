@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- `estack-prompt-builder-coach`: output save path was hardcoded to `/mnt/user-data/outputs/` (a non-existent Linux sandbox path); changed to the current working directory
+- `estack-prompt-builder-coach`: output save path was hardcoded to `/mnt/user-data/outputs/` (a non-existent Linux sandbox path) in all four part files; changed to the current working directory throughout
 
 ---
 
