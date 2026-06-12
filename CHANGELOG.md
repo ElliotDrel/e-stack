@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.36] - 2026-06-12
+
+### Changed
+- `estack-repo-search`: subagent results now treated as navigation aids only — the skill explicitly instructs the main agent to read key files itself rather than trusting subagent summaries verbatim
+
+---
+
 ## [1.0.35] - 2026-06-12
 
 ### Changed
@@ -317,7 +324,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.35...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.36...HEAD
+[1.0.36]: https://github.com/ElliotDrel/e-stack/compare/v1.0.35...v1.0.36
 [1.0.35]: https://github.com/ElliotDrel/e-stack/compare/v1.0.34...v1.0.35
 [1.0.34]: https://github.com/ElliotDrel/e-stack/compare/v1.0.33...v1.0.34
 [1.0.33]: https://github.com/ElliotDrel/e-stack/compare/v1.0.32...v1.0.33

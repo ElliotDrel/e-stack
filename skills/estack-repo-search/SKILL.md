@@ -1,6 +1,6 @@
 ---
 name: estack-repo-search
-version: 1.0.2
+version: 1.0.3
 description: >-
   (repo-search) Clone and search external GitHub repositories to answer questions about their
   code. Use this skill whenever the user references a repo you don't have local
@@ -62,6 +62,8 @@ git clone --depth 1 <repo-url> ~/repo-search-storage/<repo-name>
 To explore a repo, spawn one or more **Haiku** subagents using the Agent tool with `model: "haiku"` and `subagent_type: "Explore"`. In the prompt, always include the **full absolute path** to the cloned repo (e.g. `C:/Users/2supe/repo-search-storage/gstack`) and tell the subagent to search within that directory. Without this, the subagent won't know where to look.
 
 If the question spans multiple areas of the repo, spawn multiple subagents in parallel — each focused on a different aspect — to get answers faster.
+
+**The subagent's job is navigation, not answers.** Use subagent results to identify which files are relevant, then **read those files yourself** with the Read tool before drawing conclusions. Never trust a subagent's summary of code verbatim — always verify by reading the source directly.
 
 ---
 
