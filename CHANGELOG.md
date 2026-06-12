@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.34] - 2026-06-12
+
 ### Fixed
 - `estack-prompt-builder-coach`: output save path was hardcoded to `/mnt/user-data/outputs/` (a non-existent Linux sandbox path) in all four part files; changed to the current working directory throughout
 
@@ -306,7 +310,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.33...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.34...HEAD
+[1.0.34]: https://github.com/ElliotDrel/e-stack/compare/v1.0.33...v1.0.34
 [1.0.33]: https://github.com/ElliotDrel/e-stack/compare/v1.0.32...v1.0.33
 [1.0.32]: https://github.com/ElliotDrel/e-stack/compare/v1.0.31...v1.0.32
 [1.0.31]: https://github.com/ElliotDrel/e-stack/compare/v1.0.30...v1.0.31
