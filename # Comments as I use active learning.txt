@@ -1,0 +1,64 @@
+# Comments as I use active learning skill 
+
+## Comment 1: 
+I want to reframe the way teaching concepts goes. The correct frame should be: what concepts does a user need to understand to get this question correct? Then, for all those concepts, they can be added to the teacher list, and then one by one those concepts need to be taught. 
+
+---
+
+## Comment 2: 
+I want to make the rule for mastery to be that you have to get the amount of questions you got wrong plus one. For example, if I get two clarification questions wrong, then after I start getting them right, I need to get that many plus one right to achieve mastery. That's why, with an active question, I can achieve mastery from the first time, because zero plus one equals one. And then if I get the clarification question right and the active question right, that will also pass, since that would be one wrong question plus one equals two, which is two that I got right. 
+
+---
+
+## Comment 3:
+Why is it simplifying? If there are directions in this to simplify when teaching, that is very wrong. We need to make sure that it teaches the content exactly the way it is taught in the project file, since the exam is based on the project file. 
+
+Part of the assistance output that led me to believe this is an issue: "Good catch — I oversimplified. Per your professor's own framing, second-degree PD is actually discrimination based on timing, quantity, OR quality of the good — not just quantity alone. The "declining price schedule" description in the slides is the quantity version. SaaS tiers are the quality version. They're the same degree."
+
+---
+
+## Comment 4:
+So in this transcript, I did put the AI between a rock and a hard place. However, in this situation, it's stupid to re-ask the active question, since it literally just gave me the answer. Now, this is the most extreme example of this situation; however, I've seen similar situations where it'll basically give me the answer and then re-ask the active question. What I think is the best to do in this situation is to ask the user a clarification question. If they get it right, then mark both complete. If they get it wrong, launch it to a teaching segment, and then the cycle repeats from there, which ideally should resurface the active question again. At that point, it's been long enough for the user to forget it and something to remember. It's not a problem that it went out of its way to explain the answer. I did enough work on my end, as you could see from my input, to warrant that, and it was the correct teaching segment. What I'm not happy about is the footer.
+
+<transcriptexcerpt>
+<assistant1>Correct, B. Equilibrium is P=6, Q=2. Both triangles are symmetric here so CS = PS = $4.
+
+=== ACTIVE QUESTION ===
+
+**Q27.** A finitely repeated game differs from an infinitely repeated game in that
+
+A) the former needs a lower interest rate to support collusion than does the latter.
+B) there is an end-of-period problem for the former.
+C) a collusive outcome can usually be sustained in the former but not the latter.
+D) all of the statements associated with this question are correct.</assistant1>
+<user1>A is correct because in a finite sum game, it boils down to a one-shot, since the last game always becomes a one-shot. Then all the games become a one-shot, but in an infinite game they are interested in colluding, so we take a very high interest rate to break said collusion, since they would break it infinitely. 
+
+C is wrong. It's the opposite. 
+
+Not quite sure what an end of the period problem is.</user1>
+<assistant2>Your reasoning actually described **B** — the end-of-period problem — not A. Let me clarify all three statements:
+
+## Finitely vs. Infinitely Repeated Games
+
+**End-of-period problem (B — TRUE):** In a finite game with a known end, the last round is a one-shot game → defection is dominant. Then round T−1 becomes the effective "last round," so defect there too. This unravels all the way back to round 1. Per slides: "rolls back all the way to the first round." This collapsing is the end-of-period problem — and it only exists in **finitely** repeated games. Infinite games have no lastgn period, so backward induction can't unravel.
+
+**Statement A (FALSE):** A finite game can't sustain collusion at all — there's no interest rate that saves it, because the whole thing unravels regardless. So it's not that the finite game needs a "lower" interest rate — it needs an impossible condition.
+
+**Statement C (FALSE — it's backwards):** Collusion CAN be sustained in the **infinite** game (not the finite one), provided the interest rate is low enough (firms care enough about future payoffs).
+
+So the correct answer is **B only**.
+
+=== ACTIVE QUESTION ===
+
+**Q27.** A finitely repeated game differs from an infinitely repeated game in that
+
+A) the former needs a lower interest rate to support collusion than does the latter.
+B) there is an end-of-period problem for the former.
+C) a collusive outcome can usually be sustained in the former but not the latter.
+D) all of the statements associated with this question are correct.</assistant2>
+</transcriptexcerpt>
+
+---
+
+## Comment 5
+Active learning skill activates too easily. Must be only active when called directly. This isn't as easy as just disabling model invocation because in claude.ai that's not an option.
