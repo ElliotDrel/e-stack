@@ -61,6 +61,30 @@ function parseFrontmatter(content) {
   return fm;
 }
 
+function checkYamlSafeFrontmatter(content, relPath) {
+  const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!m) return;
+
+  const lines = m[1].split(/\r?\n/);
+  lines.forEach((line, i) => {
+    const keyMatch = line.match(/^([A-Za-z_][\w-]*):\s*(.*)$/);
+    if (!keyMatch) return;
+
+    const value = keyMatch[2].trim();
+    if (!value || /^[>|][-+]?$/.test(value)) return;
+    if (/^(['"]).*\1$/.test(value)) return;
+
+    if (/:\s/.test(value)) {
+      fail(
+        relPath +
+          ':' +
+          (i + 2) +
+          ' frontmatter value contains ": " but is not quoted or folded; use `description: >-` for long text',
+      );
+    }
+  });
+}
+
 // ── Recursive text-file walk of a skill folder ───────────────────────────────
 function walkFiles(dir) {
   const out = [];
@@ -96,7 +120,9 @@ function checkSkill(inputName) {
     fail('SKILL.md missing');
     return;
   }
-  const fm = parseFrontmatter(fs.readFileSync(skillMdPath, 'utf8'));
+  const skillMd = fs.readFileSync(skillMdPath, 'utf8');
+  checkYamlSafeFrontmatter(skillMd, path.relative(REPO_ROOT, skillMdPath).replace(/\\/g, '/'));
+  const fm = parseFrontmatter(skillMd);
   if (!fm) {
     fail('SKILL.md has no frontmatter block');
     return;
