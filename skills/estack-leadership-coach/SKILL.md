@@ -1,6 +1,6 @@
 ---
 name: estack-leadership-coach
-version: 3.1.0
+version: 3.1.1
 description: (leadership-coach) A leadership coach that walks through real decisions — delegation, and (over time) feedback, hiring, OKRs, conflict, performance — producing a concrete artifact each session (a brief, a diagnosis, a script) the user can act on immediately. Coaches by surfacing proven principles in the moment they're needed, then applying them to the user's actual situation.
 metadata:
   disable_model_invocation: true

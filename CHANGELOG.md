@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.37] - 2026-06-18
+
+### Added
+- Active learning Exam 3 walkthrough review archive with cleaned transcript artifacts, user corrections, and iteration notes.
+
+### Fixed
+- `estack-migrate-claude-session-history` and `estack-read-claude-session-history` now use folded YAML descriptions so trigger text containing colons does not break skill loading.
+- `estack-leadership-coach` reference-authoring docs now point at the installed `estack-` skill path.
+- `estack-pdf-to-md` no longer includes a redundant Markdown title after frontmatter.
+- `check-skill-name.cjs` now catches unsafe one-line frontmatter values while allowing intentional prose references and legacy compatibility paths.
+
+---
+
 ## [1.0.36] - 2026-06-12
 
 ### Changed

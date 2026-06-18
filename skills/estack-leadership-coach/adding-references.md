@@ -56,7 +56,7 @@ If both apply (e.g., a book with multiple author talks) → synthesis as the pri
 
 ### Step 4 — Create the reference file
 
-**Location:** `~/.claude/skills/leadership-coach/references/<filename>.md`
+**Location:** `~/.claude/skills/estack-leadership-coach/references/<filename>.md`
 
 **Filename convention:** `<author-lastname>_<work-shortname>.md` — lowercase, hyphens not underscores within name parts, single underscore between author and work. Examples already in the skill:
 

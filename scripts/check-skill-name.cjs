@@ -100,6 +100,30 @@ function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function isAllowedBareNameMention({ rel, line, short, index }) {
+  const charAfter = line[index + short.length] || '';
+
+  // Reference docs often talk about the display name of the skill in prose.
+  // The stale-name check is meant to catch invocation/path drift, not normal
+  // sentences like "the leadership-coach skill" or "the leadership-coach's".
+  if (rel.includes('/references/')) {
+    return true;
+  }
+  if (rel.endsWith('/adding-references.md')) {
+    if (charAfter === "'" || line.slice(index, index + short.length + 6) === short + ' skill') {
+      return true;
+    }
+  }
+
+  // Keep compatibility lookups for users who stored config before the estack-
+  // prefix migration. These paths are deliberately not rewritten.
+  if ((line.includes('/skills/' + short + '/') || line.includes('"skills" / "' + short + '"')) && /legacy/i.test(line)) {
+    return true;
+  }
+
+  return false;
+}
+
 // ── The check ────────────────────────────────────────────────────────────────
 function checkSkill(inputName) {
   const short = inputName.replace(/^estack-/, '');
@@ -167,6 +191,7 @@ function checkSkill(inputName) {
         if (/[A-Za-z0-9-]/.test(charAfter)) continue;
         // The `(<short>)` description convention is the one sanctioned bare use.
         if (charBefore === '(' && charAfter === ')') continue;
+        if (isAllowedBareNameMention({ rel, line, short, index: m.index })) continue;
         fail('stale bare name "' + short + '" at ' + rel + ':' + (i + 1) + ' — use "' + full + '"');
         staleMentions++;
       }
