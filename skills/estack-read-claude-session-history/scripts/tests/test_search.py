@@ -76,10 +76,11 @@ def test_search_until_is_exclusive(fixtures_dir):
     assert S.search_session(
         fixtures_dir / "basic-session.jsonl", "Hello", role="both", until=at
     ) == []
+    # "Hello" matches only the user message at the boundary instant, so +1s yields exactly 1.
     assert len(S.search_session(
         fixtures_dir / "basic-session.jsonl", "Hello", role="both",
         until=at + timedelta(seconds=1)
-    )) >= 1
+    )) == 1
 
 
 def test_search_project(fixtures_dir, tmp_path):
