@@ -192,6 +192,7 @@ def main() -> int:
             "parentUuid": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
             "sessionId": SESSION_ID,
             "cwd": NEW_REPO,
+            "timestamp": "2026-01-01T00:00:02.000Z",
         }]
         record("fail.migration_note (isMeta=true)", False, vm.check_migration_note(meta_note))
 
