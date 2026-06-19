@@ -738,12 +738,16 @@ def mode_count(
 
 
 def _tally_tool_usage(
-    sources: list[Path],
+    groups: list[list[Path]],
     tool_filter: set[str] | None,
     since: datetime | None,
     until: datetime | None,
 ) -> tuple[dict[str, int], dict[str, int], int, int]:
-    """Walk sessions, tallying tool_use blocks by name (Skill sub-tallied by skill).
+    """Tally tool_use blocks by name (Skill sub-tallied by skill) over session groups.
+
+    Each group is the files of ONE logical session — the parent transcript plus,
+    when subagents are folded in, its `agent-*.jsonl` siblings. A group counts as
+    one session-with-calls if any of its files contributed a call.
 
     Returns (tool_counts, skill_counts, total_calls, sessions_with_calls).
     Keys on invocation STRUCTURE (a tool_use block's name / input.skill), so it
@@ -755,31 +759,32 @@ def _tally_tool_usage(
     total = 0
     sessions_with = 0
     window = since is not None or until is not None
-    for f in sources:
-        try:
-            lines = PR.parse_lines(f)
-        except Exception as e:  # noqa: BLE001 — one bad file shouldn't abort the tally
-            print(f"Error reading {f.name}: {e}", file=sys.stderr)
-            continue
+    for group in groups:
         hit = False
-        for c in T.extract_tool_calls(lines, tool_filter):
-            if window:
-                ts = PR._parse_timestamp(c.get("timestamp"))
-                if ts is None:
-                    continue
-                if ts.tzinfo is not None:
-                    ts = ts.replace(tzinfo=None)
-                if since is not None and ts < since:
-                    continue
-                if until is not None and ts > until:
-                    continue
-            name = c["name"] or "(unknown)"
-            tool_counts[name] = tool_counts.get(name, 0) + 1
-            total += 1
-            hit = True
-            if name == "Skill":
-                sk = (c.get("input") or {}).get("skill") or "(unnamed)"
-                skill_counts[sk] = skill_counts.get(sk, 0) + 1
+        for f in group:
+            try:
+                lines = PR.parse_lines(f)
+            except Exception as e:  # noqa: BLE001 — one bad file shouldn't abort the tally
+                print(f"Error reading {f.name}: {e}", file=sys.stderr)
+                continue
+            for c in T.extract_tool_calls(lines, tool_filter):
+                if window:
+                    ts = PR._parse_timestamp(c.get("timestamp"))
+                    if ts is None:
+                        continue
+                    if ts.tzinfo is not None:
+                        ts = ts.replace(tzinfo=None)
+                    if since is not None and ts < since:
+                        continue
+                    if until is not None and ts > until:
+                        continue
+                name = c["name"] or "(unknown)"
+                tool_counts[name] = tool_counts.get(name, 0) + 1
+                total += 1
+                hit = True
+                if name == "Skill":
+                    sk = (c.get("input") or {}).get("skill") or "(unnamed)"
+                    skill_counts[sk] = skill_counts.get(sk, 0) + 1
         if hit:
             sessions_with += 1
     return tool_counts, skill_counts, total, sessions_with
@@ -795,6 +800,7 @@ def mode_tool_usage(
     tool_filter: set[str] | None = None,
     project: str | None = None,
     exclude_current: bool = False,
+    include_subagents: bool = False,
     current_uuid: str | None = None,
     fmt: str = "text",
 ):
@@ -803,21 +809,34 @@ def mode_tool_usage(
     Answers "which tools/skills do I actually use" by counting real invocations,
     not text occurrences. Scope is --file (one session) or the usual
     --cwd/--project/--all-projects. --tool narrows to a subset (e.g. --tool Skill).
+    --include-subagents folds each session's agent-*.jsonl tool calls into its tally.
     """
     if file_path:
-        sources = [file_path]
+        parents = [file_path]
     else:
         project_dirs = _scoped_project_dirs(root, cwd, all_projects, project)
         if project_dirs is None:
             return "--file, --cwd, --project, or --all-projects required"
-        sources = []
+        parents = []
         for pd in project_dirs:
-            sources.extend(P.list_transcripts(pd, since=since, until=until))
+            # `since` is a safe lower-bound mtime pre-filter (a session whose last
+            # event predates `since` holds no in-window calls). `until` is NOT a
+            # safe mtime filter — a session modified after `until` can still hold
+            # calls inside the window — so the upper bound is applied per-call in
+            # _tally_tool_usage, mirroring timeline/engagement.
+            parents.extend(P.list_transcripts(pd, since=since))
         if exclude_current and current_uuid:
-            sources = [f for f in sources if f.stem != current_uuid]
+            parents = [f for f in parents if f.stem != current_uuid]
+
+    groups = []
+    for p in parents:
+        group = [p]
+        if include_subagents:
+            group.extend(P.list_subagents(p))
+        groups.append(group)
 
     tool_counts, skill_counts, total, sessions_with = _tally_tool_usage(
-        sources, tool_filter, since, until
+        groups, tool_filter, since, until
     )
     tools_sorted = sorted(tool_counts.items(), key=lambda x: (-x[1], x[0]))
     skills_sorted = sorted(skill_counts.items(), key=lambda x: (-x[1], x[0]))
@@ -1496,7 +1515,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--role", default="both", choices=["user", "assistant", "both"])
     p.add_argument("--in", dest="in_channel", default="text",
                    choices=["text", "tool_use", "tool_result", "thinking", "all"])
-    p.add_argument("--tool", help="Comma-separated tool names (for tool-calls)")
+    p.add_argument("--tool", help="Comma-separated tool names (for tool-calls / tool-usage)")
     p.add_argument("--subagent", help="Subagent file path (for subagent-tools/files)")
     p.add_argument("--file-a", dest="file_a", help="First file for diff mode")
     p.add_argument("--file-b", dest="file_b", help="Second file for diff mode")
@@ -1506,7 +1525,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--exclude-current", action="store_true",
                    help="Drop the current session (via CLAUDE_SESSION_ID) from output")
     p.add_argument("--include-subagents", action="store_true",
-                   help="Fold subagent finals into brief/last/dump output")
+                   help="Fold subagent finals into brief/last/dump output; "
+                        "fold subagent tool calls into tool-usage tallies")
     p.add_argument("--force-dump", action="store_true",
                    help="Bypass the 5MB dump-size guard")
     p.add_argument("--format", default="text", choices=["text", "json"],
@@ -1657,8 +1677,9 @@ def main() -> int:
         _emit(mode_tool_usage(
             root, args.cwd, args.all_projects, fp, since, until,
             tool_filter=_split_tools(args.tool), project=args.project,
-            exclude_current=args.exclude_current, current_uuid=current_uuid,
-            fmt=fmt,
+            exclude_current=args.exclude_current,
+            include_subagents=args.include_subagents,
+            current_uuid=current_uuid, fmt=fmt,
         ))
         return 0
     if mode == "journal":

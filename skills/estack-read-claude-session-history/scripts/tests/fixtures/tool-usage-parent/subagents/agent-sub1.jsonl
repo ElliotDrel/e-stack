@@ -1,0 +1,3 @@
+{"type":"user","timestamp":"2026-05-01T10:00:03Z","message":{"role":"user","content":"sub task"}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:04Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"s1","name":"Skill","input":{"skill":"estack-repo-search"}}]}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:05Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"s2","name":"Bash","input":{"command":"ls"}}]}}

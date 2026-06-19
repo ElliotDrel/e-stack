@@ -138,7 +138,7 @@ What are you trying to do?
 | `changelog` | `--file` | `HH:MM:SS  TOOL  one-line-summary`, day-grouped |
 | `file-edits` | `--file` | Unique paths sorted with op tags |
 | `tool-calls` | `--file` (+ `--tool` filter) | Timestamped per-call blocks |
-| `tool-usage` | `--file` or scope (+ `--tool` filter) | Tool-call tallies by name; `Skill` calls sub-tallied by skill name (counts real invocations, not text) |
+| `tool-usage` | `--file` or scope (+ `--tool` filter, `--include-subagents`) | Tool-call tallies by name; `Skill` calls sub-tallied by skill name (counts real invocations, not text) |
 | `subagent-list` | `--file` | List sibling subagents with agentType + description |
 | `subagent-finals` | `--file` | Every subagent's final assistant message |
 | `subagent-tools` | `--subagent` | Forensics on one subagent |
@@ -164,7 +164,7 @@ What are you trying to do?
 - `--tz <spec>` — display timezone override (IANA name, `UTC`, or offset like `-4`). Default: system local time.
 - `--format json` (or `--json`) — structured JSON output on every mode (except the legacy `--list`/`--list-subagents` aliases). Pipe-friendly: paths are strings, timestamps ISO.
 - `--exclude-current` — drop the current session (detected via `CLAUDE_SESSION_ID`) from `list`, `journal`, `search`, `count`, `timeline`, `engagement`, and `tool-usage`. Useful for `tool-usage` so the very commands you're running now don't skew the tally.
-- `--include-subagents` — fold subagent finals into `brief`, `last`, `dump` output, each tagged `[subagent <id-short> · <agentType>]`.
+- `--include-subagents` — fold subagent finals into `brief`, `last`, `dump` output, each tagged `[subagent <id-short> · <agentType>]`. For `tool-usage`, folds each session's subagent `tool_use` calls into the tally (the subagent is not counted as a separate session).
 - `--force-dump` — bypass the 5 MB `dump` guard.
 - `-n N` — count modifier (default 5 for `last`, 80 for `dump`, 10 for `resume-prev`).
 

@@ -379,7 +379,7 @@ python read_transcript.py --all-projects --mode tool-usage --tool Skill
 python read_transcript.py --project keel --mode tool-usage --since 30d
 ```
 
-Scope is `--file` (one session) or `--cwd` / `--project` / `--all-projects`. `--tool` narrows to a comma-separated subset (e.g. `--tool Skill` for a skills-only view, `--tool Bash,Edit`). `--since/--until` bound the calls by their own timestamp. `--exclude-current` drops the current session so the commands you're running now don't skew the count.
+Scope is `--file` (one session) or `--cwd` / `--project` / `--all-projects`. `--tool` narrows to a comma-separated subset (e.g. `--tool Skill` for a skills-only view, `--tool Bash,Edit`). `--since/--until` bound the calls by their own timestamp (not file mtime — a session modified after `--until` is still read so in-window calls are counted). `--exclude-current` drops the current session so the commands you're running now don't skew the count. `--include-subagents` folds each session's `agent-*.jsonl` tool calls into its tally — needed to capture skills invoked inside fan-out subagents (the subagent is not counted as a separate session).
 
 Why this exists: it counts real **invocations** — a `tool_use` block whose `name` is the tool (and, for skills, `input.skill`). Text-based modes like `search --in tool_use` and `count` match the *string* "ast-grep" wherever it appears (a `CLAUDE.md` instruction, a bash command, even your own search commands this session), so they over-count. `tool-usage` keys on structure and is immune to that.
 

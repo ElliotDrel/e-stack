@@ -173,6 +173,67 @@ def test_tool_usage_missing_file(cli_path, tmp_path):
     assert r.returncode == 1
 
 
+def test_tool_usage_until_keeps_in_window_calls(cli_path, fixtures_dir, tmp_path):
+    # The tool-zoo calls are stamped 2026-05-01T10:00:0x. Copy the fixture, then
+    # bump its mtime far past --until. A naive mtime filter would drop the file
+    # and report zero; per-call timestamp filtering must still count the calls.
+    import os
+    fake_root = tmp_path / "projects"
+    fake_proj = fake_root / "C--fake-proj"
+    fake_proj.mkdir(parents=True)
+    target = fake_proj / "a.jsonl"
+    shutil.copy(fixtures_dir / "tool-zoo.jsonl", target)
+    future = 1_900_000_000  # ~2030, well after the --until bound below
+    os.utime(target, (future, future))
+    r = _run_cli(
+        cli_path, "--root", str(fake_root), "--cwd", "C:\\fake\\proj",
+        "--mode", "tool-usage", "--until", "2026-05-02", "--format", "json",
+    )
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["total"] == 9, data  # all 9 calls are inside the window
+    assert data["sessions"] == 1
+
+
+def test_tool_usage_exclude_current_drops_session(cli_path, fixtures_dir, tmp_path):
+    fake_root = tmp_path / "projects"
+    fake_proj = fake_root / "C--fake-proj"
+    fake_proj.mkdir(parents=True)
+    shutil.copy(fixtures_dir / "tool-zoo.jsonl", fake_proj / "cur.jsonl")
+    shutil.copy(fixtures_dir / "tool-zoo.jsonl", fake_proj / "other.jsonl")
+    # Without exclusion: 2 sessions, 18 calls. Excluding "cur" leaves 1 session, 9.
+    r = _run_cli(
+        cli_path, "--root", str(fake_root), "--cwd", "C:\\fake\\proj",
+        "--mode", "tool-usage", "--exclude-current", "--format", "json",
+        env_overrides={"CLAUDE_SESSION_ID": "cur"},
+    )
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["sessions"] == 1
+    assert data["total"] == 9
+
+
+def test_tool_usage_include_subagents(cli_path, fixtures_dir):
+    # Parent calls: Skill(commit) + Agent. Subagent calls: Skill(estack-repo-search) + Bash.
+    # --include-subagents must fold the subagent's calls in, without counting the
+    # subagent as its own session.
+    parent = fixtures_dir / "tool-usage-parent.jsonl"
+    without = json.loads(_run_cli(
+        cli_path, "--file", str(parent), "--mode", "tool-usage", "--format", "json",
+    ).stdout)
+    assert without["total"] == 2
+    assert without["sessions"] == 1
+    assert {s["skill"] for s in without["skills"]} == {"commit"}
+
+    with_sub = json.loads(_run_cli(
+        cli_path, "--file", str(parent), "--mode", "tool-usage",
+        "--include-subagents", "--format", "json",
+    ).stdout)
+    assert with_sub["total"] == 4  # +Skill(estack-repo-search) +Bash
+    assert with_sub["sessions"] == 1  # subagent is not a separate session
+    assert {s["skill"] for s in with_sub["skills"]} == {"commit", "estack-repo-search"}
+
+
 def test_subagent_list(cli_path, fixtures_dir):
     r = _run_cli(
         cli_path, "--file", str(fixtures_dir / "subagent-parent.jsonl"),
