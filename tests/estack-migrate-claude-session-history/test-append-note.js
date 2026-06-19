@@ -5,6 +5,8 @@ const os = require('os');
 
 const mod = require('../../skills/estack-migrate-claude-session-history/scripts/migrate-claude-history.js');
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Set up a tiny synthetic .jsonl in a temp dir
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'migrate-test-'));
 const testFile = path.join(tmp, 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.jsonl');
@@ -18,36 +20,42 @@ const oldRepo = mod.parseWindowsRepoPath('C:\\fake\\old', 'old');
 const newRepo = mod.parseWindowsRepoPath('C:\\fake\\new', 'new');
 
 const summary = { migrationNotesAppended: 0, migrationNotesSkipped: 0 };
+let appended;
 
-// First call — should append
-mod.appendMigrationNote({ filePath: testFile, oldRepo, newRepo, dryRun: false, summary });
-console.log('After first call:', summary);
+try {
+  // First call — should append
+  mod.appendMigrationNote({ filePath: testFile, oldRepo, newRepo, dryRun: false, summary });
+  console.log('After first call:', summary);
 
-// Second call — should detect duplicate and skip
-mod.appendMigrationNote({ filePath: testFile, oldRepo, newRepo, dryRun: false, summary });
-console.log('After second call:', summary);
+  // Second call — should detect duplicate and skip
+  mod.appendMigrationNote({ filePath: testFile, oldRepo, newRepo, dryRun: false, summary });
+  console.log('After second call:', summary);
 
-// Inspect the appended entry
-const lines = fs.readFileSync(testFile, 'utf8').split('\n').filter((l) => l.trim());
-const appended = JSON.parse(lines[lines.length - 1]);
+  // Inspect the appended entry
+  const lines = fs.readFileSync(testFile, 'utf8').split('\n').filter((l) => l.trim());
+  appended = JSON.parse(lines[lines.length - 1]);
 
-console.log('');
-console.log('=== Appended entry shape ===');
-console.log('type:    ', appended.type);
-console.log('isMeta:  ', 'isMeta' in appended ? appended.isMeta : '<not set>');
-console.log('parent:  ', appended.parentUuid);
-console.log('uuid:    ', appended.uuid);
-console.log('cwd:     ', appended.cwd);
-console.log('');
-console.log('=== content (first 200 chars) ===');
-console.log(appended.message?.content?.slice(0, 200) ?? '<no content>');
+  console.log('');
+  console.log('=== Appended entry shape ===');
+  console.log('type:    ', appended.type);
+  console.log('isMeta:  ', 'isMeta' in appended ? appended.isMeta : '<not set>');
+  console.log('parent:  ', appended.parentUuid);
+  console.log('uuid:    ', appended.uuid);
+  console.log('cwd:     ', appended.cwd);
+  console.log('');
+  console.log('=== content (first 200 chars) ===');
+  console.log(appended.message?.content?.slice(0, 200) ?? '<no content>');
+} finally {
+  fs.rmSync(tmp, { recursive: true, force: true });
+}
 
-// Cleanup
-fs.rmSync(tmp, { recursive: true, force: true });
 console.log('');
 const contentOk = appended.message?.content?.includes('<session-migration-note>') ?? false;
 const cwdOk = appended.cwd === newRepo.normalized;
 const parentOk = appended.parentUuid === '11111111-1111-1111-1111-111111111111';
-const passed = summary.migrationNotesAppended === 1 && summary.migrationNotesSkipped === 1 && !('isMeta' in appended) && contentOk && cwdOk && parentOk;
+const typeOk = appended.type === 'user';
+const uuidOk = typeof appended.uuid === 'string' && UUID_RE.test(appended.uuid);
+const passed = summary.migrationNotesAppended === 1 && summary.migrationNotesSkipped === 1
+  && !('isMeta' in appended) && contentOk && cwdOk && parentOk && typeOk && uuidOk;
 console.log('Test passed:', passed ? 'YES' : 'NO');
 if (!passed) process.exit(1);
