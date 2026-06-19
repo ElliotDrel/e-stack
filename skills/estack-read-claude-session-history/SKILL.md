@@ -1,6 +1,6 @@
 ---
 name: estack-read-claude-session-history
-version: 1.2.1
+version: 1.2.2
 description: >-
   (read-claude-session-history) Invoke for ANY task involving Claude Code
   session history, transcripts, or .jsonl files - this is the only way to read,
@@ -97,7 +97,7 @@ What are you trying to do?
 │  ├─ One project ─────────────────────────────── --mode search --cwd …
 │  ├─ All projects ────────────────────────────── --mode search --all-projects
 │  ├─ Expand a wide search to full windows ───── --full
-│  └─ Filter to user msgs / tool-use inputs ──── --role user --in tool_use
+│  └─ Filter by role / content channel ──────── --role user --in tool_use|tool_result|thinking|all
 │
 ├─ Forensics on a session
 │  ├─ Chronological tool-call log ────────────── --mode changelog

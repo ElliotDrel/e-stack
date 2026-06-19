@@ -236,12 +236,18 @@ python "$PY" --file <unknown-session>.jsonl --mode changelog | tail -30
 ## 8. Tool-call forensics ("when did I last `git push --force`?")
 
 ```bash
-# Find every tool_use whose JSON args contain a substring, across all sessions
+# Find which sessions contain a matching tool_use, across all projects
+# (returns a per-session summary by default: one line per session with hit count + snippet)
 python "$PY" --all-projects --mode search --query "git push --force" --in tool_use
+
+# Add --full to expand to match windows instead of the per-session summary
+python "$PY" --all-projects --mode search --query "git push --force" --in tool_use --full
 
 # Get full forensics on the session that matched
 python "$PY" --file <matching-session>.jsonl --mode tool-calls --tool Bash
 ```
+
+Wide-scope search (`--all-projects`, `--cwd`, `--project`) returns a **per-session summary** by default — one line per matching session with a hit count and first snippet — so the output stays under the harness's Read cap. Add `--full` to expand to match windows (bounded by a ~10k-token budget; degrades back to summary with a note if it overflows). Single-file search (`--file`) always returns full windows.
 
 ---
 

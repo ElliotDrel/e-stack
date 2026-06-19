@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `docs/skill-authoring.md`: documented `check-skill-name.cjs` — the CI gate that verifies skill naming, frontmatter shape, and self-reference correctness. Previously only `check-docs.cjs` and `check-versions.cjs` were documented; `check-skill-name.cjs` ran silently as a hard gate without any author-facing guidance.
+- `docs/publishing.md`: added `check-skill-name.cjs --all` to the publish workflow step description so the gate is discoverable alongside the other two.
+
+### Fixed
+- `estack-read-claude-session-history` (`recipes.md`): recipe 8 (tool-call forensics) now documents the wide-scope search default (per-session summary) and shows `--full` for expanding to match windows. Previously the recipe showed `--all-projects --mode search` without mentioning that the output is a summary by default, which could confuse users expecting match windows.
+- `estack-read-claude-session-history` (`SKILL.md`): quick-reference tree now shows `--in tool_use|tool_result|thinking|all` instead of just `--in tool_use`, reflecting the `--in tool_result` and `--in all` options added in v1.2.1.
+
 ---
 
 ## [1.0.39] - 2026-06-19
