@@ -4,8 +4,8 @@ Builds synthetic transcripts with known defects, runs each check against
 them, and confirms each check catches what it's supposed to catch (and
 doesn't false-positive on clean inputs).
 
-Run from the skill's scripts/ directory:
-    python test-validate-migration.py
+Run from the repo root:
+    python tests/estack-migrate-claude-session-history/test-validate-migration.py
 
 Exit 0 on full pass, 1 if any case fails.
 """
@@ -21,7 +21,7 @@ import tempfile
 from pathlib import Path
 
 # Import validate-migration.py despite the hyphen in the filename.
-SCRIPT_DIR = Path(__file__).parent
+SCRIPT_DIR = Path(__file__).resolve().parent.parent.parent / "skills" / "estack-migrate-claude-session-history" / "scripts"
 spec = importlib.util.spec_from_file_location(
     "validate_migration",
     SCRIPT_DIR / "validate-migration.py",

@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const mod = require('./migrate-claude-history.js');
+const mod = require('../../skills/estack-migrate-claude-session-history/scripts/migrate-claude-history.js');
 
 // Set up a tiny synthetic .jsonl in a temp dir
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'migrate-test-'));

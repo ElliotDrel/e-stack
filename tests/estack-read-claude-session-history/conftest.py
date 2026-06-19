@@ -17,7 +17,7 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
 
 
 THIS_DIR = Path(__file__).resolve().parent
-SCRIPTS_DIR = THIS_DIR.parent
+SCRIPTS_DIR = THIS_DIR.parent.parent / "skills" / "estack-read-claude-session-history" / "scripts"
 FIXTURES_DIR = THIS_DIR / "fixtures"
 
 # Make `from lib...` work in tests

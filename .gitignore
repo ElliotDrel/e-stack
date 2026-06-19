@@ -1,4 +1,7 @@
 .agents/
-.pytest_cache/
+**/.pytest_cache/
+**/__pycache__/
+*.pyc
+*.pyo
 Untitled-1.md
 **/.env
