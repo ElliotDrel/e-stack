@@ -282,9 +282,10 @@ def filter_by_time(
         # Strip tzinfo for naive comparison
         if ts.tzinfo is not None:
             ts = ts.replace(tzinfo=None)
+        # Half-open window [since, until): since inclusive, until exclusive.
         if since is not None and ts < since:
             continue
-        if until is not None and ts > until:
+        if until is not None and ts >= until:
             continue
         out.append(m)
     return out

@@ -859,9 +859,10 @@ def _tally_tool_usage(
                         continue
                     if ts.tzinfo is not None:
                         ts = ts.replace(tzinfo=None)
+                    # Half-open window [since, until): since inclusive, until exclusive.
                     if since is not None and ts < since:
                         continue
-                    if until is not None and ts > until:
+                    if until is not None and ts >= until:
                         continue
                 name = c["name"] or "(unknown)"
                 tool_counts[name] = tool_counts.get(name, 0) + 1

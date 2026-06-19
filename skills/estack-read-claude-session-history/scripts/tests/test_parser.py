@@ -132,6 +132,15 @@ def test_filter_by_time(fixtures_dir):
     )
 
 
+def test_filter_by_time_until_is_exclusive():
+    # Half-open [since, until): a message stamped exactly at `until` is excluded.
+    # Derive the bound from the parser so the test is timezone-independent.
+    msgs = [{"timestamp": "2026-05-01T10:00:00Z"}]
+    at = PR._parse_timestamp(msgs[0]["timestamp"])
+    assert PR.filter_by_time(msgs, since=None, until=at) == []
+    assert PR.filter_by_time(msgs, since=None, until=at + timedelta(seconds=1)) == msgs
+
+
 def test_truncated_line_dropped(fixtures_dir, capsys):
     # Should not raise, and warning should be on stderr
     lines = _load(fixtures_dir, "truncated.jsonl")

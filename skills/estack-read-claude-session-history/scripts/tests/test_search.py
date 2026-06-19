@@ -67,6 +67,19 @@ def test_search_with_time_filter(fixtures_dir):
     assert matches == []
 
 
+def test_search_until_is_exclusive(fixtures_dir):
+    # The "Hello" user message is stamped exactly 2026-05-01T10:00:00Z.
+    # Half-open [since, until): until at that instant excludes it; one second later includes it.
+    at = datetime(2026, 5, 1, 10, 0, 0)
+    assert S.search_session(
+        fixtures_dir / "basic-session.jsonl", "Hello", role="both", until=at
+    ) == []
+    after = datetime(2026, 5, 1, 10, 0, 1)
+    assert len(S.search_session(
+        fixtures_dir / "basic-session.jsonl", "Hello", role="both", until=after
+    )) >= 1
+
+
 def test_search_project(fixtures_dir, tmp_path):
     # Copy 2 fixtures into a fake project dir and search
     import shutil

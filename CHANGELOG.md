@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   **Behavior change:** `--mode search --cwd` now matches **both user and assistant** messages (previously assistant-only), making it consistent with `--project`/`--all-projects`. This can increase match counts for existing `--cwd` searches; pass `--role assistant` to restore the old assistant-only behavior.
 
 ### Fixed
-- `estack-read-claude-session-history`: `--mode search` now uses a half-open `[since, until)` window — the `--until` bound is applied with `>=` (exclusive upper end) rather than `>`, consistent with how `timeline` and `engagement` handle time windows.
+- `estack-read-claude-session-history`: `--until` is now exclusive across every mode, giving a consistent half-open `[since, until)` window. Previously `search` and `tool-usage` included messages stamped exactly at `--until` while `timeline` and `engagement` excluded them; a message at the exact `--until` instant is now uniformly excluded.
 - `estack-read-claude-session-history`: search progress (`Searching i/N…`) is now suppressed when stderr is not an interactive terminal, so captured/piped runs no longer inflate the output with hundreds of literal `\r` progress lines.
 - `estack-read-claude-session-history`: project/all-projects `search` no longer drops sessions whose file mtime is after `--until` — the `until` bound is now applied per message (as in `timeline`/`tool-usage`), so a session still being written can't hide its in-window matches.
 - `estack-read-claude-session-history`: `--mode search` with no scope flag now prints an accurate error (`search requires --file, --cwd, --project, or --all-projects`) instead of the misleading `--file required`.
