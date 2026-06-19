@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.39] - 2026-06-19
+
 ### Changed
 - `estack-read-claude-session-history`: wide-scope `--mode search` (`--cwd`/`--project`/`--all-projects`) now prints a per-session summary by default — one line per session (`mtime · uuid8 · project · hit-count · first snippet`), sorted newest first, headed by total hit and session counts. Previously it dumped a 1500-char window for every match across every session, which could exceed the harness's ~25k-token Read cap and force a write-then-can't-read round trip. Add `--full` to expand a wide search into match windows; the full view is bounded by a ~10k-token character budget and degrades back to the summary (with a note) if it would overflow. Sessions past the 200-line summary cap are counted in a footer, never silently dropped. Single-file searches (`--file`) are unchanged — always full windows. The full view (single-file or wide + `--full`) is bounded by the same budget, so even one huge session can't overflow the Read cap. JSON mirrors the same split.
 
@@ -354,7 +358,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.38...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.39...HEAD
+[1.0.39]: https://github.com/ElliotDrel/e-stack/compare/v1.0.38...v1.0.39
 [1.0.38]: https://github.com/ElliotDrel/e-stack/compare/v1.0.37...v1.0.38
 [1.0.37]: https://github.com/ElliotDrel/e-stack/compare/v1.0.36...v1.0.37
 [1.0.36]: https://github.com/ElliotDrel/e-stack/compare/v1.0.35...v1.0.36
