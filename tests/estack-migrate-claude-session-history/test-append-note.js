@@ -45,6 +45,7 @@ console.log(appended.message.content.slice(0, 200) + '...');
 // Cleanup
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log('');
-const passed = summary.migrationNotesAppended === 1 && summary.migrationNotesSkipped === 1 && !('isMeta' in appended);
+const contentOk = appended.message.content.includes('<session-migration-note>');
+const passed = summary.migrationNotesAppended === 1 && summary.migrationNotesSkipped === 1 && !('isMeta' in appended) && contentOk;
 console.log('Test passed:', passed ? 'YES' : 'NO');
 if (!passed) process.exit(1);

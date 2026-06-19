@@ -22,6 +22,8 @@ FIXTURES_DIR = THIS_DIR / "fixtures"
 
 if not SCRIPTS_DIR.is_dir():
     raise FileNotFoundError(f"Scripts dir missing: {SCRIPTS_DIR}")
+if not FIXTURES_DIR.is_dir():
+    raise FileNotFoundError(f"Fixtures dir missing: {FIXTURES_DIR}")
 
 # Make `from lib...` work in tests
 if str(SCRIPTS_DIR) not in sys.path:

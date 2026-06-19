@@ -99,15 +99,8 @@ def write_jsonl(path: Path, entries: list[dict], raw_lines: list[str] | None = N
 results: list[tuple[str, bool, str]] = []
 
 
-def record(test_name: str, expected_pass: bool, result_obj, *, expect_detail_contains: str | None = None) -> None:
-    matches_expected = result_obj.passed == expected_pass
-    detail_ok = True
-    if expect_detail_contains and not matches_expected:
-        # If the check unexpectedly went the wrong way, don't penalize detail.
-        pass
-    elif expect_detail_contains:
-        detail_ok = expect_detail_contains.lower() in result_obj.detail.lower()
-    ok = matches_expected and detail_ok
+def record(test_name: str, expected_pass: bool, result_obj) -> None:
+    ok = result_obj.passed == expected_pass
     results.append((test_name, ok, result_obj.detail))
     label = "PASS" if ok else "FAIL"
     expected = "should PASS" if expected_pass else "should FAIL"

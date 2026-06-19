@@ -55,7 +55,7 @@ jobs:
           python-version: "3.13"
 
       - name: Install pytest
-        run: pip install "pytest==9.0.3"
+        run: pip install "pytest>=9,<10"
 
       - name: Run pytest suite
         run: pytest -q
