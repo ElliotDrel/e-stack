@@ -186,9 +186,22 @@ def test_cli_list_project_filter(cli_path, multi_root):
 
 
 def test_cli_search_project_filter(cli_path, multi_root):
+    # Wide scope summarizes by default: the session shows as its uuid8 prefix,
+    # and the off-project session must not appear.
     r = _run_cli(
         cli_path, "--root", str(multi_root), "--mode", "search",
         "--query", "help", "--project", "keel",
+    )
+    assert r.returncode == 0
+    assert "keelsess" in r.stdout
+    assert "othersess" not in r.stdout
+
+
+def test_cli_search_project_filter_full(cli_path, multi_root):
+    # --full expands to match windows, which include the full session filename.
+    r = _run_cli(
+        cli_path, "--root", str(multi_root), "--mode", "search",
+        "--query", "help", "--project", "keel", "--full",
     )
     assert r.returncode == 0
     assert "keelsession" in r.stdout

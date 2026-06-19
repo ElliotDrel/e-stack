@@ -33,6 +33,16 @@ from lib import search as S  # noqa: E402
 from lib import subagents as SA  # noqa: E402
 
 
+# Wide-scope search output budget. Full match windows across many sessions can
+# balloon past the harness's ~25k-token Read cap, forcing a write-then-can't-read
+# round trip. We summarize by default and degrade --full back to a summary once
+# the rendered text would exceed this many characters (~10k tokens at ~4 ch/tok).
+SEARCH_CHAR_BUDGET = 40_000
+# Cap session lines in the summary view so the summary itself stays bounded.
+# Overflow is counted and noted, never silently dropped.
+SEARCH_SUMMARY_SESSION_CAP = 200
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Legacy mode implementations (kept byte-identical to v1 for backwards-compat)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -104,24 +114,6 @@ def mode_dump(lines, limit=80):
         if len(text) > 1500:
             text = text[:1500] + "\n[...truncated...]"
         output.append(f"[{role_label}]\n{text}")
-    return "\n\n".join(output)
-
-
-def mode_search_legacy(lines, query: str):
-    """Legacy single-file search: assistant text only, case-insensitive."""
-    messages = PR.get_messages(lines)
-    results = []
-    q = query.lower()
-    for m in messages:
-        if m["role"] == "assistant":
-            combined = " ".join(m["texts"])
-            if q in combined.lower():
-                results.append(combined)
-    if not results:
-        return None
-    output = [f"=== {len(results)} match(es) for '{query}' ===\n"]
-    for i, r in enumerate(results, 1):
-        output.append(f"--- Match #{i} ---\n{r[:1500]}")
     return "\n\n".join(output)
 
 
@@ -579,6 +571,81 @@ def mode_tool_calls(path: Path, tool_filter: set[str] | None, fmt: str = "text")
     return "\n".join(out).lstrip("\n")
 
 
+def _one_line(text: str, n: int) -> str:
+    """Collapse whitespace to a single line and truncate to n chars."""
+    s = " ".join((text or "").split())
+    return s[:n] + ("…" if len(s) > n else "")
+
+
+def _sessions_by_mtime(matches) -> list:
+    """Group matches by session, return (session_path, matches) sorted newest first."""
+    by_session: dict[Path, list] = {}
+    for m in matches:
+        by_session.setdefault(m.session_path, []).append(m)
+    return sorted(by_session.items(), key=lambda kv: kv[1][0].mtime, reverse=True)
+
+
+def _render_search_full(matches) -> str:
+    """Full per-match windows grouped by session, newest first (the detailed view)."""
+    out = []
+    for sp, ms in _sessions_by_mtime(matches):
+        out.append(f"{'=' * 60}\nSession: {sp.name}  ({_fmt_mtime(ms[0].mtime)})\n{'=' * 60}")
+        for i, m in enumerate(ms, 1):
+            label = f"--- Match #{i} [{m.role}/{m.where}] ---"
+            out.append(f"{label}\n{m.window_text[:1500]}")
+    return "\n\n".join(out)
+
+
+def _render_search_summary(query: str, matches, already_full: bool = False) -> str:
+    """One line per session: mtime · uuid8 · project · hits · first snippet.
+
+    Every hit is counted in the header; sessions past the cap are counted in a
+    footer note, never silently dropped. When ``already_full`` is set (the
+    summary is a degraded ``--full`` result), the footer drops the "use --full"
+    suggestion the caller already tried.
+    """
+    sessions = _sessions_by_mtime(matches)
+    total_hits = len(matches)
+    total_sessions = len(sessions)
+    shown = sessions[:SEARCH_SUMMARY_SESSION_CAP]
+    hit_w = "match" if total_hits == 1 else "matches"
+    sess_w = "session" if total_sessions == 1 else "sessions"
+    lines = [f'=== "{query}": {total_hits} {hit_w} across {total_sessions} {sess_w} ===']
+    for sp, ms in shown:
+        uuid8 = sp.stem[:8]
+        project = P.decode_project_name(sp.parent.name)
+        snippet = _one_line(ms[0].window_text, 120)
+        n = len(ms)
+        # Pad the unit so singular ("hit ") and plural ("hits") align the snippet column.
+        hits = f'{n:>4} hit' + ('s' if n != 1 else ' ')
+        lines.append(f'{_fmt_mtime(ms[0].mtime)}  {uuid8}  {project[:28]:<28}  {hits}  · "{snippet}"')
+    if total_sessions > len(shown):
+        lines.append(
+            f"… and {total_sessions - len(shown)} more session(s) not shown — "
+            f"narrow with --project or a tighter --query."
+        )
+    # On a degrade (already_full) the [note] prefix already carries the actionable
+    # hint, so don't append a second — possibly conflicting — guidance line.
+    if not already_full:
+        lines.append("Use --full for match windows, or narrow with --project / a tighter --query.")
+    return "\n".join(lines)
+
+
+def _search_summary_json(matches) -> list:
+    """Compact per-session metadata (no windows) for structured consumers."""
+    return [
+        {
+            "session": str(sp),
+            "uuid": sp.stem,
+            "project": P.decode_project_name(sp.parent.name),
+            "mtime_iso": _fmt_mtime(ms[0].mtime),
+            "hits": len(ms),
+            "first_snippet": _one_line(ms[0].window_text, 120),
+        }
+        for sp, ms in _sessions_by_mtime(matches)
+    ]
+
+
 def mode_search_v2(
     root: Path,
     cwd: str | None,
@@ -593,6 +660,7 @@ def mode_search_v2(
     fmt: str = "text",
     exclude_current: bool = False,
     current_uuid: str | None = None,
+    full: bool = False,
 ):
     """Cross-scope search with role/in-channel filters."""
     matches: list = []
@@ -607,12 +675,21 @@ def mode_search_v2(
         pd = P.find_project_dir(cwd, root)
         matches = list(S.search_project(pd, query, role, in_channel, since, until))
     else:
-        return "Provide --file, --cwd, --project, or --all-projects"
+        # Unreachable from the CLI (the dispatch guarantees a scope flag), but keep
+        # the direct-call contract honest: JSON callers get a JSON object.
+        msg = "Provide --file, --cwd, --project, or --all-projects"
+        return {"error": msg} if fmt == "json" else msg
 
     if exclude_current and current_uuid:
         matches = [m for m in matches if m.session_path.stem != current_uuid]
 
+    # Single-file scope is narrow and won't overflow — render full by default.
+    # Wide scope (cwd / project / all-projects) summarizes unless --full is set.
+    wide = file_path is None
+
     if fmt == "json":
+        if wide and not full:
+            return _search_summary_json(matches)
         return [
             {
                 "session": str(m.session_path),
@@ -628,17 +705,25 @@ def mode_search_v2(
     if not matches:
         return f"No matches for '{query}'."
 
-    # Group by session for readable output
-    by_session: dict[Path, list] = {}
-    for m in matches:
-        by_session.setdefault(m.session_path, []).append(m)
-    out = []
-    for sp, ms in by_session.items():
-        out.append(f"\n{'=' * 60}\nSession: {sp.name}  ({_fmt_mtime(ms[0].mtime)})\n{'=' * 60}")
-        for i, m in enumerate(ms, 1):
-            label = f"--- Match #{i} [{m.role}/{m.where}] ---"
-            out.append(f"{label}\n{m.window_text[:1500]}")
-    return "\n\n".join(out)
+    if wide and not full:
+        return _render_search_summary(query, matches)
+
+    # Full render (single-file, or wide + --full), bounded by the char budget so
+    # the output never exceeds what the reader accepts. Degrade to summary if it would.
+    full_text = _render_search_full(matches)
+    if len(full_text) > SEARCH_CHAR_BUDGET:
+        # Ceiling-round the size so it always reads as strictly over the budget.
+        size_k = (len(full_text) + 999) // 1000
+        if wide:
+            hint = "Use a tighter --query / --role / --in, or --file <session> to read one session in full."
+        else:
+            hint = "This one session has many matches; use a tighter --query / --role / --in to narrow."
+        note = (
+            f"[note: full output is ~{size_k}K chars (> "
+            f"{SEARCH_CHAR_BUDGET // 1000}K budget) — showing a summary instead. {hint}]"
+        )
+        return note + "\n" + _render_search_summary(query, matches, already_full=True)
+    return full_text
 
 
 def mode_subagent_list(path: Path, fmt: str = "text"):
@@ -1509,6 +1594,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # Mode-specific flags
     p.add_argument("--query", help="Search query (for search/count modes)")
+    p.add_argument("--full", action="store_true",
+                   help="Wide-scope search: expand to full match windows instead of "
+                        "the per-session summary (bounded; degrades back to summary if oversized)")
     p.add_argument("--uuid", help="UUID prefix (for lookup/resume-cmd modes)")
     p.add_argument("--title", help="Title substring (for find mode)")
     p.add_argument("--first-prompt", dest="first_prompt", help="First-prompt substring (for find mode)")
@@ -1589,40 +1677,6 @@ def main() -> int:
     current_uuid = P.current_session_id()
     since = _resolve_time(args.since)
     until = _resolve_time(args.until)
-
-    # Legacy --mode search with --cwd (no --file) preserved byte-for-byte.
-    if args.mode == "search" and args.cwd and not args.file and not args.all_projects \
-            and not args.project and fmt == "text" \
-            and args.role == "both" and args.in_channel == "text":
-        if not args.query:
-            print("--query required with --mode search", file=sys.stderr)
-            return 1
-        files = P.list_transcripts(P.find_project_dir(args.cwd, root))
-        if not files:
-            print("No transcript files found.")
-            return 0
-        total_matches = 0
-        for i, f in enumerate(files, 1):
-            print(f"Searching {i}/{len(files)}: {f.name}...", file=sys.stderr, end="\r")
-            try:
-                lines = PR.parse_lines(f)
-                result = mode_search_legacy(lines, args.query)
-            except Exception as e:
-                print(f"\nError reading {f.name}: {e}", file=sys.stderr)
-                continue
-            if result is not None:
-                mtime = _fmt_mtime(f.stat().st_mtime)
-                print(f"\n{'=' * 60}")
-                print(f"Session: {f.name}  ({mtime})")
-                print("=" * 60)
-                print(result)
-                total_matches += 1
-        print(file=sys.stderr)
-        if total_matches == 0:
-            print(f"No matches for '{args.query}' found across {len(files)} session(s).")
-        else:
-            print(f"\n--- Found matches in {total_matches}/{len(files)} session(s) ---")
-        return 0
 
     mode = args.mode
 
@@ -1769,8 +1823,8 @@ def main() -> int:
             return 1
         _emit(mode_diff(Path(args.file_a), Path(args.file_b), fmt=fmt))
         return 0
-    # (cwd-scoped searches with non-default role/in/json land here — the
-    # byte-compat legacy path above already handled the default-flag case.)
+    # All scoped searches (--file / --cwd / --project / --all-projects) route here.
+    # Wide scope summarizes by default; --full expands to bounded match windows.
     if mode == "search" and (args.file or args.all_projects or args.project or args.cwd):
         if not args.query:
             print("--query required", file=sys.stderr)
@@ -1780,8 +1834,12 @@ def main() -> int:
                              args.role, args.in_channel, since, until,
                              project=args.project, fmt=fmt,
                              exclude_current=args.exclude_current,
-                             current_uuid=current_uuid))
+                             current_uuid=current_uuid, full=args.full))
         return 0
+    if mode == "search":
+        # Reached only when no scope flag was given — search needs one of these.
+        print("search requires --file, --cwd, --project, or --all-projects", file=sys.stderr)
+        return 1
 
     # File-required modes
     if mode == "subagent-tools":
@@ -1874,13 +1932,6 @@ def main() -> int:
             if args.include_subagents:
                 body += _append_subagents(path)
             print(body)
-    elif mode == "search":
-        if not args.query:
-            print("--query required with --mode search", file=sys.stderr)
-            return 1
-        result = mode_search_legacy(lines, args.query)
-        print(result if result is not None
-              else f"No assistant messages containing '{args.query}' found.")
     elif mode == "debug":
         print(mode_debug(lines))
 

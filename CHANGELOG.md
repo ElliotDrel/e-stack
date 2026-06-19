@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `estack-read-claude-session-history`: wide-scope `--mode search` (`--cwd`/`--project`/`--all-projects`) now prints a per-session summary by default — one line per session (`mtime · uuid8 · project · hit-count · first snippet`), sorted newest first, headed by total hit and session counts. Previously it dumped a 1500-char window for every match across every session, which could exceed the harness's ~25k-token Read cap and force a write-then-can't-read round trip. Add `--full` to expand a wide search into match windows; the full view is bounded by a ~10k-token character budget and degrades back to the summary (with a note) if it would overflow. Sessions past the 200-line summary cap are counted in a footer, never silently dropped. Single-file searches (`--file`) are unchanged — always full windows. The full view (single-file or wide + `--full`) is bounded by the same budget, so even one huge session can't overflow the Read cap. JSON mirrors the same split.
+
+  **Behavior change:** `--mode search --cwd` now matches **both user and assistant** messages (previously assistant-only), making it consistent with `--project`/`--all-projects`. This can increase match counts for existing `--cwd` searches; pass `--role assistant` to restore the old assistant-only behavior.
+
+### Fixed
+- `estack-read-claude-session-history`: search progress (`Searching i/N…`) is now suppressed when stderr is not an interactive terminal, so captured/piped runs no longer inflate the output with hundreds of literal `\r` progress lines.
+- `estack-read-claude-session-history`: project/all-projects `search` no longer drops sessions whose file mtime is after `--until` — the `until` bound is now applied per message (as in `timeline`/`tool-usage`), so a session still being written can't hide its in-window matches.
+- `estack-read-claude-session-history`: `--mode search` with no scope flag now prints an accurate error (`search requires --file, --cwd, --project, or --all-projects`) instead of the misleading `--file required`.
+
 ---
 
 ## [1.0.38] - 2026-06-18

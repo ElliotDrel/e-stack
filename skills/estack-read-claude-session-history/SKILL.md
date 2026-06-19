@@ -1,6 +1,6 @@
 ---
 name: estack-read-claude-session-history
-version: 1.1.0
+version: 1.2.0
 description: >-
   (read-claude-session-history) Invoke for ANY task involving Claude Code
   session history, transcripts, or .jsonl files - this is the only way to read,
@@ -96,6 +96,7 @@ What are you trying to do?
 │  ├─ One session ─────────────────────────────── --mode search --file …
 │  ├─ One project ─────────────────────────────── --mode search --cwd …
 │  ├─ All projects ────────────────────────────── --mode search --all-projects
+│  ├─ Expand a wide search to full windows ───── --full
 │  └─ Filter to user msgs / tool-use inputs ──── --role user --in tool_use
 │
 ├─ Forensics on a session
@@ -128,7 +129,7 @@ What are you trying to do?
 | `advisor` | `--file` | All `advisor_tool_result` payloads |
 | `pre-compact` | `--file` | 40 exchanges before the most recent `/compact` |
 | `dump` | `--file` | Human-readable dump (auto-degrades on transcripts >5MB) |
-| `search` | `--query` + scope | Matches windowed for context (supports `--role`, `--in text|tool_use|thinking|all`) |
+| `search` | `--query` + scope | Single file: full match windows. Wide scope (`--cwd`/`--project`/`--all-projects`): per-session summary by default; `--full` expands to windows. Either way the full view is bounded by a char budget and degrades back to a summary (with a note) if it would overflow. Supports `--role`, `--in text\|tool_use\|tool_result\|thinking\|all` |
 | `debug` | `--file` | Entry/block type distributions + probes |
 | `brief` | `--file` | 6-line summary: uuid·project·mtime·status / intent / last / edits / tools / subagents |
 | `list` | `--cwd` or `--all-projects` | Rich table: mtime, size, uuid, msg count, flags, status, title |
@@ -157,6 +158,7 @@ What are you trying to do?
 - `--all-projects` — walk every project under `--root`.
 - `--project <name>` — filter projects by name substring, case-insensitive, matches encoded or decoded form (`--project keel`, `--project "Other Claude Code"`). Works on `list`, `journal`, `search`, `count`, `find`, `timeline`, `engagement`, `tool-usage`. Use this instead of `--cwd` when you know the project's name but not its exact path. (Note: for `engagement`, scope filters which sessions are *reported* — the attention stream is always computed across all projects so parallel chats never double-count.)
 - `--file <path>` — single-session scope.
+- `--full` — for wide-scope `search` (`--cwd`/`--project`/`--all-projects`), expand the default per-session summary into full match windows. Single-file searches (`--file`) are always full and ignore this flag. In every case the full view is bounded by a character budget (~10k tokens); if the windows would overflow it, the output degrades back to the summary with a note.
 - `--since <spec>` / `--until <spec>` — accepts ISO date, ISO datetime, relative (`30m`, `24h`, `7d`, `1w`, `1mo`), named (`today`, `yesterday`, `now`).
 - `--date <spec>` — single-day window for `timeline` (`--date yesterday`, `--date 2026-06-01`).
 - `--gap <spec>` — idle-gap threshold for `timeline` blocks (`15m` default, `1h`).

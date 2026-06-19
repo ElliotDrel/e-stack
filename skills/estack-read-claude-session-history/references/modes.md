@@ -188,16 +188,26 @@ python read_transcript.py --cwd <path> --mode search --query "<q>"
 
 # All projects
 python read_transcript.py --all-projects --mode search --query "<q>"
+
+# Expand a wide search to full match windows
+python read_transcript.py --all-projects --mode search --query "<q>" --full
 ```
 
 Flags:
 - `--role {user,assistant,both}` (default `both`)
-- `--in {text,tool_use,thinking,all}` (default `text`)
+- `--in {text,tool_use,tool_result,thinking,all}` (default `text`)
+- `--full` — wide scope only (see Output below)
 - `--since` / `--until`
 
 `--in tool_use` searches the `name + JSON-stringified input` of every `tool_use` block — useful for finding "the session where I ran `git push --force`".
 
 `--in thinking` searches `thinking` blocks (model reasoning).
+
+`--in tool_result` searches the text content of `tool_result` blocks (what tools returned). `--in all` covers text + tool_use + tool_result + thinking.
+
+**Output.** A single-file search (`--file`) prints full match windows. A wide search (`--cwd` / `--project` / `--all-projects`) prints a **per-session summary** by default — one line per session (`mtime · uuid8 · project · hit-count · first snippet`), sorted newest first, with a header counting total hits and sessions. This keeps cross-project searches well under the harness's ~25k-token Read cap instead of dumping tens of thousands of tokens that the reader then refuses. Add `--full` to expand a wide search into full windows. In every case the full view (single-file, or wide + `--full`) is bounded by a character budget (~10k tokens) and degrades back to the summary with a note if it would overflow — so even a single huge session can't blow the Read cap. Sessions past the 200-line summary cap are counted in a footer, never silently dropped. JSON mirrors this: wide scope returns compact per-session metadata (`uuid`, `project`, `hits`, `first_snippet`) by default, full per-match objects (with `window`) under `--full`.
+
+Progress (`Searching i/N…`) prints to stderr only when stderr is an interactive terminal — captured/piped runs stay clean.
 
 ### `count`
 
@@ -434,7 +444,7 @@ Output is prefixed `A>` / `B>` (or with subagent id shorts).
 | `tool-calls` / `subagent-tools` | `[{timestamp, tool, summary, input}]` |
 | `tool-usage` | `{total, sessions, tools: [{tool, count}], skills: [{skill, count}]}` |
 | `file-edits` / `subagent-files` | `[{path, ops}]` |
-| `search` | `[{session, mtime_iso, role, where, timestamp, window}]` |
+| `search` | single-file or `--full`: `[{session, mtime_iso, role, where, timestamp, window}]`; wide scope default: `[{session, uuid, project, mtime_iso, hits, first_snippet}]` |
 | `count` | `{sessions, messages, matches}` |
 | `subagent-list` | `[{id, agentType, description, path, size_kb, mtime_iso}]` |
 | `subagent-finals` | `[{id, agentType, text}]` |

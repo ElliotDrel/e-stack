@@ -70,6 +70,16 @@ def _entry_search_text(obj: dict, in_channel: str) -> list[tuple[str, str]]:
     return out
 
 
+def _show_progress(progress: bool) -> bool:
+    """Progress is for a live terminal only.
+
+    When stderr is captured to a file or pipe (e.g. by a tool harness), the
+    per-file ``Searching i/N…\\r`` stream lands as hundreds of literal lines and
+    inflates the captured output. Suppress it unless stderr is an interactive TTY.
+    """
+    return progress and sys.stderr.isatty()
+
+
 def _window(text: str, q: str, n: int = 200) -> str:
     """Return up to n chars of context around the first match of q."""
     if not text or not q:
@@ -90,7 +100,7 @@ def search_session(
     path: Path,
     query: str,
     role: Literal["user", "assistant", "both"] = "both",
-    in_channel: Literal["text", "tool_use", "thinking", "all"] = "text",
+    in_channel: Literal["text", "tool_use", "tool_result", "thinking", "all"] = "text",
     since: datetime | None = None,
     until: datetime | None = None,
 ) -> list[Match]:
@@ -138,15 +148,19 @@ def search_project(
     project_dir: Path,
     query: str,
     role: Literal["user", "assistant", "both"] = "both",
-    in_channel: Literal["text", "tool_use", "thinking", "all"] = "text",
+    in_channel: Literal["text", "tool_use", "tool_result", "thinking", "all"] = "text",
     since: datetime | None = None,
     until: datetime | None = None,
     progress: bool = True,
 ) -> Iterator[Match]:
     """Search every transcript in a project directory, newest first."""
-    files = _paths.list_transcripts(project_dir, since=since, until=until)
+    # Filter files by mtime >= since only. A session last written after `until`
+    # may still contain messages inside the window, so we don't bound file mtime
+    # above — search_session() applies the `until` cut per-message instead.
+    files = _paths.list_transcripts(project_dir, since=since)
+    show = _show_progress(progress)
     for i, f in enumerate(files, 1):
-        if progress:
+        if show:
             print(
                 f"Searching {i}/{len(files)}: {f.name}...",
                 file=sys.stderr,
@@ -156,8 +170,11 @@ def search_project(
             for m in search_session(f, query, role, in_channel, since, until):
                 yield m
         except Exception as e:
-            print(f"\nError reading {f.name}: {e}", file=sys.stderr)
-    if progress:
+            # Lead with \n only to clear an active \r progress line; when progress
+            # is suppressed there's no line to clear, so don't add a blank one.
+            prefix = "\n" if show else ""
+            print(f"{prefix}Error reading {f.name}: {e}", file=sys.stderr)
+    if show:
         print(file=sys.stderr)
 
 
@@ -165,14 +182,14 @@ def search_all_projects(
     root: Path,
     query: str,
     role: Literal["user", "assistant", "both"] = "both",
-    in_channel: Literal["text", "tool_use", "thinking", "all"] = "text",
+    in_channel: Literal["text", "tool_use", "tool_result", "thinking", "all"] = "text",
     since: datetime | None = None,
     until: datetime | None = None,
     progress: bool = True,
 ) -> Iterator[Match]:
     """Walk every project directory under root."""
     for project_dir in _paths.list_projects(root):
-        if progress:
+        if _show_progress(progress):
             print(f"--- {project_dir.name} ---", file=sys.stderr)
         yield from search_project(
             project_dir, query, role, in_channel, since, until, progress
