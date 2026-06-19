@@ -45,8 +45,11 @@ for (const dirName of skillDirs) {
   const skillName = nameMatch ? nameMatch[1] : dirName;
 
   const rendered = template.replace(/\{\{SKILL_NAME\}\}/g, skillName);
-  // Template already includes "---\n\n## Skill Feedback" — just add a leading newline separator
-  const renderedSection = '\n' + rendered.trimEnd() + '\n';
+  // Preserve whatever leading newlines the regex consumed so blank separator lines aren't dropped.
+  // SECTION_REGEX's greedy \n+ would otherwise collapse \n\n into \n in pure-LF files.
+  const sectionText = original.match(SECTION_REGEX);
+  const lead = sectionText ? (sectionText[0].match(/^(\r?\n)+/)?.[0] ?? '\n') : '\n';
+  const renderedSection = lead + rendered.trimEnd() + '\n';
 
   // Find existing feedback section (any format) and replace to EOF.
   // Using a regex ensures duplicates are collapsed in one pass.
