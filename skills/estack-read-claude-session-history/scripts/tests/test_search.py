@@ -1,8 +1,9 @@
 """Tests for lib.search."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
+from lib import parser as PR
 from lib import search as S
 
 
@@ -68,15 +69,16 @@ def test_search_with_time_filter(fixtures_dir):
 
 
 def test_search_until_is_exclusive(fixtures_dir):
-    # The "Hello" user message is stamped exactly 2026-05-01T10:00:00Z.
+    # The "Hello" user message is stamped 2026-05-01T10:00:00Z. Derive the bound
+    # from the parser (it converts to local naive time) so this is tz-independent.
     # Half-open [since, until): until at that instant excludes it; one second later includes it.
-    at = datetime(2026, 5, 1, 10, 0, 0)
+    at = PR._parse_timestamp("2026-05-01T10:00:00Z")
     assert S.search_session(
         fixtures_dir / "basic-session.jsonl", "Hello", role="both", until=at
     ) == []
-    after = datetime(2026, 5, 1, 10, 0, 1)
     assert len(S.search_session(
-        fixtures_dir / "basic-session.jsonl", "Hello", role="both", until=after
+        fixtures_dir / "basic-session.jsonl", "Hello", role="both",
+        until=at + timedelta(seconds=1)
     )) >= 1
 
 
