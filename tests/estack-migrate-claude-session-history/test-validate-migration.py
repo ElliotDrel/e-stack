@@ -222,6 +222,7 @@ def main() -> int:
             "parentUuid": "cccccccc-cccc-cccc-cccc-cccccccccccc",
             "sessionId": SESSION_ID,
             "cwd": NEW_REPO,
+            "timestamp": "2026-01-01T00:00:04.000Z",
             "message": {
                 "role": "user",
                 "content": f"Tool output mentioning {OLD_REPO}\\somefile.txt — but this is AFTER migration",

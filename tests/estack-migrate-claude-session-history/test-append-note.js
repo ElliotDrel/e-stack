@@ -50,6 +50,10 @@ try {
 }
 
 console.log('');
+if (!appended) {
+  console.error('Test failed: appended entry was never assigned');
+  process.exit(1);
+}
 const contentOk = appended.message?.content?.includes('<session-migration-note>') ?? false;
 const cwdOk = appended.cwd === newRepo.normalized;
 const parentOk = appended.parentUuid === '11111111-1111-1111-1111-111111111111';
