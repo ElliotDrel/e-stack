@@ -40,12 +40,12 @@ console.log('uuid:    ', appended.uuid);
 console.log('cwd:     ', appended.cwd);
 console.log('');
 console.log('=== content (first 200 chars) ===');
-console.log(appended.message.content.slice(0, 200) + '...');
+console.log(appended.message?.content?.slice(0, 200) ?? '<no content>');
 
 // Cleanup
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log('');
-const contentOk = appended.message.content.includes('<session-migration-note>');
+const contentOk = appended.message?.content?.includes('<session-migration-note>') ?? false;
 const passed = summary.migrationNotesAppended === 1 && summary.migrationNotesSkipped === 1 && !('isMeta' in appended) && contentOk;
 console.log('Test passed:', passed ? 'YES' : 'NO');
 if (!passed) process.exit(1);

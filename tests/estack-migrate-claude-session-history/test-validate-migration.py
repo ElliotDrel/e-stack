@@ -27,7 +27,8 @@ spec = importlib.util.spec_from_file_location(
     SCRIPT_DIR / "validate-migration.py",
 )
 vm = importlib.util.module_from_spec(spec)
-assert spec.loader is not None
+if spec.loader is None:
+    raise ImportError(f"Cannot load validate-migration.py from {SCRIPT_DIR}")
 # Register before exec so @dataclass can resolve the module via sys.modules (Python 3.13+).
 sys.modules["validate_migration"] = vm
 spec.loader.exec_module(vm)
