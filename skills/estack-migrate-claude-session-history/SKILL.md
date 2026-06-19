@@ -1,6 +1,6 @@
 ---
 name: estack-migrate-claude-session-history
-version: 1.0.1
+version: 1.0.2
 description: >-
   (migrate-claude-session-history) Use whenever the user wants to move a Claude
   Code session (the .jsonl transcript plus its subagent sidecar files) from one
@@ -204,7 +204,7 @@ These are the failure modes that have actually happened — read `references/tro
 
 - `scripts/migrate-claude-history.js` — the migration script. Supports full-project and single-session modes, CLI overrides for old/new repo, auto-append of the migration note (on by default), `--no-migration-note` opt-out, and `--dry-run`. Run `node scripts/migrate-claude-history.js --help` for the full CLI.
 - `scripts/validate-migration.py` — post-migration validator. Runs structural, schema, path-consistency, sidecar, and (optional) backup-cross-validation checks on a migrated `.jsonl`. Exits 0 if every check passes, 1 otherwise. Run `python scripts/validate-migration.py --help` for the full CLI. Use this in step 7 instead of writing ad-hoc Python.
-- `scripts/test-append-note.js` — a self-contained smoke test for the note-append routine. Run with `node scripts/test-append-note.js`. Useful if you edit the migration script and want to sanity-check the duplicate-detection and non-meta entry shape.
+- `tests/estack-migrate-claude-session-history/test-append-note.js` (repo root) — a self-contained smoke test for the note-append routine. Run with `node tests/estack-migrate-claude-session-history/test-append-note.js` from the repo root. Useful if you edit the migration script and want to sanity-check the duplicate-detection and non-meta entry shape.
 - `references/path-encoding.md` — the 9 path-encoding variants, why each exists, which entries use which form.
 - `references/troubleshooting.md` — recoveries for stale-reference false positives, missed sidecars, ambiguous lookups, and the true-stale grep recipe.
 ---
