@@ -20,7 +20,8 @@ THIS_DIR = Path(__file__).resolve().parent
 SCRIPTS_DIR = THIS_DIR.parent.parent / "skills" / "estack-read-claude-session-history" / "scripts"
 FIXTURES_DIR = THIS_DIR / "fixtures"
 
-assert SCRIPTS_DIR.is_dir(), f"Scripts dir missing: {SCRIPTS_DIR}"
+if not SCRIPTS_DIR.is_dir():
+    raise FileNotFoundError(f"Scripts dir missing: {SCRIPTS_DIR}")
 
 # Make `from lib...` work in tests
 if str(SCRIPTS_DIR) not in sys.path:

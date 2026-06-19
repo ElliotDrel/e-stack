@@ -55,10 +55,10 @@ jobs:
           python-version: "3.13"
 
       - name: Install pytest
-        run: pip install pytest
+        run: pip install "pytest==9.0.3"
 
       - name: Run pytest suite
-        run: pytest tests/estack-read-claude-session-history/ -q
+        run: pytest -q
 
       - name: Run migrate smoke tests
         run: |
