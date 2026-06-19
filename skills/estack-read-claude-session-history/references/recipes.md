@@ -245,6 +245,35 @@ python "$PY" --file <matching-session>.jsonl --mode tool-calls --tool Bash
 
 ---
 
+## 8b. "Which skills (or tools) do I actually use?" — true invocation counts
+
+To decide which skills to keep or prune, you need real usage counts. Do **not**
+use `search`/`count` for this: they match the *string* (a skill name in a
+`CLAUDE.md` instruction, a bash command, even the search commands you're running
+right now), so they over-count. `tool-usage` counts real `tool_use` invocations —
+for skills, the `Skill` block's `input.skill` — and is immune to that.
+
+```bash
+# Skills you actually invoked, ranked, across every project
+python "$PY" --all-projects --mode tool-usage --tool Skill
+
+# All tools (skills broken out under the Skill row)
+python "$PY" --all-projects --mode tool-usage
+
+# One project, last 30 days, excluding this very session
+python "$PY" --project keel --mode tool-usage --tool Skill --since 30d --exclude-current
+
+# Machine-readable: skills sorted by count
+python "$PY" --all-projects --mode tool-usage --tool Skill --format json \
+  | python -c "import json,sys; [print(s['count'], s['skill']) for s in json.load(sys.stdin)['skills']]"
+```
+
+A skill missing from the output was never invoked in that scope — a positive
+inventory ("here is everything I used, and X isn't in it") is stronger evidence
+of non-use than a search that simply returns nothing.
+
+---
+
 ## 9. Resume previous session in the current project
 
 If you just `cd`'d into a project and want to pick up where you left off:

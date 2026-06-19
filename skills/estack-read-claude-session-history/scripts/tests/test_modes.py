@@ -110,6 +110,69 @@ def test_tool_calls_filter(cli_path, fixtures_dir):
     assert "Glob" not in r.stdout
 
 
+def test_tool_usage_file(cli_path, fixtures_dir):
+    r = _run_cli(cli_path, "--file", str(fixtures_dir / "tool-zoo.jsonl"), "--mode", "tool-usage")
+    assert r.returncode == 0
+    assert "Tool calls" in r.stdout
+    assert "Bash" in r.stdout
+    assert "Skill" in r.stdout
+    # Skill calls are sub-tallied by the actual skill name (input.skill).
+    assert "using-superpowers" in r.stdout
+
+
+def test_tool_usage_skill_filter(cli_path, fixtures_dir):
+    r = _run_cli(
+        cli_path, "--file", str(fixtures_dir / "tool-zoo.jsonl"),
+        "--mode", "tool-usage", "--tool", "Skill",
+    )
+    assert r.returncode == 0
+    assert "Skill" in r.stdout
+    assert "using-superpowers" in r.stdout
+    # Filtering to Skill must drop every other tool.
+    assert "Bash" not in r.stdout
+    assert "Glob" not in r.stdout
+
+
+def test_tool_usage_json(cli_path, fixtures_dir):
+    r = _run_cli(
+        cli_path, "--file", str(fixtures_dir / "tool-zoo.jsonl"),
+        "--mode", "tool-usage", "--format", "json",
+    )
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["total"] == 9
+    assert data["sessions"] == 1
+    tools = {t["tool"]: t["count"] for t in data["tools"]}
+    assert tools["Skill"] == 1
+    assert tools["Bash"] == 1
+    skills = {s["skill"]: s["count"] for s in data["skills"]}
+    assert skills == {"using-superpowers": 1}
+
+
+def test_tool_usage_scope_aggregates(cli_path, fixtures_dir, tmp_path):
+    # Two sessions in one project → counts add up across files.
+    fake_root = tmp_path / "projects"
+    fake_proj = fake_root / "C--fake-proj"
+    fake_proj.mkdir(parents=True)
+    shutil.copy(fixtures_dir / "tool-zoo.jsonl", fake_proj / "a.jsonl")
+    shutil.copy(fixtures_dir / "tool-zoo.jsonl", fake_proj / "b.jsonl")
+    r = _run_cli(
+        cli_path, "--root", str(fake_root), "--cwd", "C:\\fake\\proj",
+        "--mode", "tool-usage", "--format", "json",
+    )
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["sessions"] == 2
+    assert data["total"] == 18
+    skills = {s["skill"]: s["count"] for s in data["skills"]}
+    assert skills == {"using-superpowers": 2}
+
+
+def test_tool_usage_missing_file(cli_path, tmp_path):
+    r = _run_cli(cli_path, "--file", str(tmp_path / "nope.jsonl"), "--mode", "tool-usage")
+    assert r.returncode == 1
+
+
 def test_subagent_list(cli_path, fixtures_dir):
     r = _run_cli(
         cli_path, "--file", str(fixtures_dir / "subagent-parent.jsonl"),

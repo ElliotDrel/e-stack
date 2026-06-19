@@ -737,6 +737,111 @@ def mode_count(
     return {"sessions": sessions, "messages": total_msgs, "matches": matches}
 
 
+def _tally_tool_usage(
+    sources: list[Path],
+    tool_filter: set[str] | None,
+    since: datetime | None,
+    until: datetime | None,
+) -> tuple[dict[str, int], dict[str, int], int, int]:
+    """Walk sessions, tallying tool_use blocks by name (Skill sub-tallied by skill).
+
+    Returns (tool_counts, skill_counts, total_calls, sessions_with_calls).
+    Keys on invocation STRUCTURE (a tool_use block's name / input.skill), so it
+    is immune to the substring false-positives that plague text search — the
+    word "ast-grep" in a CLAUDE.md or a bash command never counts as a call.
+    """
+    tool_counts: dict[str, int] = {}
+    skill_counts: dict[str, int] = {}
+    total = 0
+    sessions_with = 0
+    window = since is not None or until is not None
+    for f in sources:
+        try:
+            lines = PR.parse_lines(f)
+        except Exception as e:  # noqa: BLE001 — one bad file shouldn't abort the tally
+            print(f"Error reading {f.name}: {e}", file=sys.stderr)
+            continue
+        hit = False
+        for c in T.extract_tool_calls(lines, tool_filter):
+            if window:
+                ts = PR._parse_timestamp(c.get("timestamp"))
+                if ts is None:
+                    continue
+                if ts.tzinfo is not None:
+                    ts = ts.replace(tzinfo=None)
+                if since is not None and ts < since:
+                    continue
+                if until is not None and ts > until:
+                    continue
+            name = c["name"] or "(unknown)"
+            tool_counts[name] = tool_counts.get(name, 0) + 1
+            total += 1
+            hit = True
+            if name == "Skill":
+                sk = (c.get("input") or {}).get("skill") or "(unnamed)"
+                skill_counts[sk] = skill_counts.get(sk, 0) + 1
+        if hit:
+            sessions_with += 1
+    return tool_counts, skill_counts, total, sessions_with
+
+
+def mode_tool_usage(
+    root: Path,
+    cwd: str | None,
+    all_projects: bool,
+    file_path: Path | None,
+    since: datetime | None,
+    until: datetime | None,
+    tool_filter: set[str] | None = None,
+    project: str | None = None,
+    exclude_current: bool = False,
+    current_uuid: str | None = None,
+    fmt: str = "text",
+):
+    """Tally tool_use blocks by tool name; Skill calls sub-tallied by skill name.
+
+    Answers "which tools/skills do I actually use" by counting real invocations,
+    not text occurrences. Scope is --file (one session) or the usual
+    --cwd/--project/--all-projects. --tool narrows to a subset (e.g. --tool Skill).
+    """
+    if file_path:
+        sources = [file_path]
+    else:
+        project_dirs = _scoped_project_dirs(root, cwd, all_projects, project)
+        if project_dirs is None:
+            return "--file, --cwd, --project, or --all-projects required"
+        sources = []
+        for pd in project_dirs:
+            sources.extend(P.list_transcripts(pd, since=since, until=until))
+        if exclude_current and current_uuid:
+            sources = [f for f in sources if f.stem != current_uuid]
+
+    tool_counts, skill_counts, total, sessions_with = _tally_tool_usage(
+        sources, tool_filter, since, until
+    )
+    tools_sorted = sorted(tool_counts.items(), key=lambda x: (-x[1], x[0]))
+    skills_sorted = sorted(skill_counts.items(), key=lambda x: (-x[1], x[0]))
+
+    if fmt == "json":
+        return {
+            "total": total,
+            "sessions": sessions_with,
+            "tools": [{"tool": k, "count": v} for k, v in tools_sorted],
+            "skills": [{"skill": k, "count": v} for k, v in skills_sorted],
+        }
+
+    if total == 0:
+        return "No tool calls found."
+    out = [f"Tool calls ({total} total across {sessions_with} session(s)):"]
+    for name, count in tools_sorted:
+        out.append(f"  {count:5d}  {name}")
+        if name == "Skill" and skills_sorted:
+            for i, (sk, n) in enumerate(skills_sorted):
+                glyph = "└" if i == len(skills_sorted) - 1 else "├"
+                out.append(f"         {glyph} {n} {sk}")
+    return "\n".join(out)
+
+
 def mode_journal(
     root: Path,
     cwd: str | None,
@@ -1339,7 +1444,7 @@ LEGACY_MODES = {"last", "advisor", "pre-compact", "dump", "search", "debug"}
 
 NEW_MODES = {
     "list", "lookup", "find", "resume-cmd", "brief",
-    "changelog", "file-edits", "tool-calls",
+    "changelog", "file-edits", "tool-calls", "tool-usage",
     "subagent-list", "subagent-finals", "subagent-tools", "subagent-files",
     "resume-prev", "count", "journal", "diff", "timeline", "engagement",
 }
@@ -1543,6 +1648,18 @@ def main() -> int:
                 file=sys.stderr,
             )
             print(counts["sessions"])
+        return 0
+    if mode == "tool-usage":
+        fp = Path(args.file) if args.file else None
+        if fp and not fp.exists():
+            print(f"File not found: {fp}", file=sys.stderr)
+            return 1
+        _emit(mode_tool_usage(
+            root, args.cwd, args.all_projects, fp, since, until,
+            tool_filter=_split_tools(args.tool), project=args.project,
+            exclude_current=args.exclude_current, current_uuid=current_uuid,
+            fmt=fmt,
+        ))
         return 0
     if mode == "journal":
         _emit(mode_journal(root, args.cwd, args.all_projects, since, until,

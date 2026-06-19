@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-read-claude-session-history`: new `--mode tool-usage` tallies tool calls by name across a session, project, or all projects, with `Skill` calls sub-tallied by skill name. Counts real invocations (structural `tool_use` blocks), so it answers "which skills/tools do I actually use" without the substring false-positives that made `count`/`search` miscount skill usage. Supports `--tool` filtering (e.g. `--tool Skill`), `--file`/scope targeting, time bounds, and `--format json`.
+
 ---
 
 ## [1.0.37] - 2026-06-18

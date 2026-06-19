@@ -15,7 +15,7 @@ python read_transcript.py [--root <root>] [--cwd <path> | --all-projects | --pro
 ```
 
 Global flag notes:
-- `--project <name>` — case-insensitive substring filter on project directory names (encoded or decoded form). Applies to `list`, `journal`, `search`, `count`, `find`, `timeline`, `engagement`. Exit 1 when nothing matches.
+- `--project <name>` — case-insensitive substring filter on project directory names (encoded or decoded form). Applies to `list`, `journal`, `search`, `count`, `find`, `timeline`, `engagement`, `tool-usage`. Exit 1 when nothing matches.
 - `--tz <spec>` — display timezone: IANA name (`America/New_York`), `UTC`, or fixed offset (`+5`, `-4`, `+05:30`, `UTC-4`). Default is system local time. All displayed timestamps AND `--since/--until/--date` interpretation use this zone.
 - `--format json` (alias `--json`) — structured output on every mode except the legacy `--list`/`--list-subagents` aliases. Shapes per mode are listed below.
 
@@ -364,6 +364,37 @@ path, first, last, elapsed_minutes, active_minutes, active_seconds, ratio,
 user_messages}], totals: {sessions, active_minutes, active_seconds,
 span_minutes}, stream_breaks: [{start, end, minutes}]}`.
 
+### `tool-usage`
+
+Tally tool calls by tool name; `Skill` calls are sub-tallied by skill name. Answers "which tools / skills do I actually use".
+
+```bash
+# Every tool across one session
+python read_transcript.py --file <path> --mode tool-usage
+
+# Skill usage across every project (the "what skills do I actually use" question)
+python read_transcript.py --all-projects --mode tool-usage --tool Skill
+
+# One project, last 30 days
+python read_transcript.py --project keel --mode tool-usage --since 30d
+```
+
+Scope is `--file` (one session) or `--cwd` / `--project` / `--all-projects`. `--tool` narrows to a comma-separated subset (e.g. `--tool Skill` for a skills-only view, `--tool Bash,Edit`). `--since/--until` bound the calls by their own timestamp. `--exclude-current` drops the current session so the commands you're running now don't skew the count.
+
+Why this exists: it counts real **invocations** — a `tool_use` block whose `name` is the tool (and, for skills, `input.skill`). Text-based modes like `search --in tool_use` and `count` match the *string* "ast-grep" wherever it appears (a `CLAUDE.md` instruction, a bash command, even your own search commands this session), so they over-count. `tool-usage` keys on structure and is immune to that.
+
+Text output: one `<count>  <ToolName>` row per tool, sorted by count descending; under the `Skill` row, a tree of `<count> <skill-name>` sub-rows. A leading line gives the grand total and number of sessions with calls.
+
+```
+Tool calls (66 total across 43 session(s)):
+     66  Skill
+         ├ 38 manage-e-stack
+         ├ 9 commit
+         └ ...
+```
+
+JSON shape: `{total, sessions, tools: [{tool, count}], skills: [{skill, count}]}` (both lists sorted by count descending; `skills` is empty unless `Skill` calls were counted).
+
 ---
 
 ## Comparison modes
@@ -401,6 +432,7 @@ Output is prefixed `A>` / `B>` (or with subagent id shorts).
 | `resume-cmd` | `{uuid, path, project, encoded, command}` |
 | `changelog` | `[{timestamp, tool, summary}]` |
 | `tool-calls` / `subagent-tools` | `[{timestamp, tool, summary, input}]` |
+| `tool-usage` | `{total, sessions, tools: [{tool, count}], skills: [{skill, count}]}` |
 | `file-edits` / `subagent-files` | `[{path, ops}]` |
 | `search` | `[{session, mtime_iso, role, where, timestamp, window}]` |
 | `count` | `{sessions, messages, matches}` |

@@ -1,6 +1,6 @@
 ---
 name: estack-read-claude-session-history
-version: 1.0.4
+version: 1.1.0
 description: >-
   (read-claude-session-history) Invoke for ANY task involving Claude Code
   session history, transcripts, or .jsonl files - this is the only way to read,
@@ -9,7 +9,8 @@ description: >-
   compact"), advisor response retrieval ("what did the advisor say"), subagent
   output collection ("get all subagent finals"), cross-project session search by
   keyword, session listing and triage, UUID and title lookup, resume-command
-  generation, file-edit and tool-call forensics, session diff between two
+  generation, file-edit and tool-call forensics, tool- and skill-usage tallies
+  ("which skills do I actually use"), session diff between two
   sessions or subagents, weekly work journal, day timeline of activity blocks
   and idle gaps, engagement/attention-time accounting (active vs elapsed time,
   break detection, parallel-chat-safe totals), recovering from .claude-backups
@@ -100,7 +101,8 @@ What are you trying to do?
 ├─ Forensics on a session
 │  ├─ Chronological tool-call log ────────────── --mode changelog
 │  ├─ Every file touched ─────────────────────── --mode file-edits
-│  └─ Every tool call (optionally filtered) ──── --mode tool-calls --tool Bash,Edit
+│  ├─ Every tool call (optionally filtered) ──── --mode tool-calls --tool Bash,Edit
+│  └─ Which tools/skills do I actually use? ───── --mode tool-usage (+ scope; --tool Skill)
 │
 ├─ Subagent (fan-out) work
 │  ├─ List spawned subagents ─────────────────── --mode subagent-list
@@ -136,6 +138,7 @@ What are you trying to do?
 | `changelog` | `--file` | `HH:MM:SS  TOOL  one-line-summary`, day-grouped |
 | `file-edits` | `--file` | Unique paths sorted with op tags |
 | `tool-calls` | `--file` (+ `--tool` filter) | Timestamped per-call blocks |
+| `tool-usage` | `--file` or scope (+ `--tool` filter) | Tool-call tallies by name; `Skill` calls sub-tallied by skill name (counts real invocations, not text) |
 | `subagent-list` | `--file` | List sibling subagents with agentType + description |
 | `subagent-finals` | `--file` | Every subagent's final assistant message |
 | `subagent-tools` | `--subagent` | Forensics on one subagent |
@@ -152,7 +155,7 @@ What are you trying to do?
 - `--root {live|mirror|snapshot-24h|snapshot-1w|snapshot-1mo|<abs-path>}` — read from a `.claude-backups` mirror or snapshot instead of live. Default `live`.
 - `--cwd <path>` — single-project scope. Use the original working directory (e.g. `"C:\Users\2supe\Other Claude Code"`).
 - `--all-projects` — walk every project under `--root`.
-- `--project <name>` — filter projects by name substring, case-insensitive, matches encoded or decoded form (`--project keel`, `--project "Other Claude Code"`). Works on `list`, `journal`, `search`, `count`, `find`, `timeline`, `engagement`. Use this instead of `--cwd` when you know the project's name but not its exact path. (Note: for `engagement`, scope filters which sessions are *reported* — the attention stream is always computed across all projects so parallel chats never double-count.)
+- `--project <name>` — filter projects by name substring, case-insensitive, matches encoded or decoded form (`--project keel`, `--project "Other Claude Code"`). Works on `list`, `journal`, `search`, `count`, `find`, `timeline`, `engagement`, `tool-usage`. Use this instead of `--cwd` when you know the project's name but not its exact path. (Note: for `engagement`, scope filters which sessions are *reported* — the attention stream is always computed across all projects so parallel chats never double-count.)
 - `--file <path>` — single-session scope.
 - `--since <spec>` / `--until <spec>` — accepts ISO date, ISO datetime, relative (`30m`, `24h`, `7d`, `1w`, `1mo`), named (`today`, `yesterday`, `now`).
 - `--date <spec>` — single-day window for `timeline` (`--date yesterday`, `--date 2026-06-01`).
@@ -160,7 +163,7 @@ What are you trying to do?
 - `--break <spec>` — break threshold for `engagement` (`10m` default; `5m` strict, `20m` forgiving). Gaps between your prompts longer than this count as breaks unless you replied right after Claude finished working.
 - `--tz <spec>` — display timezone override (IANA name, `UTC`, or offset like `-4`). Default: system local time.
 - `--format json` (or `--json`) — structured JSON output on every mode (except the legacy `--list`/`--list-subagents` aliases). Pipe-friendly: paths are strings, timestamps ISO.
-- `--exclude-current` — drop the current session (detected via `CLAUDE_SESSION_ID`) from `list`, `journal`, `search`, `count`, `timeline`, and `engagement`.
+- `--exclude-current` — drop the current session (detected via `CLAUDE_SESSION_ID`) from `list`, `journal`, `search`, `count`, `timeline`, `engagement`, and `tool-usage`. Useful for `tool-usage` so the very commands you're running now don't skew the tally.
 - `--include-subagents` — fold subagent finals into `brief`, `last`, `dump` output, each tagged `[subagent <id-short> · <agentType>]`.
 - `--force-dump` — bypass the 5 MB `dump` guard.
 - `-n N` — count modifier (default 5 for `last`, 80 for `dump`, 10 for `resume-prev`).
@@ -202,6 +205,7 @@ See `references/recipes.md` → "Deletion-incident recovery" for the full playbo
 | "How much did I actually work today?" | `--mode engagement --date today` |
 | "How much time on Keel today?" | `--mode engagement --project keel --date today` |
 | "How long did that session take me?" | `--mode engagement --file <session.jsonl>` |
+| "Which skills do I actually use?" | `--mode tool-usage --all-projects --tool Skill` |
 | Feed session data into a script | any mode + `--format json` |
 
 See `references/recipes.md` for fuller multi-step workflows.
