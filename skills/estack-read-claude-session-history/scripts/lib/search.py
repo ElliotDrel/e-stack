@@ -127,9 +127,10 @@ def search_session(
                 continue
             if ts_dt.tzinfo is not None:
                 ts_dt = ts_dt.replace(tzinfo=None)
+            # Half-open window [since, until): since inclusive, until exclusive.
             if since is not None and ts_dt < since:
                 continue
-            if until is not None and ts_dt > until:
+            if until is not None and ts_dt >= until:
                 continue
         for where, text in _entry_search_text(obj, in_channel):
             if q in text.lower():
