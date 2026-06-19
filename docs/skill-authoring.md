@@ -34,6 +34,22 @@ Every skill and hook must be listed in two places:
 
 ---
 
+### Skill Name Validation
+
+`node scripts/check-skill-name.cjs <skill-name>` (or `--all` for every skill) verifies that a skill was migrated and self-references correctly. It checks:
+
+1. Folder is named `skills/estack-<short>/`
+2. Frontmatter `name:` matches the folder name exactly
+3. Frontmatter `version:` exists and is semver (`x.y.z`)
+4. Frontmatter `description:` starts with `(<short>)` — e.g. `(repo-search) Use when…`
+5. No bare short-name self-references inside the skill's own files — every mention of `<short>` must be prefixed `estack-<short>` or wrapped as `(<short>)` (the description convention)
+
+Allowed exceptions: mentions inside `references/` docs (prose about the skill's display name) and the `(<short>)` description prefix itself are not flagged as stale.
+
+The publish workflow runs `--all` as a hard gate. Run it locally before tagging if you've renamed a skill or edited its frontmatter.
+
+---
+
 ### Skill Feedback Section
 
 Every skill should include a `## Skill Feedback` section at the bottom. This is managed via a shared template — do not edit it manually in individual skill files.
