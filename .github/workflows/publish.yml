@@ -58,9 +58,15 @@ jobs:
         run: pip install "pytest>=9,<10"
 
       - name: Run pytest suite
+        # Don't write .pyc into the skill source dirs — npm publish (below)
+        # packs skills/ and would otherwise bundle the bytecode.
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
         run: pytest -q
 
       - name: Run migrate smoke tests
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
         run: |
           python tests/estack-migrate-claude-session-history/test-validate-migration.py
           node tests/estack-migrate-claude-session-history/test-append-note.js

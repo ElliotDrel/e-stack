@@ -8,7 +8,11 @@
   "files": [
     "bin/",
     "skills/",
-    "hooks/"
+    "hooks/",
+    "!**/__pycache__",
+    "!**/__pycache__/**",
+    "!**/*.pyc",
+    "!**/*.pyo"
   ],
   "keywords": [
     "claude-code",
