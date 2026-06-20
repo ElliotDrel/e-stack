@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.40] - 2026-06-20
+
 ### Added
 - `estack-read-claude-session-history` (v1.3.0): new `session-report` mode — the one-call "what did I do, per session" day review. Renders one numbered, chronological block per session over the same windowed, overlap-safe attention engine as `engagement`, carrying both clocks (`ran` = the session's own first→last span, which can overlap others; `active` = deduped attention), honest you/assistant message counts, files edited, and the intent/last-message inputs for a one-sentence summary. Replaces the prior hand-stitched `timeline` + `lookup` + `engagement` + raw-message-count workflow for "break down my day" questions. Supports `--date` or `--since`/`--until` scoping (windowed metrics) and `--format json`.
 - `estack-read-claude-session-history`: `engagement` now reports per-role message counts (`you`/`assistant` in text; `user_messages`/`assistant_messages` in JSON). Counts are honest — real typed prompts only (tool-result envelopes, `isMeta` hook/skill injections, and compact continuations excluded) and text-bearing assistant turns only (tool-only turns excluded) — so they no longer require error-prone hand-counting of raw `.jsonl` entries. Both are windowed to `[since, until)`.
@@ -370,7 +374,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.39...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.40...HEAD
+[1.0.40]: https://github.com/ElliotDrel/e-stack/compare/v1.0.39...v1.0.40
 [1.0.39]: https://github.com/ElliotDrel/e-stack/compare/v1.0.38...v1.0.39
 [1.0.38]: https://github.com/ElliotDrel/e-stack/compare/v1.0.37...v1.0.38
 [1.0.37]: https://github.com/ElliotDrel/e-stack/compare/v1.0.36...v1.0.37
