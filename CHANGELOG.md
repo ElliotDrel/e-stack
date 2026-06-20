@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `estack-read-claude-session-history` (v1.3.1): the report modes (`session-report`, `engagement`, `timeline`) now render every clock time as 12-hour with the 24-hour value in parens — `7:00pm (19:00)` — deterministically in the script (computed by hand, identical on every platform), with the header advertising `12h (24h)`. JSON output is unchanged (ISO timestamps). `SKILL.md` adds a global directive to report times to the user in 12-hour format unless they ask otherwise, and the day-review presentation defaults now say 12-hour instead of 24-hour.
+
 ---
 
 ## [1.0.40] - 2026-06-20

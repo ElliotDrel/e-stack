@@ -1,6 +1,6 @@
 ---
 name: estack-read-claude-session-history
-version: 1.3.0
+version: 1.3.1
 description: >-
   (read-claude-session-history) Invoke for ANY task involving Claude Code
   session history, transcripts, or .jsonl files - this is the only way to read,
@@ -79,6 +79,13 @@ treat raw `"timestamp"` fields from a .jsonl (which ARE UTC) as comparable to CL
 output. If you need a different zone, pass `--tz` (IANA name like
 `America/New_York`, `UTC`, or an offset like `-4`) — never convert manually.
 `--since/--until/--date` specs are interpreted in that same display timezone.
+
+**Report times to the user in 12-hour format unless they ask otherwise.** The
+report modes (`session-report`, `engagement`, `timeline`) already emit each clock
+time as `7:00pm (19:00)` — 12-hour with the 24-hour value in parens — so quoting
+them directly satisfies this. When you paraphrase or summarize a time instead of
+quoting raw output, keep the 12-hour form (the parenthetical 24-hour is optional
+in prose). Switch to 24-hour only if the user requests it.
 
 ## Decision tree
 
@@ -231,7 +238,7 @@ When the user asks a natural-language "what did I do" / "review my day" / "break
 - **One to two sentences per session** describing what they did and why — synthesized from the `intent` + `last` + files, not a raw dump of either. The mode hands you the inputs; you write the sentence.
 - **Show both clocks and name the overlap.** `active` is deduped attention (parallel chats never double-counted); `ran`/elapsed is the session's own first→last span and *will* overlap others. Say so once — users work on several things at once and want the overlap reflected in the span but removed from active minutes.
 - **Counts are clean already.** `you N msgs` is real typed prompts (tool-results and hook/skill injections excluded); `assistant N msgs` is text replies (tool-only turns excluded). Do NOT hand-count raw `type:user`/`type:assistant` entries from the .jsonl — that over-counts both (tool-result envelopes inflate "user"; multi-block turns inflate "assistant"). Trust the mode's numbers.
-- **24-hour time** as the CLI emits it; convert only if the user asks.
+- **12-hour time** as the report modes emit it (`7:00pm (19:00)` — 12-hour with 24-hour in parens); keep the 12-hour form in prose, and switch to 24-hour only if the user asks.
 - **Scope to a sub-window with `--since/--until`** (omit `--date` — `--date` overrides `--since`). The metrics are windowed to the range, so "from 7pm" counts and active-time reflect only that slice.
 
 For a normal day (16–20 sessions) `session-report` text output stays well within the read budget; prefer it over `--mode list --format json`, which dumps full per-session arrays and can overflow into a persisted-file round-trip.

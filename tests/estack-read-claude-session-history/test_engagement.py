@@ -319,6 +319,25 @@ def test_session_report_cli_json(cli_path, fixtures_dir, tmp_path):
         assert key in s
 
 
+def test_report_modes_emit_12h_with_24h_parens(cli_path, fixtures_dir, tmp_path):
+    """session-report, engagement, and timeline render clock times as
+    '7:00pm (19:00)' — 12-hour with 24-hour in parens — deterministically."""
+    import re
+    fmt = re.compile(r"\d{1,2}:\d{2}(?:am|pm) \(\d{2}:\d{2}\)")
+    root = _fake_root(
+        tmp_path, **{"C--proj-a": [(fixtures_dir / "engagement-gaps.jsonl", "aaaa1111")]}
+    )
+    for mode in ("session-report", "engagement", "timeline"):
+        r = _run_cli(
+            cli_path, "--root", str(root), "--tz", "UTC",
+            "--mode", mode, "--date", "2026-05-01",
+        )
+        assert r.returncode == 0, mode
+        assert fmt.search(r.stdout), f"{mode} missing 12h(24h) time: {r.stdout[:300]}"
+        # The header advertises the convention.
+        assert "12h (24h)" in r.stdout, mode
+
+
 def test_session_report_chronological_order(cli_path, fixtures_dir, tmp_path):
     """Sessions render oldest-first by their first user prompt."""
     root = _fake_root(

@@ -1036,6 +1036,21 @@ def _fmt_dur(td: timedelta) -> str:
     return f"{h}h{m:02d}m" if h else f"{m}m"
 
 
+def _fmt_tod(dt: datetime) -> str:
+    """Time-of-day as 12-hour with 24-hour in parens: '7:00pm (19:00)'.
+
+    Computed by hand (not strftime %-I/%#I) so it's identical on every platform.
+    """
+    h12 = dt.hour % 12 or 12
+    ampm = "am" if dt.hour < 12 else "pm"
+    return f"{h12}:{dt.minute:02d}{ampm} ({dt.hour:02d}:{dt.minute:02d})"
+
+
+def _fmt_clock(dt: datetime, with_date: bool) -> str:
+    """A report clock value — `_fmt_tod`, date-prefixed when the window spans days."""
+    return f"{dt:%Y-%m-%d} {_fmt_tod(dt)}" if with_date else _fmt_tod(dt)
+
+
 _GAP_RE = re.compile(r"^(\d+)\s*(m|h)?$", re.IGNORECASE)
 
 
@@ -1112,10 +1127,9 @@ def render_timeline(data: dict, tz_label: str) -> str:
     since, until = data["since"], data["until"]
     blocks, sessions = data["blocks"], data["sessions"]
     multi_day = (until - since) > timedelta(days=1)
-    tfmt = "%Y-%m-%d %H:%M" if multi_day else "%H:%M"
     head = (
-        f"=== Timeline {since:%Y-%m-%d %H:%M} → {until:%Y-%m-%d %H:%M} "
-        f"(times: {tz_label}, gap={data['gap_minutes']}m) ==="
+        f"=== Timeline {_fmt_clock(since, True)} → {_fmt_clock(until, True)} "
+        f"(times: {tz_label} 12h (24h), gap={data['gap_minutes']}m) ==="
     )
     if not blocks:
         return head + "\n\n(no activity in range)"
@@ -1125,7 +1139,7 @@ def render_timeline(data: dict, tz_label: str) -> str:
         if prev_end is not None:
             out.append(f"     ── idle {_fmt_dur(b['start'] - prev_end)} ──")
         dur = b["end"] - b["start"]
-        out.append(f"{b['start'].strftime(tfmt)}–{b['end'].strftime('%H:%M')}  ({_fmt_dur(dur)})")
+        out.append(f"{_fmt_clock(b['start'], multi_day)}–{_fmt_tod(b['end'])}  ({_fmt_dur(dur)})")
         for f, n in sorted(b["counts"].items(), key=lambda x: -x[1]):
             out.append(f"   · {_session_label(sessions[f])} — {n} msgs")
         prev_end = b["end"]
@@ -1135,7 +1149,7 @@ def render_timeline(data: dict, tz_label: str) -> str:
     # no claim about user attention time. For that, use --mode engagement.
     out.append(
         f"Total: {len(blocks)} block(s) across a {_fmt_dur(span)} span "
-        f"({blocks[0]['start'].strftime(tfmt)}–{blocks[-1]['end'].strftime('%H:%M')}), "
+        f"({_fmt_clock(blocks[0]['start'], multi_day)}–{_fmt_tod(blocks[-1]['end'])}), "
         f"{len(sessions)} session(s)"
     )
     return "\n".join(out)
@@ -1376,10 +1390,9 @@ def render_engagement(data: dict, tz_label: str) -> str:
     since, until = data["since"], data["until"]
     sessions = data["sessions"]
     multi_day = (until - since) > timedelta(days=1)
-    tfmt = "%Y-%m-%d %H:%M" if multi_day else "%H:%M"
     head = (
-        f"=== Engagement {since:%Y-%m-%d %H:%M} → {until:%Y-%m-%d %H:%M} "
-        f"(times: {tz_label}, break={data['break_minutes']}m) ==="
+        f"=== Engagement {_fmt_clock(since, True)} → {_fmt_clock(until, True)} "
+        f"(times: {tz_label} 12h (24h), break={data['break_minutes']}m) ==="
     )
     if not sessions:
         return head + "\n\n(no user messages in range)"
@@ -1396,7 +1409,7 @@ def render_engagement(data: dict, tz_label: str) -> str:
         out.append(
             f"{_fmt_dur(s['active']):>7}  ratio {ratio}  "
             f"you {s['user_messages']:<3} ai {s['assistant_messages']:<4} "
-            f"{s['first'].strftime(tfmt)}–{s['last'].strftime('%H:%M')}  "
+            f"{_fmt_clock(s['first'], multi_day)}–{_fmt_tod(s['last'])}  "
             f"{_session_label(s['summary'])}"
         )
     total_active = sum((s["active"] for s in sessions.values()), timedelta())
@@ -1405,13 +1418,13 @@ def render_engagement(data: dict, tz_label: str) -> str:
     out.append("")
     out.append(
         f"Total: {_fmt_dur(total_active)} active across {len(sessions)} session(s), "
-        f"{first.strftime(tfmt)}–{last.strftime('%H:%M')} span ({_fmt_dur(last - first)})"
+        f"{_fmt_clock(first, multi_day)}–{_fmt_tod(last)} span ({_fmt_dur(last - first)})"
     )
     breaks = data["breaks"]
     if breaks:
         shown = breaks[:6]
         items = ", ".join(
-            f"{a.strftime(tfmt)}→{b.strftime('%H:%M')} ({_fmt_dur(b - a)})"
+            f"{_fmt_clock(a, multi_day)}→{_fmt_tod(b)} ({_fmt_dur(b - a)})"
             for a, b in shown
         )
         more = f" (+{len(breaks) - len(shown)} more)" if len(breaks) > len(shown) else ""
@@ -1502,10 +1515,9 @@ def render_session_report(data: dict, tz_label: str) -> str:
     since, until = data["since"], data["until"]
     sessions = data["sessions"]
     multi_day = (until - since) > timedelta(days=1)
-    tfmt = "%Y-%m-%d %H:%M" if multi_day else "%H:%M"
     head = (
-        f"=== Session report {since:%Y-%m-%d %H:%M} → {until:%Y-%m-%d %H:%M} "
-        f"(times: {tz_label}, break={data['break_minutes']}m) ==="
+        f"=== Session report {_fmt_clock(since, True)} → {_fmt_clock(until, True)} "
+        f"(times: {tz_label} 12h (24h), break={data['break_minutes']}m) ==="
     )
     if not sessions:
         return head + "\n\n(no user activity in range)"
@@ -1518,7 +1530,7 @@ def render_session_report(data: dict, tz_label: str) -> str:
         out.append(f"{i}. {title}")
         out.append(
             f"   {summary['decoded_project']}  ·  "
-            f"{s['first'].strftime(tfmt)}–{s['last'].strftime('%H:%M')}  "
+            f"{_fmt_clock(s['first'], multi_day)}–{_fmt_tod(s['last'])}  "
             f"(ran {_fmt_dur(elapsed)} · active {_fmt_dur(s['active'])})"
         )
         out.append(
@@ -1535,7 +1547,7 @@ def render_session_report(data: dict, tz_label: str) -> str:
     out.append(
         f"Total: {len(sessions)} session(s) · {_fmt_dur(total_active)} active "
         f"(overlap removed) across a {_fmt_dur(last - first)} span "
-        f"({first.strftime(tfmt)}–{last.strftime('%H:%M')})."
+        f"({_fmt_clock(first, multi_day)}–{_fmt_tod(last)})."
     )
     out.append(
         "(active = your attention, parallel chats never double-counted; "
