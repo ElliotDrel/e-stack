@@ -171,7 +171,7 @@ What are you trying to do?
 - `--root {live|mirror|snapshot-24h|snapshot-1w|snapshot-1mo|<abs-path>}` — read from a `.claude-backups` mirror or snapshot instead of live. Default `live`.
 - `--cwd <path>` — single-project scope. Use the original working directory (e.g. `"C:\Users\2supe\Other Claude Code"`).
 - `--all-projects` — walk every project under `--root`.
-- `--project <name>` — filter projects by name substring, case-insensitive, matches encoded or decoded form (`--project keel`, `--project "Other Claude Code"`). Works on `list`, `journal`, `search`, `count`, `find`, `timeline`, `engagement`, `tool-usage`. Use this instead of `--cwd` when you know the project's name but not its exact path. (Note: for `engagement`, scope filters which sessions are *reported* — the attention stream is always computed across all projects so parallel chats never double-count.)
+- `--project <name>` — filter projects by name substring, case-insensitive, matches encoded or decoded form (`--project keel`, `--project "Other Claude Code"`). Works on `list`, `journal`, `search`, `count`, `find`, `timeline`, `engagement`, `session-report`, `tool-usage`. Use this instead of `--cwd` when you know the project's name but not its exact path. (Note: for `engagement`, scope filters which sessions are *reported* — the attention stream is always computed across all projects so parallel chats never double-count.)
 - `--file <path>` — single-session scope.
 - `--full` — for wide-scope `search` (`--cwd`/`--project`/`--all-projects`), expand the default per-session summary into full match windows. Single-file searches (`--file`) are always full and ignore this flag. In every case the full view is bounded by a character budget (~10k tokens); if the windows would overflow it, the output degrades back to the summary with a note.
 - `--since <spec>` / `--until <spec>` — accepts ISO date, ISO datetime, relative (`30m`, `24h`, `7d`, `1w`, `1mo`), named (`today`, `yesterday`, `now`).
@@ -180,7 +180,7 @@ What are you trying to do?
 - `--break <spec>` — break threshold for `engagement` (`10m` default; `5m` strict, `20m` forgiving). Gaps between your prompts longer than this count as breaks unless you replied right after Claude finished working.
 - `--tz <spec>` — display timezone override (IANA name, `UTC`, or offset like `-4`). Default: system local time.
 - `--format json` (or `--json`) — structured JSON output on every mode (except the legacy `--list`/`--list-subagents` aliases). Pipe-friendly: paths are strings, timestamps ISO.
-- `--exclude-current` — drop the current session (detected via `CLAUDE_SESSION_ID`) from `list`, `journal`, `search`, `count`, `timeline`, `engagement`, and `tool-usage`. Useful for `tool-usage` so the very commands you're running now don't skew the tally.
+- `--exclude-current` — drop the current session (detected via `CLAUDE_SESSION_ID`) from `list`, `journal`, `search`, `count`, `timeline`, `engagement`, `session-report`, and `tool-usage`. Useful for `tool-usage` so the very commands you're running now don't skew the tally.
 - `--include-subagents` — fold subagent finals into `brief`, `last`, `dump` output, each tagged `[subagent <id-short> · <agentType>]`. For `tool-usage`, folds each session's subagent `tool_use` calls into the tally (the subagent is not counted as a separate session).
 - `--force-dump` — bypass the 5 MB `dump` guard.
 - `-n N` — count modifier (default 5 for `last`, 80 for `dump`, 10 for `resume-prev`).

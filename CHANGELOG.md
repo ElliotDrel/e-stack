@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `estack-read-claude-session-history` docs: the `session-report` mode (added in 1.0.40) was missing from several global-flag lists that it actually honors. Added it to the `--project` applies-to lists (SKILL.md + modes.md), the `--exclude-current` list (SKILL.md), the half-open `--since/--until` message-level mode list (modes.md), and the JSON shapes table (modes.md). No behavior change — the mode already shared the engagement code path and respected these flags; only the docs lagged.
+
 ---
 
 ## [1.0.41] - 2026-06-20
