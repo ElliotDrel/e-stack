@@ -1,6 +1,6 @@
 ---
 name: estack-read-claude-session-history
-version: 1.2.2
+version: 1.3.0
 description: >-
   (read-claude-session-history) Invoke for ANY task involving Claude Code
   session history, transcripts, or .jsonl files - this is the only way to read,
@@ -60,6 +60,12 @@ python "$PY" --mode timeline --date yesterday
 # How much focused time did today actually consume? (your attention, not Claude's)
 python "$PY" --mode engagement --date today
 
+# Per-session "what did I do" report — one block each: active+ran time, you/assistant
+# message counts, intent, last message. The whole "review my day" answer in one call.
+python "$PY" --mode session-report --date yesterday
+# Scope to part of a day with --since/--until (omit --date — date wins over since):
+python "$PY" --mode session-report --since "2026-06-19 19:00" --until "2026-06-20 00:00"
+
 # Any mode as structured JSON for piping into the next step
 python "$PY" --mode list --project keel --since 7d --format json
 ```
@@ -111,6 +117,7 @@ What are you trying to do?
 │  └─ Forensics on one subagent ──────────────── --mode subagent-tools|subagent-files --subagent …
 │
 ├─ Cross-cutting reporting
+│  ├─ "What did I do, per session?" (day review) ─ --mode session-report --date … | --since/--until …
 │  ├─ "What did I do this week?" ──────────────── --mode journal --since 7d
 │  ├─ "What was I doing, when?" / day map ─────── --mode timeline --date yesterday
 │  ├─ "How long did X actually take ME?" ──────── --mode engagement --date … | --project … | --file …
@@ -148,7 +155,8 @@ What are you trying to do?
 | `count` | `--query` (+ scope) | `<N>` to stdout, summary to stderr |
 | `journal` | `--since` (+ scope) | Per-session 5-line block: date·uuid / prompt / ended / edits / tools |
 | `timeline` | `--date` or `--since/--until` (defaults: today, all projects) | Map of WHAT was active WHEN: blocks + idle gaps (no attention claim — that's `engagement`) |
-| `engagement` | `--date` or `--since/--until` or `--file` (defaults: today, all projects) | YOUR attention time: active vs elapsed + ratio per session, parallel-chat-safe totals, breaks |
+| `engagement` | `--date` or `--since/--until` or `--file` (defaults: today, all projects) | YOUR attention time: active vs elapsed + ratio per session, **you/assistant message counts**, parallel-chat-safe totals, breaks |
+| `session-report` | `--date` or `--since/--until` (defaults: today, all projects) | Per-session day review, chronological: one numbered block each with both clocks (ran = own span, overlaps OK; active = deduped attention), you/assistant message counts, intent, last message, files edited. All windowed to the range. The one-call "review my day" answer. |
 | `diff` | `--file-a` + `--file-b` OR `--subagents-of` | Timestamp-interleaved A>/B> output |
 
 ## Global flags
@@ -203,6 +211,8 @@ See `references/recipes.md` → "Deletion-incident recovery" for the full playbo
 | Find "that session where I asked about supabase rate limits" | `--mode search --all-projects --query "supabase rate limits"` |
 | Resume a project after a few days away | `--mode resume-prev --cwd "<project path>"` |
 | Daily/weekly journal | `--mode journal --since 7d --all-projects` |
+| "What did I do yesterday, per session?" (day review) | `--mode session-report --date yesterday` |
+| "Break down what I did from 7pm on" | `--mode session-report --since "<date> 19:00" --until "<date+1> 00:00"` |
 | "Where did yesterday go?" (map of activity) | `--mode timeline --date yesterday` |
 | "How much did I actually work today?" | `--mode engagement --date today` |
 | "How much time on Keel today?" | `--mode engagement --project keel --date today` |
@@ -211,6 +221,20 @@ See `references/recipes.md` → "Deletion-incident recovery" for the full playbo
 | Feed session data into a script | any mode + `--format json` |
 
 See `references/recipes.md` for fuller multi-step workflows.
+
+## Presentation defaults for a human day-review
+
+When the user asks a natural-language "what did I do" / "review my day" / "break down what I worked on" question (as opposed to feeding JSON to a script), lead with `session-report` — it carries everything one such answer needs in a single call — and present it this way unless the user says otherwise:
+
+- **Number the sessions** and separate them into clear blocks. Users read a numbered, sectioned list far more easily than a wall of prose.
+- **Drop UUIDs.** They are noise in a human review; only surface them if the user is going to resume or look one up.
+- **One to two sentences per session** describing what they did and why — synthesized from the `intent` + `last` + files, not a raw dump of either. The mode hands you the inputs; you write the sentence.
+- **Show both clocks and name the overlap.** `active` is deduped attention (parallel chats never double-counted); `ran`/elapsed is the session's own first→last span and *will* overlap others. Say so once — users work on several things at once and want the overlap reflected in the span but removed from active minutes.
+- **Counts are clean already.** `you N msgs` is real typed prompts (tool-results and hook/skill injections excluded); `assistant N msgs` is text replies (tool-only turns excluded). Do NOT hand-count raw `type:user`/`type:assistant` entries from the .jsonl — that over-counts both (tool-result envelopes inflate "user"; multi-block turns inflate "assistant"). Trust the mode's numbers.
+- **24-hour time** as the CLI emits it; convert only if the user asks.
+- **Scope to a sub-window with `--since/--until`** (omit `--date` — `--date` overrides `--since`). The metrics are windowed to the range, so "from 7pm" counts and active-time reflect only that slice.
+
+For a normal day (16–20 sessions) `session-report` text output stays well within the read budget; prefer it over `--mode list --format json`, which dumps full per-session arrays and can overflow into a persisted-file round-trip.
 
 ## Windows notes
 

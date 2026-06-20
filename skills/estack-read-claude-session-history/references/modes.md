@@ -352,11 +352,17 @@ How it works — three deterministic rules over ONE merged stream:
 3. Everything else is a break and contributes zero. A session left open with no
    prompts accrues nothing.
 
-Output: one row per session (active, ratio = active/elapsed, prompt count,
-first–last), a totals line (already interval-merged — safe to quote), breaks in
-the merged stream, and (single-session view) median/p90 prompt gaps. Ratio is
-capped at 1.0: composing time leading into a chat's first prompt is credited to
-that chat, so raw active can slightly exceed its first–last span.
+Output: one row per session (active, ratio = active/elapsed, `you`/`ai` message
+counts, first–last), a totals line (already interval-merged — safe to quote),
+breaks in the merged stream, and (single-session view) median/p90 prompt gaps.
+Ratio is capped at 1.0: composing time leading into a chat's first prompt is
+credited to that chat, so raw active can slightly exceed its first–last span.
+
+Message counts are honest, not raw entry counts: `you` (`user_messages`) is real
+typed prompts only — tool-result envelopes, hook/skill `isMeta` injections, and
+compact continuations are excluded; `ai` (`assistant_messages`) is assistant
+turns bearing visible text — tool-only turns don't count. Both are windowed to
+`[since, until)`.
 
 Scoping caveat: `--project`/`--cwd`/`--file` filter which sessions are
 *reported*; the stream is always computed across all projects under `--root` so
@@ -372,8 +378,47 @@ Flags:
 
 JSON shape: `{since, until, break_minutes, sessions: [{uuid, project, title,
 path, first, last, elapsed_minutes, active_minutes, active_seconds, ratio,
-user_messages}], totals: {sessions, active_minutes, active_seconds,
-span_minutes}, stream_breaks: [{start, end, minutes}]}`.
+user_messages, assistant_messages}], totals: {sessions, active_minutes,
+active_seconds, span_minutes}, stream_breaks: [{start, end, minutes}]}`.
+
+### `session-report`
+
+The per-session "what did I do" day review. Same windowed, overlap-safe
+attention engine as `engagement`, but rendered as one numbered block per
+session, **chronological** (oldest first by first prompt), carrying everything a
+human review needs in a single call — so a "break down my day" answer doesn't
+require stitching `timeline` + `lookup` + `engagement` + raw message counts by
+hand.
+
+```bash
+# Yesterday, every project
+python read_transcript.py --mode session-report --date yesterday
+
+# Just the evening — omit --date so --since/--until take effect
+python read_transcript.py --mode session-report --since "2026-06-19 19:00" --until "2026-06-20 00:00"
+
+# One project
+python read_transcript.py --mode session-report --project keel --date today
+```
+
+Each block shows: title, project, first–last span with **both clocks** —
+`ran` (the session's own first→last elapsed, which can overlap other sessions)
+and `active` (deduped attention, parallel chats never double-counted) — then
+`you`/`assistant` message counts (same honest definitions as `engagement`),
+files edited, the `intent` (first prompt) and `last` (final assistant message).
+The intent/last are raw inputs for you to synthesize a one-sentence description
+from, not the description itself. A totals line closes with deduped active time
+and the overlap-inclusive span.
+
+Flags: same as `engagement` (`--break`, `--date`/`--since`/`--until`,
+`--cwd`/`--project`/`--all-projects`, `--tz`, `--exclude-current`). As with
+`engagement`, `--date` takes precedence over `--since`/`--until`; to scope to a
+sub-window of a day, pass `--since`/`--until` and omit `--date`.
+
+JSON shape: `{since, until, break_minutes, sessions: [{uuid, project, title,
+path, first, last, elapsed_minutes, active_minutes, user_messages,
+assistant_messages, edits, intent, last_message}], totals: {sessions,
+active_minutes, span_minutes}}`. Sessions are ordered chronologically.
 
 ### `tool-usage`
 

@@ -134,6 +134,38 @@ def test_single_message_session(tmp_path, utc_tz):
     assert s["user_messages"] == 1
 
 
+def test_assistant_message_count_excludes_tool_only_turns(tmp_path, utc_tz):
+    root = tmp_path / "projects"
+    pd = root / "C--proj-a"
+    pd.mkdir(parents=True)
+    (pd / "eeee5555.jsonl").write_text(
+        # real user prompt
+        '{"type":"user","timestamp":"2026-05-01T10:00:00Z",'
+        '"message":{"role":"user","content":"hello"}}\n'
+        # assistant text reply — counts
+        '{"type":"assistant","timestamp":"2026-05-01T10:01:00Z",'
+        '"message":{"role":"assistant","content":[{"type":"text","text":"hi there"}]}}\n'
+        # assistant tool-only turn — does NOT count (no visible text)
+        '{"type":"assistant","timestamp":"2026-05-01T10:02:00Z",'
+        '"message":{"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"Bash","input":{}}]}}\n'
+        # tool result (user-role envelope) — not a user prompt, not an assistant msg
+        '{"type":"user","timestamp":"2026-05-01T10:03:00Z",'
+        '"message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":"ok"}]}}\n'
+        # second real user prompt
+        '{"type":"user","timestamp":"2026-05-01T10:05:00Z",'
+        '"message":{"role":"user","content":"do x"}}\n'
+        # assistant text reply — counts
+        '{"type":"assistant","timestamp":"2026-05-01T10:06:00Z",'
+        '"message":{"role":"assistant","content":[{"type":"text","text":"done"}]}}\n',
+        encoding="utf-8",
+    )
+    data = _build(root)
+    (s,) = data["sessions"].values()
+    assert s["user_messages"] == 2          # only the two typed prompts
+    assert s["assistant_messages"] == 2     # tool-only turn excluded
+    assert s["active"] == timedelta(minutes=5)
+
+
 def test_report_scope_filters_but_stream_stays_global(fixtures_dir, tmp_path, utc_tz):
     root = _fake_root(
         tmp_path,
@@ -237,3 +269,70 @@ def test_engagement_cli_empty_range(cli_path, fixtures_dir, tmp_path):
     )
     assert r.returncode == 0
     assert "no user messages" in r.stdout
+
+
+def test_engagement_json_has_assistant_messages(cli_path, fixtures_dir, tmp_path):
+    root = _fake_root(
+        tmp_path, **{"C--proj-a": [(fixtures_dir / "engagement-gaps.jsonl", "aaaa1111")]}
+    )
+    r = _run_cli(
+        cli_path, "--root", str(root), "--tz", "UTC",
+        "--mode", "engagement", "--date", "2026-05-01", "--format", "json",
+    )
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert "assistant_messages" in data["sessions"][0]
+
+
+# ── session-report mode ───────────────────────────────────────────────────────
+
+def test_session_report_cli_text(cli_path, fixtures_dir, tmp_path):
+    root = _fake_root(
+        tmp_path, **{"C--proj-a": [(fixtures_dir / "engagement-gaps.jsonl", "aaaa1111")]}
+    )
+    r = _run_cli(
+        cli_path, "--root", str(root), "--tz", "UTC",
+        "--mode", "session-report", "--date", "2026-05-01",
+    )
+    assert r.returncode == 0
+    assert "Session report" in r.stdout
+    assert "1. " in r.stdout                 # numbered block
+    assert "ran" in r.stdout and "active" in r.stdout  # both clocks
+    assert "you" in r.stdout and "assistant" in r.stdout
+    assert "intent:" in r.stdout and "last:" in r.stdout
+
+
+def test_session_report_cli_json(cli_path, fixtures_dir, tmp_path):
+    root = _fake_root(
+        tmp_path, **{"C--proj-a": [(fixtures_dir / "engagement-gaps.jsonl", "aaaa1111")]}
+    )
+    r = _run_cli(
+        cli_path, "--root", str(root), "--tz", "UTC",
+        "--mode", "session-report", "--date", "2026-05-01", "--format", "json",
+    )
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["totals"]["sessions"] == 1
+    s = data["sessions"][0]
+    for key in ("user_messages", "assistant_messages", "intent",
+                "last_message", "elapsed_minutes", "active_minutes", "edits"):
+        assert key in s
+
+
+def test_session_report_chronological_order(cli_path, fixtures_dir, tmp_path):
+    """Sessions render oldest-first by their first user prompt."""
+    root = _fake_root(
+        tmp_path,
+        **{
+            "C--proj-a": [(fixtures_dir / "engagement-parallel-a.jsonl", "aaaa1111")],
+            "C--proj-b": [(fixtures_dir / "engagement-parallel-b.jsonl", "bbbb2222")],
+        },
+    )
+    r = _run_cli(
+        cli_path, "--root", str(root), "--tz", "UTC",
+        "--mode", "session-report", "--date", "2026-05-01", "--format", "json",
+    )
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    firsts = [s["first"] for s in data["sessions"]]
+    assert firsts == sorted(firsts)

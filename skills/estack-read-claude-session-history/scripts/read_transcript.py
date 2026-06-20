@@ -1202,17 +1202,38 @@ def _is_real_user_prompt(obj: dict) -> bool:
     return False
 
 
+def _assistant_has_text(obj: dict) -> bool:
+    """True if an assistant entry carries human-visible text, not just tool_use.
+
+    A turn that only fires tools (no text block) is plumbing, not a reply the
+    user reads, so it does not count as an assistant message.
+    """
+    content = obj.get("message", {}).get("content", "")
+    if isinstance(content, str):
+        return bool(content.strip())
+    if isinstance(content, list):
+        return any(
+            isinstance(b, dict) and b.get("type") == "text" and b.get("text", "").strip()
+            for b in content
+        )
+    return False
+
+
 def _engagement_event_streams(
     path: Path, since: datetime | None, until: datetime | None
-) -> tuple[list[datetime], list[datetime]]:
-    """One session's (user_events, claude_events) inside [since, until).
+) -> tuple[list[datetime], list[datetime], list[datetime]]:
+    """One session's (user_events, claude_events, assistant_events) in [since, until).
 
     user_events — real user prompts only (see _is_real_user_prompt).
     claude_events — assistant messages and tool results: evidence Claude was
     working. Used only to grant waiting-on-Claude credit for long gaps.
+    assistant_events — assistant turns bearing visible text (see
+    _assistant_has_text): the replies the user actually reads, counted clean of
+    tool-only turns and tool-result envelopes.
     """
     user_ev: list[datetime] = []
     claude_ev: list[datetime] = []
+    assistant_ev: list[datetime] = []
     for obj in PR.parse_lines(path):
         cls = PR.classify_entry(obj)
         if cls in ("noise", "title", "compact"):
@@ -1229,9 +1250,12 @@ def _engagement_event_streams(
                 claude_ev.append(ts)  # tool_result entries
         else:  # assistant
             claude_ev.append(ts)
+            if _assistant_has_text(obj):
+                assistant_ev.append(ts)
     user_ev.sort()
     claude_ev.sort()
-    return user_ev, claude_ev
+    assistant_ev.sort()
+    return user_ev, claude_ev, assistant_ev
 
 
 def build_engagement(
@@ -1265,6 +1289,7 @@ def build_engagement(
 
     user_events: dict[Path, list[datetime]] = {}
     claude_events: dict[Path, list[datetime]] = {}
+    assistant_events: dict[Path, list[datetime]] = {}
     walk_dirs = P.list_projects(root)
     files: list[Path] = []
     for pd in walk_dirs:
@@ -1279,10 +1304,11 @@ def build_engagement(
     for f in files:
         if exclude_current and current_uuid and f.stem == current_uuid:
             continue
-        u, c = _engagement_event_streams(f, since, until)
+        u, c, a = _engagement_event_streams(f, since, until)
         if u or c:
             user_events[f] = u
             claude_events[f] = c
+            assistant_events[f] = a
 
     stream = sorted(
         (ts, f) for f, evs in user_events.items() for ts in evs
@@ -1320,6 +1346,7 @@ def build_engagement(
             "first": evs[0],
             "last": evs[-1],
             "user_messages": len(evs),
+            "assistant_messages": len(assistant_events.get(f, [])),
             "active": active.get(f, timedelta()),
         }
 
@@ -1367,7 +1394,8 @@ def render_engagement(data: dict, tz_label: str) -> str:
             if elapsed.total_seconds() > 0 else "  — "
         )
         out.append(
-            f"{_fmt_dur(s['active']):>7}  ratio {ratio}  msgs {s['user_messages']:<4} "
+            f"{_fmt_dur(s['active']):>7}  ratio {ratio}  "
+            f"you {s['user_messages']:<3} ai {s['assistant_messages']:<4} "
             f"{s['first'].strftime(tfmt)}–{s['last'].strftime('%H:%M')}  "
             f"{_session_label(s['summary'])}"
         )
@@ -1394,7 +1422,7 @@ def render_engagement(data: dict, tz_label: str) -> str:
         (f, s), = sessions.items()
         # recompute the session's own user events from the stored bounds is not
         # enough — pull them again (cached parse, cheap)
-        evs, _ = _engagement_event_streams(f, data["since"], data["until"])
+        evs, _, _ = _engagement_event_streams(f, data["since"], data["until"])
         pct = _gap_percentiles(evs)
         if pct:
             out.append(f"Prompt gaps: median {pct[0]}m, p90 {pct[1]}m")
@@ -1432,6 +1460,7 @@ def engagement_json(data: dict) -> dict:
                 if elapsed.total_seconds() > 0 else None
             ),
             "user_messages": s["user_messages"],
+            "assistant_messages": s["assistant_messages"],
         })
     span_min = 0
     if data["sessions"]:
@@ -1457,6 +1486,102 @@ def engagement_json(data: dict) -> dict:
             }
             for a, b in data["breaks"]
         ],
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Session-report mode — the per-session "what did I do" view
+# ─────────────────────────────────────────────────────────────────────────────
+# Reuses the engagement engine (windowed, overlap-safe attention time) but
+# renders one numbered block per session, chronological, with both clocks
+# (ran = own first→last span, which overlaps others; active = deduped
+# attention), per-role message counts, and the intent/last-message inputs a
+# human day-review is written from.
+
+def render_session_report(data: dict, tz_label: str) -> str:
+    since, until = data["since"], data["until"]
+    sessions = data["sessions"]
+    multi_day = (until - since) > timedelta(days=1)
+    tfmt = "%Y-%m-%d %H:%M" if multi_day else "%H:%M"
+    head = (
+        f"=== Session report {since:%Y-%m-%d %H:%M} → {until:%Y-%m-%d %H:%M} "
+        f"(times: {tz_label}, break={data['break_minutes']}m) ==="
+    )
+    if not sessions:
+        return head + "\n\n(no user activity in range)"
+    out = [head, ""]
+    rows = sorted(sessions.items(), key=lambda kv: kv[1]["first"])  # chronological
+    for i, (f, s) in enumerate(rows, 1):
+        summary = s["summary"]
+        elapsed = s["last"] - s["first"]
+        title = summary.get("title") or summary.get("first_prompt") or "(untitled)"
+        out.append(f"{i}. {title}")
+        out.append(
+            f"   {summary['decoded_project']}  ·  "
+            f"{s['first'].strftime(tfmt)}–{s['last'].strftime('%H:%M')}  "
+            f"(ran {_fmt_dur(elapsed)} · active {_fmt_dur(s['active'])})"
+        )
+        out.append(
+            f"   you {s['user_messages']} msgs · "
+            f"assistant {s['assistant_messages']} msgs · "
+            f"{summary['edit_count']} files edited"
+        )
+        out.append(f"   intent: {summary.get('first_prompt') or '(no user prompt)'}")
+        out.append(f"   last:   {summary.get('last_assistant') or '(no assistant message)'}")
+        out.append("")
+    total_active = sum((s["active"] for s in sessions.values()), timedelta())
+    first = min(s["first"] for s in sessions.values())
+    last = max(s["last"] for s in sessions.values())
+    out.append(
+        f"Total: {len(sessions)} session(s) · {_fmt_dur(total_active)} active "
+        f"(overlap removed) across a {_fmt_dur(last - first)} span "
+        f"({first.strftime(tfmt)}–{last.strftime('%H:%M')})."
+    )
+    out.append(
+        "(active = your attention, parallel chats never double-counted; "
+        "ran = each session's own first→last span, which can overlap others.)"
+    )
+    return "\n".join(out)
+
+
+def session_report_json(data: dict) -> dict:
+    rows = sorted(data["sessions"].items(), key=lambda kv: kv[1]["first"])
+    sessions_out = []
+    total_active = timedelta()
+    for f, s in rows:
+        summary = s["summary"]
+        elapsed = s["last"] - s["first"]
+        total_active += s["active"]
+        sessions_out.append({
+            "uuid": summary["uuid"],
+            "project": summary["decoded_project"],
+            "title": summary.get("title") or summary.get("first_prompt") or "",
+            "path": str(f),
+            "first": s["first"].isoformat(),
+            "last": s["last"].isoformat(),
+            "elapsed_minutes": int(elapsed.total_seconds() // 60),
+            "active_minutes": int(s["active"].total_seconds() // 60),
+            "user_messages": s["user_messages"],
+            "assistant_messages": s["assistant_messages"],
+            "edits": summary["edit_count"],
+            "intent": summary.get("first_prompt") or "",
+            "last_message": summary.get("last_assistant") or "",
+        })
+    span_min = 0
+    if data["sessions"]:
+        first = min(s["first"] for s in data["sessions"].values())
+        last = max(s["last"] for s in data["sessions"].values())
+        span_min = int((last - first).total_seconds() // 60)
+    return {
+        "since": data["since"].isoformat(),
+        "until": data["until"].isoformat(),
+        "break_minutes": data["break_minutes"],
+        "sessions": sessions_out,
+        "totals": {
+            "sessions": len(sessions_out),
+            "active_minutes": int(total_active.total_seconds() // 60),
+            "span_minutes": span_min,
+        },
     }
 
 
@@ -1552,6 +1677,7 @@ NEW_MODES = {
     "changelog", "file-edits", "tool-calls", "tool-usage",
     "subagent-list", "subagent-finals", "subagent-tools", "subagent-files",
     "resume-prev", "count", "journal", "diff", "timeline", "engagement",
+    "session-report",
 }
 
 ALL_MODES = LEGACY_MODES | NEW_MODES
@@ -1767,7 +1893,7 @@ def main() -> int:
         else:
             print(render_timeline(data, tz_label=args.tz or "local"))
         return 0
-    if mode == "engagement":
+    if mode in ("engagement", "session-report"):
         try:
             break_minutes = _parse_gap(args.break_spec, default=10)
             if args.date:
@@ -1786,7 +1912,7 @@ def main() -> int:
             return 1
         if report_file and e_since is None:
             # Window defaults to the file's own first→last user prompt.
-            evs, _ = _engagement_event_streams(report_file, None, None)
+            evs, _, _ = _engagement_event_streams(report_file, None, None)
             if not evs:
                 print("(no user messages in this session)")
                 return 0
@@ -1805,7 +1931,12 @@ def main() -> int:
             root, report_dirs, report_file, e_since, e_until, break_minutes,
             current_uuid, exclude_current=args.exclude_current,
         )
-        if fmt == "json":
+        if mode == "session-report":
+            if fmt == "json":
+                _print_json(session_report_json(data))
+            else:
+                print(render_session_report(data, tz_label=args.tz or "local"))
+        elif fmt == "json":
             _print_json(engagement_json(data))
         else:
             print(render_engagement(data, tz_label=args.tz or "local"))
