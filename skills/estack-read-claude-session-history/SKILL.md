@@ -1,6 +1,6 @@
 ---
 name: estack-read-claude-session-history
-version: 1.3.1
+version: 1.3.2
 description: >-
   (read-claude-session-history) Invoke for ANY task involving Claude Code
   session history, transcripts, or .jsonl files - this is the only way to read,
