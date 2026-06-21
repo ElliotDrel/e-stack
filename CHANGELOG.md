@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.42] - 2026-06-20
+
 ### Fixed
 - Packaging: `npm publish` no longer ships Python bytecode. The publish workflow runs the test suite before `npm publish`, which compiled `.pyc` files into `skills/**/__pycache__/` that the `"files": ["skills/"]` allowlist then bundled (`.gitignore`/`.npmignore` do not override a directory entry in `files`). Added negation globs (`!**/__pycache__`, `!**/*.pyc`, `!**/*.pyo`) to `package.json` `files` so bytecode is excluded at pack time regardless of tree state, and set `PYTHONDONTWRITEBYTECODE=1` on the CI test steps so it is never generated. Affected 1.0.40 and 1.0.41, which shipped with bytecode included.
 - `estack-read-claude-session-history` docs: the `session-report` mode (added in 1.0.40) was missing from several global-flag lists that it actually honors. Added it to the `--project` applies-to lists (SKILL.md + modes.md), the `--exclude-current` list (SKILL.md), the half-open `--since/--until` message-level mode list (modes.md), and the JSON shapes table (modes.md). No behavior change — the mode already shared the engagement code path and respected these flags; only the docs lagged.
@@ -385,7 +389,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.41...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.42...HEAD
+[1.0.42]: https://github.com/ElliotDrel/e-stack/compare/v1.0.41...v1.0.42
 [1.0.41]: https://github.com/ElliotDrel/e-stack/compare/v1.0.40...v1.0.41
 [1.0.40]: https://github.com/ElliotDrel/e-stack/compare/v1.0.39...v1.0.40
 [1.0.39]: https://github.com/ElliotDrel/e-stack/compare/v1.0.38...v1.0.39
