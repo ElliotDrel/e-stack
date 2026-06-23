@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.47] - 2026-06-23
+
 ### Added
 - `estack-github-issue-tracker` (v1.2.0): fetch PR merge-readiness signals during analysis (closes #2). `fetch-issues` now detects PRs and pulls `mergeStateStatus`, `mergeable`, `reviewDecision`, `statusCheckRollup`, and reviews via `gh pr view`; the result-file schema gains an `is_pr` flag and a conditional `## PR Health` section; Step 2b now always re-fetches and overwrites API-observable fields (state, labels, comment count, merge/review/CI status) instead of only filling blanks, and distinguishes bot reviews from human reviews (`COMMENTED` ≠ `APPROVED`).
 - `estack-github-issue-tracker` (v1.2.0): new `append-history` command for atomic, dedup'd, interrupt-safe incremental tracker persistence (closes #3). Writes a single history entry to one issue section without a full temp-dir sweep, via a split-based section finder. Step 5c and subagents now persist each action immediately (via the `TRACKER_UPDATE:` return convention) rather than batching writes at session end.
@@ -414,7 +418,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.46...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.47...HEAD
+[1.0.47]: https://github.com/ElliotDrel/e-stack/compare/v1.0.46...v1.0.47
 [1.0.46]: https://github.com/ElliotDrel/e-stack/compare/v1.0.45...v1.0.46
 [1.0.45]: https://github.com/ElliotDrel/e-stack/compare/v1.0.44...v1.0.45
 [1.0.44]: https://github.com/ElliotDrel/e-stack/compare/v1.0.43...v1.0.44
