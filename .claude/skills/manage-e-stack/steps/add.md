@@ -4,6 +4,8 @@ Follow these steps in order. Adding a skill is separate from releasing it — ve
 
 ## 1. Create the skill folder
 
+> **Building a coaching/reference skill?** Scaffold from the template instead of authoring structure from scratch: `cp -r templates/coaching-skill skills/estack-<name>`, rename `SKILL.template.md` → `SKILL.md`, fill the `{{PLACEHOLDERS}}`, and keep only the reference tier you use. See `templates/README.md` and `docs/skill-authoring.md`.
+
 > **Migrating an existing skill?** Apply the universal "prefer deterministic changes" convention: copy the folder with `cp -r` / `xcopy /E /I` / `robocopy /E`, then use the Edit tool for targeted changes only (frontmatter `name:`, `description:` prefix, etc.).
 
 ```

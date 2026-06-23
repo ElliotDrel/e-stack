@@ -1,5 +1,17 @@
 ## Skill Authoring
 
+### Skill Templates
+
+Reusable scaffolds live in `templates/` at the repo root (outside `skills/`, so they're never published, installed, or version-checked). Start a new skill by copying a template rather than authoring structure from scratch.
+
+- **`templates/coaching-skill/`** — for a skill that coaches the user through a decision using one or more named frameworks and ends with a concrete artifact. This is the shape `estack-leadership-coach` and `estack-productivity-prioritization-coach` share. It defines the standard component set (identity → primary outcome → voice → calibrate depth → framework → coaching protocol → acceptance bar → handling resources → sources → feedback) and ships both reference tiers: a lightweight `sources/` model and a heavier `references/` knowledge vault with an `adding-references.md` playbook. Keep the tier you use, delete the other.
+
+To instantiate: `cp -r templates/coaching-skill skills/estack-<name>`, rename `SKILL.template.md` → `SKILL.md`, fill the `{{PLACEHOLDERS}}`, then run `node scripts/update-skill-feedback.cjs`. Full instructions are in `templates/README.md`. The `manage-e-stack` add flow (`steps/add.md`) points here at step 1.
+
+If a future skill is a different shape (a tool, converter, tracker), add a new template folder under `templates/` rather than forcing it into the coaching scaffold.
+
+---
+
 ### Per-Skill Versioning
 
 Every skill carries its own semver in SKILL.md frontmatter, independent of the package version in `package.json`:

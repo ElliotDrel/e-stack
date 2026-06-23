@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.46] - 2026-06-23
+
+### Changed
+- `estack-leadership-coach` (v3.1.2): surfaced two design rationales into `SKILL.md` that were previously only enforced implicitly. Added a "The line everything flows from" framing block establishing Grove's *"delegation without follow-through is abdication"* as the founding principle the whole coach protects (transfer of execution, not accountability; monitoring as the line between delegation and dumping; Gerber's management-by-abdication). Added the "why this is a conversation and never a form" rationale to the question-modes rule — a form produces fill-in-the-blank answers, a conversation produces thinking — explaining *why* questions come a few at a time rather than as a dumped questionnaire.
+
+---
+
 ## [1.0.43] - 2026-06-23
 
 ### Changed
@@ -396,7 +403,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.43...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.46...HEAD
+[1.0.46]: https://github.com/ElliotDrel/e-stack/compare/v1.0.45...v1.0.46
+[1.0.45]: https://github.com/ElliotDrel/e-stack/compare/v1.0.44...v1.0.45
+[1.0.44]: https://github.com/ElliotDrel/e-stack/compare/v1.0.43...v1.0.44
 [1.0.43]: https://github.com/ElliotDrel/e-stack/compare/v1.0.42...v1.0.43
 [1.0.42]: https://github.com/ElliotDrel/e-stack/compare/v1.0.41...v1.0.42
 [1.0.41]: https://github.com/ElliotDrel/e-stack/compare/v1.0.40...v1.0.41
