@@ -18,6 +18,7 @@ number: NUMBER
 title: "Issue title"
 state: open
 state_changed: false           # true if state changed since last check
+is_pr: false                    # true if the tracked item is a pull request
 labels: label1, label2
 has_activity: false             # true if new comments since last check
 role: "SEE GUIDANCE BELOW"
@@ -85,6 +86,32 @@ Bad: `"There's an upstream issue."`
 Good: `"Blocked on bun#28175 (open, no activity since Mar 2). Fix landed in Node 22.4 but
 Bun hasn't ported it. No workaround available upstream."`
 
+### ## PR Health
+
+**Conditional — include only when `is_pr: true`.** Omit this entire section for plain issues.
+
+Populated from the `pr_health` block in the raw JSON (or the PR-health template in
+`references/gh-cli-patterns.md`). Record:
+
+```
+merge_state: CLEAN | DIRTY | BLOCKED | UNSTABLE | ...   (mergeStateStatus)
+mergeable: MERGEABLE | CONFLICTING | UNKNOWN
+review_decision: APPROVED | CHANGES_REQUESTED | REVIEW_REQUIRED | null
+ci_status: passing | failing | pending
+ci_failures: list each failing check by name (or "none")
+human_reviews: @reviewer (APPROVED) — login NOT ending in [bot]
+bot_reviews: @some-bot[bot] (COMMENTED) — listed separately, do NOT count toward approval
+```
+
+Rules:
+- `state: COMMENTED` is **not** an approval — only `APPROVED` counts.
+- A reviewer whose login ends in `[bot]` never satisfies a human-review requirement.
+- `mergeStateStatus: DIRTY` or `mergeable: CONFLICTING` means a merge conflict — surface it in
+  `## Status Summary` and `## Next Steps`.
+
+Good: `"merge_state: DIRTY (conflict in src/index.ts). ci_status: failing — 'lint' check.
+review_decision: REVIEW_REQUIRED. human_reviews: none. bot_reviews: @codecov[bot] (COMMENTED)."`
+
 ### ## Cross-References
 
 All issue numbers mentioned in the issue body and comments. Helps the tracker build
@@ -142,6 +169,15 @@ status_summary: Open. Labels: bug, p1. JSONL crash on rename. 12 comments total.
 what_to_check: PRs modifying renameSession; JSONL title write logic changes.
 ```
 
+**Write discipline (mirrors SKILL.md Step 2b):**
+- **Always write (overwrite stale values):** `status_summary` — it carries the API-observable,
+  high-churn facts (open/closed state, labels, comment count, last-comment date, and for PRs
+  the merge state, review decision, and CI status). Always regenerate it from fresh API data;
+  never preserve a stale value.
+- **Fill only if missing (do not clobber human context):** `goal` (always user-supplied — never
+  guess), `what_to_check`, and any analysis-derived context (root cause, workaround, key
+  technical data). Emit these only when the tracker entry has a blank for them.
+
 Optional:
 ```
 new_duplicate: #NUMBER — @author, "Title" (date). Why related. [duplicate|adjacent]
@@ -154,3 +190,31 @@ history_entry: YYYY-MM-DD | Description of action or event
 
 What to log: actions taken ("Posted comment"), external events ("Maintainer replied"),
 state changes ("Closed via PR #123"). Don't log "no activity" — only real events.
+
+---
+
+## `TRACKER_UPDATE:` return convention (subagent → orchestrator)
+
+`history_entry:` lines above are persisted in bulk by `update-tracker` when it reads
+the result file (Step 3). That covers analysis. It does **not** cover an action a
+subagent takes *directly* (e.g. posting a comment mid-analysis), which must be
+persisted immediately rather than waiting for the end-of-session bulk write.
+
+For those, a subagent ends its reply (not the result file) with one line per action:
+
+```
+TRACKER_UPDATE: owner/repo#NUMBER | YYYY-MM-DD | <one-line description>
+```
+
+The orchestrator parses each line and, on receipt, calls `append-history` once per line
+before continuing:
+
+```bash
+node "$SKILL_DIR/bin/tracker-tools.cjs" append-history \
+  --tracker "$TRACKER_PATH" --issue owner/repo#NUMBER \
+  --date YYYY-MM-DD --desc "<one-line description>"
+```
+
+`append-history` is atomic and dedups, so a repeated line is a safe no-op. This is the
+incremental, interrupt-safe path; `history_entry:` remains the bulk path for analysis
+captured in result files.

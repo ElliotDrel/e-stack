@@ -102,6 +102,31 @@ gh api repos/OWNER/REPO/issues/NUMBER --jq '.state'
 gh api repos/OWNER/REPO/pulls/NUMBER --jq '{state: .state, merged: .merged, title: .title, updated: .updated_at}'
 ```
 
+## PR Health (run when the tracked item is a PR)
+
+Merge-readiness, review decision, and CI status in one call:
+```bash
+gh pr view NUMBER --repo OWNER/REPO \
+  --json state,mergeStateStatus,mergeable,reviewDecision,statusCheckRollup,reviews
+```
+
+`gh pr view --json` resolves `reviewDecision` and `statusCheckRollup` via GraphQL under the
+hood — the REST issues endpoint cannot. Use this template (not the issues endpoint) whenever
+you need merge/CI/review state.
+
+**Reading the result:**
+- `mergeStateStatus` — `DIRTY` means merge conflict; `BLOCKED` means a required check or review
+  is failing/missing; `CLEAN`/`UNSTABLE` means mergeable (`UNSTABLE` = non-required checks failing).
+- `mergeable` — `CONFLICTING` confirms a conflict; `MERGEABLE` is clean; `UNKNOWN` means GitHub
+  is still computing it.
+- `reviewDecision` — `APPROVED`, `CHANGES_REQUESTED`, or `REVIEW_REQUIRED`.
+- `statusCheckRollup` — array of checks; surface any with `conclusion` of `FAILURE`/`TIMED_OUT`/`CANCELLED`.
+
+**Review interpretation (do not misread):**
+- A review with `state: COMMENTED` is **not** an approval. Only `state: APPROVED` counts.
+- Reviewers whose login ends in `[bot]` do **not** satisfy a human-review requirement — record
+  them separately from human reviews.
+
 ---
 
 ## Rate Limiting

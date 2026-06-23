@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-github-issue-tracker` (v1.2.0): fetch PR merge-readiness signals during analysis (closes #2). `fetch-issues` now detects PRs and pulls `mergeStateStatus`, `mergeable`, `reviewDecision`, `statusCheckRollup`, and reviews via `gh pr view`; the result-file schema gains an `is_pr` flag and a conditional `## PR Health` section; Step 2b now always re-fetches and overwrites API-observable fields (state, labels, comment count, merge/review/CI status) instead of only filling blanks, and distinguishes bot reviews from human reviews (`COMMENTED` ≠ `APPROVED`).
+- `estack-github-issue-tracker` (v1.2.0): new `append-history` command for atomic, dedup'd, interrupt-safe incremental tracker persistence (closes #3). Writes a single history entry to one issue section without a full temp-dir sweep, via a split-based section finder. Step 5c and subagents now persist each action immediately (via the `TRACKER_UPDATE:` return convention) rather than batching writes at session end.
+
+### Fixed
+- `estack-github-issue-tracker` (v1.2.0): removed the `'m'` regex flag from the two section-extracting patterns (`extractSection`, `sectionRe`) that caused `$` to match end-of-every-line and truncate every extracted section to a single line (closes #1, #5, #6). This silently broke `update-tracker` (no changes applied), `compile-report` (truncated sections), and left orphaned heading-less body blocks in Active Issues when moving an issue to Closed.
+- `estack-github-issue-tracker` (v1.2.0): validate `owner`/`repo`/`number` before interpolating them into the `gh pr view` shell command in `fetch-issues`, closing a command-injection vector from a poisoned tracker/config entry.
+
+### Changed
+- `estack-github-issue-tracker` (v1.2.0): rewrote Step 5 into a persistent action queue plus a post-check-in execution framework (closes #4 and #7). Recommended "Do Today" actions now persist to a new `## Pending Actions` section in the tracker file — the authoritative cross-session queue (the harness task list is an optional within-session mirror, never the source of truth). Startup (Step 0) reads this section so unfinished `- [ ]` items surface as a "Carried Over" block at the top of the report. New Step 5c execution framework specifies the operational *how*: mark-before-acting, one parallel subagent per approved action, an action-type routing table (post comment / rebase PR / fix PR blockers / watch), temp-dir-only git clones (`mktemp -d` → work → `rm -rf`, never the working dir), blanket-approval force-push auth, a Sonnet model floor for complex code fixes, and immediate per-action persistence via `append-history` before flipping the queue item to `- [x]` (pruned after 7 days). Renumbered the former 5b/5c/5d into 5d (collect Goals) and 5e (cleanup).
+
 ---
 
 ## [1.0.46] - 2026-06-23

@@ -15,6 +15,18 @@ Excluded repos: none
 
 ---
 
+## Pending Actions
+
+<!-- Cross-session action queue (source of truth — not the harness task list).
+Unfinished `- [ ]` items carry over and surface as "Carried Over" at the next run.
+Completed items flip to `- [x]` and are pruned after 7 days.
+
+- [ ] <action> (from owner/repo#NUMBER, YYYY-MM-DD)
+- [x] <action> (YYYY-MM-DD)
+-->
+
+---
+
 ## Active Issues (watching for updates)
 
 <!-- For each issue you're tracking, use this format:

@@ -31,6 +31,35 @@ Common directives:
 
 The skill treats these as soft rules — it reads them and applies judgment. No rigid parsing.
 
+## Pending Actions Section
+
+The **authoritative, cross-session action queue**. This is the only guaranteed
+cross-session store for recommended actions — the harness task list (`TaskList`) is
+session-scoped and may be empty on a fresh run, so it is never the source of truth here.
+The skill reads this section at startup (Step 0) and surfaces unfinished items as
+"Carried Over" in the report (Step 5a).
+
+Placed after `## Config` and before `## Active Issues`:
+
+```markdown
+## Pending Actions
+
+- [ ] <action> (from owner/repo#NUMBER, YYYY-MM-DD)
+- [x] <action> (YYYY-MM-DD)
+```
+
+### Field Rules
+
+- **`- [ ]` (unfinished):** queued action not yet done. Carries over across runs until
+  completed. On a completed action it is flipped to `- [x]`.
+- **Queued form:** `- [ ] <action> (from <issue-ref>, <date>)` — `<issue-ref>` is
+  `owner/repo#NUMBER`, `<date>` is the date the action was queued.
+- **Completed form:** `- [x] <action> (<date>)` — `<date>` is the completion date.
+- **Pruning:** remove `- [x]` items whose date is more than 7 days old. Unfinished
+  `- [ ]` items are never auto-pruned — they persist until done or explicitly dropped.
+- Completing an action also writes a `## History` entry on the affected issue via
+  `append-history` (Step 5c) — the queue tracks *status*, History is the audit trail.
+
 ## Active Issues Section
 
 Each issue entry under `## Active Issues (watching for updates)`:

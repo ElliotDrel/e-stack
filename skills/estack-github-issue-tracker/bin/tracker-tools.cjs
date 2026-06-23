@@ -9,6 +9,7 @@
  *   compile-report --temp-dir <dir> --date <YYYY-MM-DD>  Build overview from result files
  *   update-tracker --tracker <path> --temp-dir <dir> --date <YYYY-MM-DD>  Apply changes (incl. Goal)
  *   build-tracker --temp-dir <dir> --template <path> --username <name> --tracker <path>  First-run tracker creation
+ *   append-history --tracker <path> --issue OWNER/REPO#NUMBER --date <YYYY-MM-DD> --desc "..."  Incremental, dedup'd history append
  *
  * All commands return a `today` field with the current date.
  * Zero dependencies. Deterministic output. The agent calls this; it cannot "forget".
@@ -40,6 +41,7 @@ const commands = {
   'startup': cmdStartup,
   'fetch-issues': cmdFetchIssues,
   'build-tracker': cmdBuildTracker,
+  'append-history': cmdAppendHistory,
 };
 
 if (!command || !commands[command]) {
@@ -478,8 +480,8 @@ function buildQuietIssueBlock(r) {
 function extractSection(body, headerPattern) {
   // Match ## Header or ### Header, capture until next ## or end
   const re = new RegExp(
-    `^#{2,4}\\s+(?:[^\\n]*?${headerPattern}[^\\n]*)\\n([\\s\\S]*?)(?=^#{2,4}\\s|$)`,
-    'mi'
+    `(?:^|\\n)#{2,4}\\s+(?:[^\\n]*?${headerPattern}[^\\n]*)\\n([\\s\\S]*?)(?=\\n#{2,4}\\s|$)`,
+    'i'
   );
   const match = body.match(re);
   return match ? match[1].trim() : null;
@@ -489,6 +491,126 @@ function firstLine(text) {
   if (!text) return '';
   const line = text.split(/\r?\n/).find(l => l.trim().length > 0) || '';
   return line.replace(/^\s*[-*]\s*/, '').trim();
+}
+
+// ─── Section Finder + History Helpers ───────────────────────────────────────
+
+/**
+ * Locate an issue's `### owner/repo#number — …` section within the tracker.
+ *
+ * Split-based finder (split on `\n### `) so it is structurally immune to the
+ * `$`/`m` regex-flag ambiguity — it does not depend on the section regex even
+ * though Brief 01 fixed that regex. Belt and suspenders.
+ *
+ * Returns null if the section is not found, otherwise:
+ *   { section, start, end }
+ * where `section` is the full multi-line section text and
+ * `trackerContent.slice(start, end) === section` (so callers can splice back
+ * with `before + newSection + after`).
+ */
+function findIssueSection(trackerContent, owner, repo, number) {
+  const SEP = '\n### ';
+  // Tokenize on the header separator while preserving offsets.
+  const headerPrefix = `${owner}/${repo}#${number}`;
+  // Find every `### ` header start (including one at the very top of the string).
+  const starts = [];
+  if (trackerContent.startsWith('### ')) starts.push(0);
+  let idx = trackerContent.indexOf(SEP);
+  while (idx !== -1) {
+    starts.push(idx + 1); // position of the '#' (skip the leading '\n')
+    idx = trackerContent.indexOf(SEP, idx + 1);
+  }
+
+  for (let s = 0; s < starts.length; s++) {
+    const start = starts[s];
+    // The header line runs from `start` to the next newline.
+    const nlIdx = trackerContent.indexOf('\n', start);
+    const headerLine = nlIdx === -1
+      ? trackerContent.slice(start)
+      : trackerContent.slice(start, nlIdx);
+    // Match header by `### owner/repo#number` prefix (must be followed by a
+    // non-digit so #12 doesn't match #123).
+    const afterHash = headerLine.slice(4); // strip "### "
+    if (afterHash.startsWith(headerPrefix)) {
+      const nextChar = afterHash.charAt(headerPrefix.length);
+      if (nextChar === '' || !/\d/.test(nextChar)) {
+        // Section ends at the next `### ` header, the next `## ` header, or EOF.
+        let end = (s + 1 < starts.length) ? starts[s + 1] : trackerContent.length;
+        // Also stop at a top-level `## ` section boundary (e.g. "## Closed")
+        // that appears before the next `### `.
+        const h2 = trackerContent.indexOf('\n## ', start);
+        if (h2 !== -1 && h2 + 1 < end) end = h2 + 1;
+        return { section: trackerContent.slice(start, end), start, end };
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Append one or more history entries to an issue section.
+ *
+ * - Locates `- **History:**`.
+ * - Dedups against existing `**DATE:** desc` bullets.
+ * - Inserts after the last existing dated bullet (before the next top-level
+ *   field or section header).
+ * - If no `- **History:**` block exists, creates one at the end of the section.
+ *
+ * `entries` is an array of `{ date, desc }`. Returns
+ *   { section, appended }
+ * where `appended` is the count of bullets actually added (post-dedup).
+ */
+function appendHistoryEntry(section, entries) {
+  const list = Array.isArray(entries) ? entries : [entries];
+  if (list.length === 0) return { section, appended: 0 };
+
+  const historyHeaderIdx = section.indexOf('- **History:**');
+  if (historyHeaderIdx !== -1) {
+    // History section exists — collect existing entries for dedup.
+    const afterHeader = section.slice(historyHeaderIdx);
+    const existingLines = afterHeader.split(/\r?\n/);
+    const existingTexts = new Set();
+    for (const line of existingLines.slice(1)) {
+      const m = line.match(/^\s+-\s+\*\*(\d{4}-\d{2}-\d{2}):\*\*\s*(.+)/);
+      if (m) existingTexts.add(`${m[1]}|${m[2].trim()}`);
+      else if (line.match(/^- \*\*[A-Z]/) || line.match(/^### /)) break;
+    }
+
+    // Build lines to append (deduped).
+    const toAppend = list
+      .filter(e => !existingTexts.has(`${e.date}|${e.desc}`))
+      .map(e => `  - **${e.date}:** ${e.desc}`);
+
+    if (toAppend.length === 0) return { section, appended: 0 };
+
+    // Find the last history bullet line and insert after it (before the next
+    // top-level field after **History:**).
+    const historyBlock = section.slice(historyHeaderIdx);
+    const historyLines = historyBlock.split(/\r?\n/);
+    let lastBulletLine = 0;
+    for (let li = 1; li < historyLines.length; li++) {
+      if (/^\s+-\s+\*\*\d{4}-\d{2}-\d{2}:\*\*/.test(historyLines[li])) {
+        lastBulletLine = li;
+      } else if (/^- \*\*[A-Z]/.test(historyLines[li]) || /^### /.test(historyLines[li])) {
+        break;
+      }
+    }
+    historyLines.splice(lastBulletLine + 1, 0, ...toAppend);
+    const newHistoryBlock = historyLines.join('\n');
+    const newSection = section.slice(0, historyHeaderIdx) + newHistoryBlock;
+    return { section: newSection, appended: toAppend.length };
+  }
+
+  // No history section yet — insert before the trailing newline / end of section.
+  const insertPoint = section.lastIndexOf('\n');
+  const historyLines = ['- **History:**'];
+  for (const e of list) {
+    historyLines.push(`  - **${e.date}:** ${e.desc}`);
+  }
+  const newSection = insertPoint === -1
+    ? section + '\n' + historyLines.join('\n')
+    : section.slice(0, insertPoint) + '\n' + historyLines.join('\n') + section.slice(insertPoint);
+  return { section: newSection, appended: list.length };
 }
 
 // ─── Tracker Updater ────────────────────────────────────────────────────────
@@ -509,7 +631,7 @@ function applyTrackerUpdates(trackerContent, tempDir, date) {
     // Find this issue's section in the tracker
     const sectionRe = new RegExp(
       `(### ${escapeRegex(meta.owner)}/${escapeRegex(meta.repo)}#${meta.number}\\s*[—–-][^\\n]*\\n[\\s\\S]*?)(?=\\n### |\\n## |$)`,
-      'm'
+      ''
     );
     const sectionMatch = updated.match(sectionRe);
     if (!sectionMatch) continue;
@@ -638,51 +760,15 @@ function applyTrackerUpdates(trackerContent, tempDir, date) {
       }
 
       if (newHistoryEntries.length > 0) {
-        const historyHeaderIdx = section.indexOf('- **History:**');
-        if (historyHeaderIdx !== -1) {
-          // History section exists — collect existing entries for dedup
-          const afterHeader = section.slice(historyHeaderIdx);
-          const existingLines = afterHeader.split(/\r?\n/);
-          const existingTexts = new Set();
-          for (const line of existingLines.slice(1)) {
-            const m = line.match(/^\s+-\s+\*\*(\d{4}-\d{2}-\d{2}):\*\*\s*(.+)/);
-            if (m) existingTexts.add(`${m[1]}|${m[2].trim()}`);
-            else if (line.match(/^- \*\*[A-Z]/) || line.match(/^### /)) break;
+        const hadHistory = section.indexOf('- **History:**') !== -1;
+        const { section: updatedSection, appended } = appendHistoryEntry(section, newHistoryEntries);
+        if (appended > 0) {
+          section = updatedSection;
+          if (hadHistory) {
+            changes.push(`Appended ${appended} history entries to ${issueKey}`);
+          } else {
+            changes.push(`Added History section with ${appended} entries to ${issueKey}`);
           }
-
-          // Build lines to append (deduped)
-          const toAppend = newHistoryEntries
-            .filter(e => !existingTexts.has(`${e.date}|${e.desc}`))
-            .map(e => `  - **${e.date}:** ${e.desc}`);
-
-          if (toAppend.length > 0) {
-            // Find the last history bullet line position and insert after it
-            // We'll insert the new lines before the next top-level field after **History:**
-            const historyBlock = section.slice(historyHeaderIdx);
-            const historyLines = historyBlock.split(/\r?\n/);
-            let lastBulletLine = 0;
-            for (let li = 1; li < historyLines.length; li++) {
-              if (/^\s+-\s+\*\*\d{4}-\d{2}-\d{2}:\*\*/.test(historyLines[li])) {
-                lastBulletLine = li;
-              } else if (/^- \*\*[A-Z]/.test(historyLines[li]) || /^### /.test(historyLines[li])) {
-                break;
-              }
-            }
-            // Insert toAppend after lastBulletLine
-            historyLines.splice(lastBulletLine + 1, 0, ...toAppend);
-            const newHistoryBlock = historyLines.join('\n');
-            section = section.slice(0, historyHeaderIdx) + newHistoryBlock;
-            changes.push(`Appended ${toAppend.length} history entries to ${issueKey}`);
-          }
-        } else {
-          // No history section yet — insert before trailing newline / end of section
-          const insertPoint = section.lastIndexOf('\n');
-          const historyLines = ['- **History:**'];
-          for (const e of newHistoryEntries) {
-            historyLines.push(`  - **${e.date}:** ${e.desc}`);
-          }
-          section = section.slice(0, insertPoint) + '\n' + historyLines.join('\n') + section.slice(insertPoint);
-          changes.push(`Added History section with ${newHistoryEntries.length} entries to ${issueKey}`);
         }
       }
     }
@@ -762,6 +848,74 @@ function cmdUpdateTracker(flags) {
 
   fs.writeFileSync(trackerPath, updated, 'utf8');
   console.log(JSON.stringify({ today: todayTag(), updated: true, changes }));
+}
+
+// ─── Command: append-history ───────────────────────────────────────────────
+
+/**
+ * Incrementally append a single history entry to one issue's section.
+ *
+ *   append-history --tracker <path> --issue OWNER/REPO#NUMBER --date YYYY-MM-DD --desc "..."
+ *
+ * Atomic, interrupt-safe, dedup'd. No read-before-edit dance. If the issue
+ * section isn't found, exits non-zero and leaves the tracker untouched.
+ */
+function cmdAppendHistory(flags) {
+  const trackerPath = flags.tracker;
+  const issue = flags.issue;
+  const date = flags.date || localDate();
+  const desc = flags.desc;
+
+  if (!trackerPath || !issue || !desc) {
+    console.error('Usage: append-history --tracker <path> --issue OWNER/REPO#NUMBER --date <YYYY-MM-DD> --desc "description"');
+    process.exit(1);
+  }
+
+  // Parse OWNER/REPO#NUMBER
+  const m = String(issue).match(/^([^/]+)\/([^#]+)#(\d+)$/);
+  if (!m) {
+    console.error(`Invalid --issue "${issue}". Expected OWNER/REPO#NUMBER (e.g. ElliotDrel/e-stack#3).`);
+    process.exit(1);
+  }
+  const owner = m[1].trim();
+  const repo = m[2].trim();
+  const number = parseInt(m[3], 10);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    console.error(`Invalid --date "${date}". Expected YYYY-MM-DD.`);
+    process.exit(1);
+  }
+
+  if (!fs.existsSync(trackerPath)) {
+    console.error(`Tracker file not found: ${trackerPath}`);
+    process.exit(1);
+  }
+
+  const content = fs.readFileSync(trackerPath, 'utf8');
+  const found = findIssueSection(content, owner, repo, number);
+  if (!found) {
+    console.error(`Issue section not found in tracker: ${owner}/${repo}#${number}. Tracker left unchanged.`);
+    process.exit(1);
+  }
+
+  const { section, start, end } = found;
+  const { section: newSection, appended } = appendHistoryEntry(section, { date, desc: String(desc).trim() });
+
+  if (appended === 0) {
+    // Dedup hit — entry already present. No write, no-op.
+    console.log(JSON.stringify({
+      today: todayTag(), updated: false, issue: `${owner}/${repo}#${number}`,
+      date, reason: 'duplicate',
+    }));
+    return;
+  }
+
+  const updated = content.slice(0, start) + newSection + content.slice(end);
+  fs.writeFileSync(trackerPath, updated, 'utf8');
+  console.log(JSON.stringify({
+    today: todayTag(), updated: true, issue: `${owner}/${repo}#${number}`,
+    date, appended,
+  }));
 }
 
 // ─── Async Helper ──────────────────────────────────────────────────────────
@@ -1032,6 +1186,8 @@ async function cmdFetchIssues(flags) {
     upstream_state: null,
     cross_references: [],
     urls: [],
+    is_pr: false,
+    pr_health: null,
   }));
 
   for (let t = 0; t < results.length; t++) {
@@ -1055,6 +1211,9 @@ async function cmdFetchIssues(flags) {
             body: raw.body,
             author: raw.user ? raw.user.login : null,
           };
+          // Detect PRs: the REST issues endpoint includes a `pull_request` object
+          // only when the item is a pull request. Plain issues omit it (null/undefined).
+          issueData[issueIdx].is_pr = raw.pull_request != null;
         } else {
           issueData[issueIdx].metadata = raw;
           issueData[issueIdx].body = raw;
@@ -1101,6 +1260,43 @@ async function cmdFetchIssues(flags) {
         }
         break;
       }
+    }
+  }
+
+  // Second phase: for any item detected as a PR, fetch merge-readiness / review / CI health.
+  // The REST issues endpoint cannot resolve reviewDecision/statusCheckRollup, so use
+  // `gh pr view --json` (resolves them via GraphQL). Centralizing here guarantees coverage.
+  function ghPrHealth(owner, repo, number) {
+    // Validate before interpolating into a shell command. owner/repo follow
+    // GitHub's allowed charset; number must be a plain integer. This blocks
+    // shell injection from a poisoned tracker/config entry.
+    if (
+      !/^[A-Za-z0-9._-]+$/.test(String(owner)) ||
+      !/^[A-Za-z0-9._-]+$/.test(String(repo)) ||
+      !/^\d+$/.test(String(number))
+    ) {
+      return Promise.resolve({ _error: `invalid PR identifier: ${owner}/${repo}#${number}` });
+    }
+    return execAsync(
+      `gh pr view ${number} --repo ${owner}/${repo} --json state,mergeStateStatus,mergeable,reviewDecision,statusCheckRollup,reviews`
+    )
+      .then(raw => JSON.parse(raw || '{}'))
+      .catch(e => ({ _error: e.message }));
+  }
+
+  const prTasks = [];
+  const prTaskIdx = [];
+  for (let i = 0; i < issues.length; i++) {
+    if (issueData[i].is_pr) {
+      const iss = issues[i];
+      prTasks.push(() => ghPrHealth(iss.owner, iss.repo, iss.number));
+      prTaskIdx.push(i);
+    }
+  }
+  if (prTasks.length > 0) {
+    const prResults = await batchRun(prTasks, 15);
+    for (let p = 0; p < prResults.length; p++) {
+      issueData[prTaskIdx[p]].pr_health = prResults[p];
     }
   }
 
