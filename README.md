@@ -1,4 +1,4 @@
-# elliot-stack
+# E-Stack - elliot-stack
 
 [![npm version](https://img.shields.io/npm/v/elliot-stack)](https://www.npmjs.com/package/elliot-stack)
 [![license](https://img.shields.io/npm/l/elliot-stack)](LICENSE)
