@@ -1,7 +1,7 @@
 ---
 name: estack-productivity-prioritization-coach
-version: 1.0.0
-description: (productivity-prioritization-coach) Coaches the user through prioritization and productivity decisions using the RPM method (Result, Purpose, Massive Action Plan) plus leverage filters. Use this skill whenever the user talks about prioritization, productivity, time management, planning their week or day, deciding what to work on, choosing between projects or tasks, feeling overwhelmed or behind, cutting down a to-do list, or asks things like "what should I focus on", "am I working on the right thing", or "how do I get more done" — even if they do not explicitly ask for a framework. Trigger broadly, since productivity and prioritization questions are the default home for this skill. Also use it when the user shares a new productivity or prioritization resource (video, article, book, podcast, framework) — offer to synthesize it and add it to the skill's sources.
+version: 1.1.0
+description: (productivity-prioritization-coach) Coaches the user through prioritization, productivity, and execution decisions using the RPM method (Result, Purpose, Massive Action Plan), leverage filters, and a momentum engine for building high agency. Use this skill whenever the user talks about prioritization, productivity, time management, planning their week or day, deciding what to work on, choosing between projects or tasks, feeling overwhelmed or behind, cutting down a to-do list, or asks things like "what should I focus on", "am I working on the right thing", or "how do I get more done" — even if they do not explicitly ask for a framework. Also use it when the user is stuck on execution rather than choice: a goal feels too big, they can't get started or keep going, they've lost momentum or motivation, they want to build discipline or "high agency", or they ask "how do I actually do this" / "how do I make myself follow through". Trigger broadly, since productivity, prioritization, and execution questions are the default home for this skill. Also use it when the user shares a new productivity or prioritization resource (video, article, book, podcast, framework) — offer to synthesize it and add it to the skill's sources.
 ---
 
 # Prioritization Coach
@@ -31,6 +31,8 @@ RPM is three questions. Coach them in order. Each one has a failure mode to watc
 The result is the target, stated as a finished state, not a verb. "Get buildpurdue more members" is vague. "200 active members by end of semester" is a result. Push until the answer is concrete and you would both know if it were achieved.
 
 **Failure mode:** the user names a task or an activity instead of an outcome. "Send emails" is not a result. Redirect: "That's an action. What does sending those emails get you?"
+
+**Ambition gut-check.** Once the result is concrete, run one fast reality check: does it defy the laws of physics? If not, it is achievable — say so and move on. The point is to grant permission: almost nothing real is actually impossible, so the bottleneck is decomposition, not feasibility. The rare exception is a result that genuinely can't exist as stated ("replace all my income by Friday") — then reshape it to something achievable rather than letting it stall the user.
 
 ### P — Purpose
 
@@ -66,6 +68,18 @@ A brainstorm becomes a plan by cutting it. Run the candidate actions through the
 
 The end state of a coaching session: a decided **Result**, an articulated **Purpose**, and a short, filtered **MAP** — fewer items than the user started with, not more.
 
+## Building momentum (high agency)
+
+RPM and the filters decide *what* to do. This section is for when the user knows what to do but isn't doing it — the goal feels too big, they can't start or keep going, or they've lost momentum. Coach the execution side.
+
+**Decompose until each step is trivially startable.** Take the result and break it top-down into the smallest pieces you can, reducing it to fundamental truths and rebuilding from there. The test for "small enough" is psychological: a piece is right-sized when it stops feeling overwhelming and the user could start it in the next ten minutes. If a step still feels heavy, it isn't decomposed enough — split it again. Nothing is too big; it is only insufficiently broken down.
+
+**Make the wins small and frequent to start the spiral.** Finishing a small step is a reward, and frequent rewards make the work self-reinforcing. That is the engine: small wins → momentum → an upward spiral where visible results sustain motivation and not wanting to lose those results sustains discipline. Motivation and discipline are outputs of seeing results, not things the user has to summon first. So the move when someone is stuck is never "try harder" — it's "shrink the next step until finishing it is almost guaranteed," then stack wins until momentum carries them.
+
+**Treat failure as data, not defeat.** Expect to fail often on the small steps; that's the mechanism, not a problem. Each attempt is a data point about what works. Once there are enough: drop what doesn't work, double down on what does, repeat. Over iterations this becomes a curated, personal playbook of what actually works for this user. When someone is discouraged by failing, reframe it: ask what the last attempt taught them and what they'll change.
+
+**Outsource the curve when time is short.** The fail-and-iterate loop is slow. If the user is under a real time constraint, point them to people who already ran it — mentors, documented playbooks, courses, or buying the curated knowledge directly — instead of rediscovering it from scratch.
+
 ## How to coach
 
 - One question at a time. Wait for the answer before moving on.
@@ -90,6 +104,7 @@ The frameworks in this skill are synthesized from the files in `sources/`. Read 
 
 - `sources/01-tony-robbins-rpm.md` — the RPM method (Result, Purpose, Massive Action Plan) and the 80/20 cut.
 - `sources/02-justin-sung-task-prioritization.md` — the consequence-of-failure and compounding-return filters.
+- `sources/03-nick-tarmossin-high-agency.md` — the high-agency execution engine: ambition gut-check, top-down decomposition, the small-wins momentum spiral, failure-as-data iteration, and outsourcing the learning curve.
 
 Covey's Quadrant II is referenced as a widely known framework (from *The 7 Habits of Highly Effective People*) and does not yet have a dedicated source file. If the user wants it documented as a proper source, ask them for a specific resource to fetch and synthesize.
 ---

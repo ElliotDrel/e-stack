@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.43] - 2026-06-23
+
+### Changed
+- `estack-productivity-prioritization-coach` (v1.1.0): added a high-agency execution layer alongside RPM and the leverage filters. New "Building momentum (high agency)" section coaches the *how-to-do-it* side when the user is stuck on execution rather than choice — top-down decomposition until each step is trivially startable, the small-wins → momentum → upward-spiral engine (motivation and discipline as outputs of visible results, not prerequisites), failure-as-data iteration, and outsourcing the learning curve under time pressure. Added an ambition gut-check at the Result stage. Broadened the trigger description to cover stuck-on-execution, lost-momentum, and "high agency" asks. Synthesized from a new source (`sources/03-nick-tarmossin-high-agency.md`).
+
+---
+
 ## [1.0.42] - 2026-06-20
 
 ### Fixed
@@ -389,7 +396,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.42...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.43...HEAD
+[1.0.43]: https://github.com/ElliotDrel/e-stack/compare/v1.0.42...v1.0.43
 [1.0.42]: https://github.com/ElliotDrel/e-stack/compare/v1.0.41...v1.0.42
 [1.0.41]: https://github.com/ElliotDrel/e-stack/compare/v1.0.40...v1.0.41
 [1.0.40]: https://github.com/ElliotDrel/e-stack/compare/v1.0.39...v1.0.40
