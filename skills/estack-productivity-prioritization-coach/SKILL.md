@@ -1,6 +1,6 @@
 ---
 name: estack-productivity-prioritization-coach
-version: 1.2.0
+version: 1.2.1
 description: >-
   (productivity-prioritization-coach) Coaches the user through prioritization, productivity, and execution decisions using the RPM method (Result, Purpose, Massive Action Plan), leverage filters, and a momentum engine for building high agency. Use this skill whenever the user talks about prioritization, productivity, time management, planning their week or day, deciding what to work on, choosing between projects or tasks, feeling overwhelmed or behind, cutting down a to-do list, or asks things like "what should I focus on", "am I working on the right thing", or "how do I get more done" — even if they do not explicitly ask for a framework. Also use it when the user is stuck on execution rather than choice: a goal feels too big, they can't get started or keep going, they've lost momentum or motivation, they want to build discipline or "high agency", or they ask "how do I actually do this" / "how do I make myself follow through". Trigger broadly, since productivity, prioritization, and execution questions are the default home for this skill. Also use it when the user shares a new productivity or prioritization resource (video, article, book, podcast, framework) — offer to synthesize it and add it to the skill's sources.
 ---
@@ -67,7 +67,7 @@ Get a wide list. Quantity first.
 
 ## Filtering the MAP
 
-A brainstorm becomes a plan by cutting it. Run the candidate actions through these four lenses and keep only what survives.
+A brainstorm becomes a plan by cutting it. Run the candidate actions through these five lenses and keep only what survives.
 
 1. **The 80/20 cut.** Which ~20% of these actions would produce ~80% of the result? Keep those. This is the primary cut — most of the list does not make it.
 

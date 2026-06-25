@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.49] - 2026-06-25
+
+### Fixed
+- `estack-productivity-prioritization-coach` (v1.2.1): corrected "four lenses" to "five lenses" in the MAP filtering section after adding the speed-to-MVP cut. Updated README description to reflect the MVP anchor and speed-to-outcome framing.
+
+---
+
 ## [1.0.48] - 2026-06-25
 
 ### Changed
@@ -425,7 +432,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.48...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.49...HEAD
+[1.0.49]: https://github.com/ElliotDrel/e-stack/compare/v1.0.48...v1.0.49
 [1.0.48]: https://github.com/ElliotDrel/e-stack/compare/v1.0.47...v1.0.48
 [1.0.47]: https://github.com/ElliotDrel/e-stack/compare/v1.0.46...v1.0.47
 [1.0.46]: https://github.com/ElliotDrel/e-stack/compare/v1.0.45...v1.0.46
