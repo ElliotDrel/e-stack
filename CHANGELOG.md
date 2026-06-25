@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.48] - 2026-06-25
+
 ### Changed
 - `estack-productivity-prioritization-coach` (v1.2.0): ingrained two core lenses that now frame every coaching session. (1) Decreasing time to outcome is the most impactful skill — every session actively coaches speed, asking "what's slowing you down?" and "what would you cut to get there twice as fast?" (2) The target is the MVP outcome, not the perfect outcome — the Result step now includes an MVP anchor ("what's the version that ships in half the time?"), the MAP gains a speed-to-MVP cut as a fifth filter, and the coaching directives explicitly call out perfection-seeking and redirect to shippable.
 
@@ -421,7 +425,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.47...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.48...HEAD
+[1.0.48]: https://github.com/ElliotDrel/e-stack/compare/v1.0.47...v1.0.48
 [1.0.47]: https://github.com/ElliotDrel/e-stack/compare/v1.0.46...v1.0.47
 [1.0.46]: https://github.com/ElliotDrel/e-stack/compare/v1.0.45...v1.0.46
 [1.0.45]: https://github.com/ElliotDrel/e-stack/compare/v1.0.44...v1.0.45
