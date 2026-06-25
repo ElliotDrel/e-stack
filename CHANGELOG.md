@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `estack-productivity-prioritization-coach` (v1.2.0): ingrained two core lenses that now frame every coaching session. (1) Decreasing time to outcome is the most impactful skill — every session actively coaches speed, asking "what's slowing you down?" and "what would you cut to get there twice as fast?" (2) The target is the MVP outcome, not the perfect outcome — the Result step now includes an MVP anchor ("what's the version that ships in half the time?"), the MAP gains a speed-to-MVP cut as a fifth filter, and the coaching directives explicitly call out perfection-seeking and redirect to shippable.
+
 ---
 
 ## [1.0.47] - 2026-06-23

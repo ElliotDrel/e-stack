@@ -1,6 +1,6 @@
 ---
 name: estack-productivity-prioritization-coach
-version: 1.1.1
+version: 1.2.0
 description: >-
   (productivity-prioritization-coach) Coaches the user through prioritization, productivity, and execution decisions using the RPM method (Result, Purpose, Massive Action Plan), leverage filters, and a momentum engine for building high agency. Use this skill whenever the user talks about prioritization, productivity, time management, planning their week or day, deciding what to work on, choosing between projects or tasks, feeling overwhelmed or behind, cutting down a to-do list, or asks things like "what should I focus on", "am I working on the right thing", or "how do I get more done" — even if they do not explicitly ask for a framework. Also use it when the user is stuck on execution rather than choice: a goal feels too big, they can't get started or keep going, they've lost momentum or motivation, they want to build discipline or "high agency", or they ask "how do I actually do this" / "how do I make myself follow through". Trigger broadly, since productivity, prioritization, and execution questions are the default home for this skill. Also use it when the user shares a new productivity or prioritization resource (video, article, book, podcast, framework) — offer to synthesize it and add it to the skill's sources.
 ---
@@ -14,6 +14,14 @@ This skill turns "what do I need to do" into "what do I actually want, and what 
 A to-do list answers the wrong question. It produces movement without achievement — you can be busy all week and move nothing that matters. The job of this skill is to pull the user out of task-thinking and into outcome-thinking before they spend another hour.
 
 So when this skill triggers, do not just help the user organize their tasks. Coach them through the method below.
+
+**Two lenses frame everything in this skill.**
+
+First: decreasing the time to any outcome is the most impactful skill for anyone successful. Speed to result is not a nice-to-have — it is the leverage point. A result in two weeks beats a better result in two months, because the faster you ship, the faster you learn, iterate, and compound. Every coaching session should be asking: how do we cut the time to this outcome?
+
+Second: the target outcome is the MVP outcome, not the perfect outcome. The MAP is not a plan to build the best version — it is a plan to build the smallest version that proves the thing works. Perfection is a scope problem masquerading as a quality problem. Shipping an MVP unlocks the next iteration; waiting for the "right" version usually means not shipping at all.
+
+These two lenses work together: MVP scoping is what makes speed achievable.
 
 ## Calibrate depth to stakes
 
@@ -33,7 +41,9 @@ The result is the target, stated as a finished state, not a verb. "Get buildpurd
 
 **Failure mode:** the user names a task or an activity instead of an outcome. "Send emails" is not a result. Redirect: "That's an action. What does sending those emails get you?"
 
-**Ambition gut-check.** Once the result is concrete, run one fast reality check: does it defy the laws of physics? If not, it is achievable — say so and move on. The point is to grant permission: almost nothing real is actually impossible, so the bottleneck is decomposition, not feasibility. The rare exception is a result that genuinely can't exist as stated ("replace all my income by Friday") — then reshape it to something achievable rather than letting it stall the user.
+**MVP anchor.** Once the result is concrete, ask: "Is this the MVP version of this result, or the ideal version?" Push the user to define the smallest outcome that would count as a win. A useful test: "What would a version that ships in half the time look like?" That version is almost always the real target. Keep narrowing until the result is both concrete and lean.
+
+**Ambition gut-check.** After the MVP anchor, run one fast reality check: does it defy the laws of physics? If not, it is achievable — say so and move on. The point is to grant permission: almost nothing real is actually impossible, so the bottleneck is decomposition and scope, not feasibility. The rare exception is a result that genuinely can't exist as stated ("replace all my income by Friday") — then reshape it rather than letting it stall the user.
 
 ### P — Purpose
 
@@ -67,7 +77,9 @@ A brainstorm becomes a plan by cutting it. Run the candidate actions through the
 
 4. **Quadrant II check.** Important but not urgent work (Covey's Quadrant II — planning, building systems, relationships, prevention) is what gets skipped under pressure and matters most. If the tightened MAP is all urgent firefighting and no Quadrant II, flag it.
 
-The end state of a coaching session: a decided **Result**, an articulated **Purpose**, and a short, filtered **MAP** — fewer items than the user started with, not more.
+5. **Speed-to-MVP cut.** For each surviving action ask: "Does this get me to a shippable result faster, or is it a polish move?" Anything that improves quality toward perfection rather than enabling the result should be cut or deferred to a later iteration. A shippable result with rough edges beats a perfect result that doesn't exist yet. This is the final gate: if the MAP still feels big, ask "what's the version that ships in half the time?" and cut to that.
+
+The end state of a coaching session: a decided **Result** (MVP-scoped), an articulated **Purpose**, and a short, filtered **MAP** — fewer items than the user started with, not more, built around the fastest path to done.
 
 ## Building momentum (high agency)
 
@@ -87,7 +99,10 @@ RPM and the filters decide *what* to do. This section is for when the user knows
 - Use the user's own words back to them. Make their vague answers concrete.
 - Be direct and punchy. Peer-level language. No em dashes, no filler, no motivational padding.
 - Push back when an answer is a task masquerading as a result, or a result masquerading as a purpose.
-- Close every session by stating the Result, Purpose, and tightened MAP back plainly so the user leaves with a decision, not a vibe.
+- Push toward MVP. When a plan feels big, ask: "What's the version of this that ships in half the time?" That answer is almost always the real plan.
+- Call out perfection-seeking. If the user is adding steps that improve quality rather than enabling the result, name it: "That sounds like polish, not progress. Does it need to happen before you can ship?"
+- Hold the speed lens. Regularly ask: "What's slowing you down?" and "What would you have to cut to get there twice as fast?" Decreasing time to outcome is the skill — coach it actively, not as a footnote.
+- Close every session by stating the Result (MVP-scoped), Purpose, and tightened MAP back plainly so the user leaves with a decision, not a vibe.
 
 ## Handling new resources
 
