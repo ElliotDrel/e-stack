@@ -10,7 +10,7 @@ Run the preflight script. It shows installed vs repo state, diffs, and frontmatt
 bash "${CLAUDE_SKILL_DIR}/scripts/preflight.sh"
 ```
 
-(The script lives at `.claude/skills/manage-e-stack/scripts/preflight.sh` if `CLAUDE_SKILL_DIR` is not set.)
+(The script lives at `.agents/skills/manage-e-stack/scripts/preflight.sh` if `CLAUDE_SKILL_DIR` is not set.)
 
 Present the diagnostics to the user. If there are frontmatter issues, fix them before continuing.
 

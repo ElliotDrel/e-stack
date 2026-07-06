@@ -10,7 +10,7 @@ Run the preflight script. It reports installed-vs-repo state for both skills and
 bash "${CLAUDE_SKILL_DIR}/scripts/preflight.sh"
 ```
 
-(The script lives at `.claude/skills/manage-e-stack/scripts/preflight.sh` if `CLAUDE_SKILL_DIR` is not set.)
+(The script lives at `.agents/skills/manage-e-stack/scripts/preflight.sh` if `CLAUDE_SKILL_DIR` is not set.)
 
 Present the diagnostics. If the hook you intend to edit shows as STALE or modified, decide before continuing whether to keep local edits or overwrite.
 

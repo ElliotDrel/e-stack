@@ -28,7 +28,7 @@ If a future skill is a different shape (a pure tool, a converter, a tracker), do
    ```
 5. **Register the skill** — README.md table, AGENTS.md "Skills in the pack" line, CHANGELOG `[Unreleased]`. Verify with `node scripts/check-docs.cjs && node scripts/check-skill-name.cjs estack-<short-name>`.
 
-The full add flow (installer dry-run, commit gate, publish) is in `.claude/skills/manage-e-stack/steps/add.md` — this template plugs into step 1 of that flow.
+The full add flow (installer dry-run, commit gate, publish) is in `.agents/skills/manage-e-stack/steps/add.md` — this template plugs into step 1 of that flow.
 
 ## The two reference tiers
 
