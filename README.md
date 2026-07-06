@@ -70,6 +70,8 @@ npx elliot-stack@latest
 
 External contributions are welcome via pull request. Direct pushes to `main` are blocked — fork the repo, push your changes to a branch, and open a PR. Only the maintainer (Elliot) can merge to `main` and cut releases. This is intentional: `elliot-stack` is a security-sensitive npm package and the release tag can only be pushed by the maintainer.
 
+Adding or editing a skill? Authoring conventions (versioning, doc listings, feedback section) are in [`docs/skill-authoring.md`](docs/skill-authoring.md), and coaching-style skills can start from the scaffold in [`templates/`](templates/README.md).
+
 ### Testing locally
 
 Run the installer straight from your checkout to preview what a real install would do to your `~/.claude/`:
