@@ -241,6 +241,7 @@ For convenience, here's where each existing reference filename is mentioned in t
 
 | Reference file | Mentioned in |
 |---|---|
+| `lencioni_the-motive.md` | `SKILL.md`, `frameworks/motive-check/flow.md`, `frameworks/developing-team/flow.md`, `frameworks/managing-subordinates/flow.md`, `frameworks/difficult-conversations/flow.md`, `frameworks/running-meetings/flow.md`, `frameworks/repetitive-communication/flow.md`, `phases/1-intake.md`, `phases/7-diagnose.md` |
 | `grove_high-output-management.md` | `phases/1-intake.md`, `phases/2-trm-assessment.md`, `phases/4-build-brief.md`, `phases/5-monitoring.md`, `phases/7-diagnose.md` |
 | `gerber_e-myth-revisited.md` | `phases/1-intake.md`, `phases/7-diagnose.md` |
 | `hormozi-leila_4-stages.md` | `phases/2-trm-assessment.md`, `phases/7-diagnose.md` |

@@ -29,6 +29,8 @@ The order matters: by the time you've asked the first two or three, you usually 
 
 Map the user's answers to *one* of these. The primary gap is the one that, if fixed, would have prevented the failure. Secondary gaps may exist; surface them but don't make them the headline.
 
+**The gap beneath the gap — check the motive.** A structural gap is the mechanism; sometimes a reward-centered motive is the reason it opened. If the user skipped monitoring because check-ins felt tedious, skipped enrollment because the conversation felt awkward, or left authority vague to avoid a hard boundary, the corrective move isn't only structural — it's naming that the tedious part *is* the job. Lencioni's definition is the line to hold here: *"Management is the act of aligning people's actions, behaviors, and attitudes with the needs of the organization and making sure that little problems don't become big ones."* The follow-through the user avoided is not overhead on top of delegation — it is the management the delegation required. Name the motive when it's driving the gap, and route to `../../motive-check/flow.md` if the user wants to work it directly. (See `../../../references/lencioni_the-motive.md`.)
+
 ### Enrollment gap
 
 The work was *assigned*, not *enrolled into*. The person did the job but didn't bring initiative, judgment, or ownership — because no one explained why it mattered or why they were chosen.

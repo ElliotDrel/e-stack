@@ -1,7 +1,7 @@
 # Phase 1 — Intake
 
 <primary_outcome>
-By the end of this phase you have: (1) a specific named task, (2) a named owner (or, in flat teams, owner-selection logic if not yet decided), (3) a timeline, (4) the team mode locked in (hierarchical or flat/peer — this calibrates every downstream phase), (5) a filter decision (Eliminate / Automate / Delegate / hold), and (6) a resistance pattern named if one is present. No fuzz allowed: "marketing stuff" is not a task; "I think Sarah probably" is not an owner; "we kinda all work together" is not a team mode.
+By the end of this phase you have: (1) a motive-gate result — the task is genuinely delegable (not one of the five omissions) and any reward-centered motive was named, (2) a specific named task, (3) a named owner (or, in flat teams, owner-selection logic if not yet decided), (4) a timeline, (5) the team mode locked in (hierarchical or flat/peer — this calibrates every downstream phase), (6) a filter decision (Eliminate / Automate / Delegate / hold), and (7) a resistance pattern named if one is present. No fuzz allowed: "marketing stuff" is not a task; "I think Sarah probably" is not an owner; "we kinda all work together" is not a team mode.
 </primary_outcome>
 
 This is the first phase of the pre-delegation flow. Your job here is to understand what is actually being handed off, to whom, and on what timeline — and to catch the cases where the work shouldn't be delegated at all (because it should be eliminated, automated, or kept with the user).
@@ -29,9 +29,23 @@ If the user says "marketing stuff" or "the whole onboarding thing," push: *"Walk
 
 ---
 
-## While the user is talking, run three filters silently
+## While the user is talking, run four filters silently
 
 Don't ask all of these. Listen for whether each is satisfied. Raise a coaching note only if the user seems to be heading toward a wrong answer.
+
+### Filter 0 — Is the motive right, and is this even delegable? (the motive gate)
+
+This runs first because it can end the delegation before it starts. Two silent reads (the motive gate from `SKILL.md`):
+
+- **Is what they're handing off one of the five omissions?** Developing their leadership team, managing their people, a difficult conversation, running their meetings, or repeating the core message. These are not delegation candidates — handing them off is the definition of abdication. If the task is one of the five, stop the delegation and redirect:
+
+  > 🚩 That's one of the handful of things a leader can't hand off without abdicating. Let's not build a brief for it — let's build your plan to actually do it.
+
+  Then route to the matching omission flow (`../../developing-team/flow.md`, `../../managing-subordinates/flow.md`, `../../difficult-conversations/flow.md`, `../../running-meetings/flow.md`, or `../../repetitive-communication/flow.md`).
+
+- **Is the motive reward-centered?** Is the user reaching to offload this because it's tedious, uncomfortable, or unfun rather than because someone else should genuinely own it? If so, name it in one honest sentence before proceeding — a legitimate delegation can still be driven by the wrong motive, and saying so is the coaching. If the user is stuck or defensive about it, route to `../../motive-check/flow.md`.
+
+If the task is genuinely delegable and the motive is sound, continue to the filters below.
 
 ### Filter 1 — Should this exist at all? (Ferriss: Eliminate → Automate → Delegate)
 
@@ -126,6 +140,7 @@ What makes this case useful for Phase 1 is the *order* Ferriss eventually codifi
 
 ## Phase 1 is complete when
 
+- The motive gate has been run: the task is not one of the five omissions (or, if it was, the session was redirected), and a reward-centered motive, if present, was named
 - The task is specific (deliverable describable in one sentence)
 - The owner is named (or, in flat teams, owner-selection logic is in motion)
 - The timeline is on the table
@@ -138,6 +153,7 @@ When all of those are true, move to Phase 2.
 ---
 
 > **Going deeper.** Everything you need to coach this section is above. If the user asks where this comes from, or you need a more detailed take, load:
+> - [Lencioni — *The Motive*](../../../references/lencioni_the-motive.md) — the two motives and the five omissions behind the motive gate
 > - [Ferriss — *The 4-Hour Workweek*](../../../references/ferriss_4hww.md) — Eliminate / Automate / Delegate sequencing
 > - [Sullivan — *Who Not How*](../../../references/sullivan_who-not-how.md) — identity reframes for letting go
 > - [Grove — *High Output Management*](../../../references/grove_high-output-management.md) — delegate what is familiar
