@@ -74,6 +74,11 @@ populating a placeholder — the link path in the placeholder is the contract.
 
 Use the matching template from the **Templates** section below.
 
+If the reference file runs past ~100 lines, open the body (right after the H1)
+with a short `## Contents` list of its section names. Claude previews long files
+with partial reads; a table of contents lets it see the full scope and jump to
+the right section instead of acting on the first 100 lines.
+
 ### Step 5 — Wire it up across the skill
 
 A new reference file is only useful if existing placeholders find it. After

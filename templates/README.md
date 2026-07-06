@@ -18,8 +18,10 @@ If a future skill is a different shape (a pure tool, a converter, a tracker), do
    ```bash
    cp -r templates/coaching-skill skills/estack-<short-name>
    ```
-2. **Rename and fill `SKILL.template.md` → `SKILL.md`.** Replace every `{{PLACEHOLDER}}`, work through the section-by-section guidance comments, and delete the comments as you resolve them. Each section is labeled **REQUIRED** or **OPTIONAL**.
-3. **Pick your reference tier** (see below) and keep only the matching files. Delete the other tier's files from the new skill.
+2. **Rename and fill `SKILL.template.md` → `SKILL.md`.** Replace every `{{PLACEHOLDER}}`, work through the section-by-section guidance comments, and delete the comments as you resolve them. Each section is labeled **REQUIRED** or **OPTIONAL**. (The guidance comments sit below the frontmatter on purpose — never add anything above the opening `---`, or the frontmatter won't parse and the skill won't trigger.)
+3. **Pick your reference tier** (see below) and resolve the template files. No `.template.md` file may remain in the finished skill — anything left in `skills/` ships to npm and installs to users' machines:
+   - **Tier 1:** delete the `references/` folder. Use `sources/00-source-name.template.md` as the pattern for your first real `sources/01-<name>.md`, then delete the `00-*.template.md` file.
+   - **Tier 2:** delete the `sources/` folder. Rename `references/adding-references.template.md` → `adding-references.md` and fill its `{{PLACEHOLDERS}}`.
 4. **Stamp the feedback section** — do not write it by hand:
    ```bash
    node scripts/update-skill-feedback.cjs
@@ -45,12 +47,17 @@ Every coaching skill's `SKILL.md` should carry these components, in this order. 
 |---|---|---|
 | 1 | Frontmatter (`name`, `version`, `description` with `(short)` prefix) | Required |
 | 2 | Identity statement — who the coach is | Required |
-| 3 | Primary outcome / core shift — what every session must produce | Required |
+| 3 | Primary outcome / core shift — what every session must produce, wrapped in `<primary_outcome>` tags | Required |
 | 4 | Voice & posture — tone rules applied every turn | Required |
 | 5 | Calibrate depth to stakes — compressed vs. full path | Required |
 | 6 | The framework(s) — the coaching method itself | Required |
 | 7 | Coaching protocol — the per-turn loop + question discipline | Required |
-| 8 | Acceptance bar — when a session is done | Required |
-| 9 | Handling new resources — how sources get added | Required |
-| 10 | Sources / References list | Required |
-| 11 | Skill Feedback (auto-stamped by script) | Required |
+| 8 | Acceptance bar — binary checklist for when a session is done | Required |
+| 9 | Pre-empted shortcuts — named anti-patterns, each *don't* paired with its *do* | Optional (recommended) |
+| 10 | Handling new resources — how sources get added (Tier 2 adds the runtime consult-the-vault rule) | Required |
+| 11 | Sources / References list | Required |
+| 12 | Skill Feedback (auto-stamped by script) | Required |
+
+## Writing the prose inside a skill
+
+The skill body is a prompt, so prompt-writing rules apply. The authoring companion is [`prompting_guidelines-Matt-Shummer.md`](../prompting_guidelines-Matt-Shummer.md) at the repo root — goal-first hierarchy, artifact-gated phases, pre-empted shortcuts, binary acceptance criteria, positive framing over negation. The template's structure already enforces about half of it; the guidelines cover the sentence-level rest (numeric bars over adjectives, motivation behind each rule, normal imperatives instead of alarm-caps).
