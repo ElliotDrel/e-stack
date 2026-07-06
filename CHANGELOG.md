@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.50] - 2026-07-06
+
 ### Fixed
 - `check-docs.cjs` now reads the "Skills in the pack" / "Hooks in the pack" lines from `AGENTS.md` instead of `CLAUDE.md`, matching the move of the project instructions into `AGENTS.md` (CLAUDE.md now just imports it). Updated the matching instructions across `manage-e-stack` step files, `docs/skill-authoring.md`, `docs/publishing.md`, `templates/README.md`, and `AGENTS.md` so contributors register skills/hooks in the right file.
 
@@ -439,7 +443,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.49...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.50...HEAD
+[1.0.50]: https://github.com/ElliotDrel/e-stack/compare/v1.0.49...v1.0.50
 [1.0.49]: https://github.com/ElliotDrel/e-stack/compare/v1.0.48...v1.0.49
 [1.0.48]: https://github.com/ElliotDrel/e-stack/compare/v1.0.47...v1.0.48
 [1.0.47]: https://github.com/ElliotDrel/e-stack/compare/v1.0.46...v1.0.47
