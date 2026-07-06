@@ -146,5 +146,5 @@ Deliver as a markdown block. Keep it short — this is a mirror, not a report.
 - [ ] The motive is named (reward / responsibility / mixed-sliding) with the behavior that revealed it
 - [ ] The five-omissions test was run and its result stated
 - [ ] A concrete responsibility-centered move exists, with the flow it routes into
-- [ ] If it's one of the five omissions, it was NOT converted into a delegation brief
+- [ ] If it's one of the five omissions, it was *not* converted into a delegation brief
 - [ ] The read was direct but charitable — no character verdict
