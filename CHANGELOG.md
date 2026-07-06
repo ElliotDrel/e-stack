@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `estack-leadership-coach` (v4.0.0): restructured SKILL.md onto the `templates/coaching-skill` scaffold's standard component order (identity → primary outcome → voice → calibrate depth → framework → coaching protocol → acceptance bar → shortcuts → handling resources → references → feedback). New "References — the knowledge vault" section links all 12 reference files directly from SKILL.md (one-hop rule), and the framework router now links each of the 7 delegation phase files directly instead of only through the flow files. Dissolved the "Standing instructions" block into the matching template components, removed the model-specific "Claude Opus 4.7 follows literally" line, and paired every pre-empted shortcut's *don't* with its *do*. Coaching behavior, flows, and phase files are unchanged.
+
 ---
 
 ## [1.0.49] - 2026-06-25
