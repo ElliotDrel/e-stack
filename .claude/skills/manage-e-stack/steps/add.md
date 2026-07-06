@@ -41,7 +41,7 @@ Every skill must have this section. The script writes it from `scripts/skill-fee
 Add the new skill to both doc lists — the release gate (`node scripts/check-docs.cjs`) fails if either is missing it:
 
 1. **README.md** — add a row to the Skills table (alphabetical order): `| **<Title>** | \`/estack-<skill-name>\` | <one-line description> |`
-2. **CLAUDE.md** — add `estack-<skill-name>` to the "Skills in the pack" line (alphabetical order)
+2. **AGENTS.md** — add `estack-<skill-name>` to the "Skills in the pack" line (alphabetical order)
 
 Verify:
 

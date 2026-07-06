@@ -8,8 +8,10 @@
 // Checked:
 //   README.md   — Skills table must have a `/estack-<name>` row per skill;
 //                 Hooks table must have a row per hooks/*.js file
-//   CLAUDE.md   — "Skills in the pack" line must list every skill;
+//   AGENTS.md   — "Skills in the pack" line must list every skill;
 //                 "Hooks in the pack" line must list every hook
+//                 (the project instructions live in AGENTS.md; CLAUDE.md just
+//                 imports it via `@AGENTS.md`)
 //
 // Usage:
 //   node scripts/check-docs.cjs
@@ -34,7 +36,7 @@ const hookFiles = fs.existsSync(hooksDir)
   : [];
 
 const readme = fs.readFileSync(path.join(REPO_ROOT, 'README.md'), 'utf8');
-const claudeMd = fs.readFileSync(path.join(REPO_ROOT, 'CLAUDE.md'), 'utf8');
+const agentsMd = fs.readFileSync(path.join(REPO_ROOT, 'AGENTS.md'), 'utf8');
 
 let failures = 0;
 
@@ -92,39 +94,39 @@ console.log('README.md:');
   }
 }
 
-// ── CLAUDE.md — "Skills in the pack" / "Hooks in the pack" lines ───────────
-console.log('\nCLAUDE.md:');
+// ── AGENTS.md — "Skills in the pack" / "Hooks in the pack" lines ───────────
+console.log('\nAGENTS.md:');
 {
-  const skillsLine = claudeMd.match(/^- \*\*Skills in the pack:\*\*(.*)$/m);
+  const skillsLine = agentsMd.match(/^- \*\*Skills in the pack:\*\*(.*)$/m);
   if (!skillsLine) {
-    fail('CLAUDE.md has no "Skills in the pack" line');
+    fail('AGENTS.md has no "Skills in the pack" line');
   } else {
     const listed = new Set();
     for (const m of skillsLine[1].matchAll(/`(estack-[a-z0-9-]+)`/g)) listed.add(m[1]);
     for (const name of skillNames) {
       if (listed.has(name)) ok('skill listed: ' + name);
-      else fail('CLAUDE.md "Skills in the pack" is missing ' + name);
+      else fail('AGENTS.md "Skills in the pack" is missing ' + name);
     }
     for (const name of listed) {
       if (!skillNames.includes(name)) {
-        fail('CLAUDE.md "Skills in the pack" lists ' + name + ' but skills/' + name + '/ does not exist (stale entry?)');
+        fail('AGENTS.md "Skills in the pack" lists ' + name + ' but skills/' + name + '/ does not exist (stale entry?)');
       }
     }
   }
 
-  const hooksLine = claudeMd.match(/^- \*\*Hooks in the pack:\*\*(.*)$/m);
+  const hooksLine = agentsMd.match(/^- \*\*Hooks in the pack:\*\*(.*)$/m);
   if (hookFiles.length > 0 && !hooksLine) {
-    fail('CLAUDE.md has no "Hooks in the pack" line but hooks/ contains ' + hookFiles.length + ' hook(s)');
+    fail('AGENTS.md has no "Hooks in the pack" line but hooks/ contains ' + hookFiles.length + ' hook(s)');
   } else if (hooksLine) {
     const listed = new Set();
     for (const m of hooksLine[1].matchAll(/`([a-z0-9-]+\.js)`/g)) listed.add(m[1]);
     for (const filename of hookFiles) {
       if (listed.has(filename)) ok('hook listed: ' + filename);
-      else fail('CLAUDE.md "Hooks in the pack" is missing ' + filename);
+      else fail('AGENTS.md "Hooks in the pack" is missing ' + filename);
     }
     for (const filename of listed) {
       if (!hookFiles.includes(filename)) {
-        fail('CLAUDE.md "Hooks in the pack" lists ' + filename + ' but hooks/' + filename + ' does not exist (stale entry?)');
+        fail('AGENTS.md "Hooks in the pack" lists ' + filename + ' but hooks/' + filename + ' does not exist (stale entry?)');
       }
     }
   }
@@ -134,8 +136,8 @@ console.log('\nCLAUDE.md:');
 console.log('');
 if (failures > 0) {
   console.log('check-docs: ' + failures + ' doc entry/entries out of sync.');
-  console.log('Update the README.md Skills/Hooks tables and the CLAUDE.md "Skills in the pack" / "Hooks in the pack" lines to match skills/ and hooks/.');
+  console.log('Update the README.md Skills/Hooks tables and the AGENTS.md "Skills in the pack" / "Hooks in the pack" lines to match skills/ and hooks/.');
   process.exit(1);
 }
-console.log('check-docs: README.md and CLAUDE.md list every skill and hook.');
+console.log('check-docs: README.md and AGENTS.md list every skill and hook.');
 process.exit(0);

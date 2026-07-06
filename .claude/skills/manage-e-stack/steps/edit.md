@@ -22,7 +22,7 @@ Edit the skill files in `skills/estack-*/` as needed. Conventions are in the mai
 - `name` field matches the folder name
 - `description` starts with `(<short-name>)`
 - **Bump the skill's `version:` field** as part of the edit — patch (`1.0.0` → `1.0.1`) for fixes/tweaks, minor (`1.0.0` → `1.1.0`) for new capabilities, major for rewrites/breaking changes. Every content change needs a bump; `scripts/check-versions.cjs` blocks the release otherwise.
-- **If the edit changes what the skill is or does**, update its row in the README.md Skills table and (for renames) the CLAUDE.md "Skills in the pack" line. `node scripts/check-docs.cjs` catches missing/stale names but not stale descriptions — keep those honest manually.
+- **If the edit changes what the skill is or does**, update its row in the README.md Skills table and (for renames) the AGENTS.md "Skills in the pack" line. `node scripts/check-docs.cjs` catches missing/stale names but not stale descriptions — keep those honest manually.
 - Do NOT bump `package.json` version as part of an edit — the PACKAGE version bumps during release (`npm version`), not while editing skills. Only the per-SKILL version bumps here.
 - **Update `CHANGELOG.md`** — add an entry under `## [Unreleased]` describing the user-visible change. Use `### Changed` for behavior updates, `### Fixed` for bug fixes, `### Removed` for anything removed. See `docs/changelog-maintenance.md` for format rules. Skip this only for changes with zero user-visible effect (e.g. fixing a comment or internal refactor).
 
@@ -41,7 +41,7 @@ const DEPRECATED_SKILLS = [
 
 On the next install (any mode), the installer deletes each listed folder from both `~/.agents/skills/` and `~/.claude/skills/` (real dir or symlink) and drops its checksum entry. Leave entries in the list permanently — they're cheap and protect users who update infrequently.
 
-A rename/remove also requires updating the docs: fix the skill's row in the README.md Skills table and the CLAUDE.md "Skills in the pack" line, then verify with `node scripts/check-docs.cjs` — it flags both missing and stale entries, and the publish workflow runs it as a hard gate.
+A rename/remove also requires updating the docs: fix the skill's row in the README.md Skills table and the AGENTS.md "Skills in the pack" line, then verify with `node scripts/check-docs.cjs` — it flags both missing and stale entries, and the publish workflow runs it as a hard gate.
 
 ## Phase 3: Review — APPROVAL GATE
 
