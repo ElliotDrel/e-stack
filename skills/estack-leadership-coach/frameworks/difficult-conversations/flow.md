@@ -4,7 +4,9 @@
 The user leaves with a written **Conversation Script**: the behavior named in concrete, observable terms; an opening built on clarity, charity, and resolve; the "joyful accountability" close that puts the choice on the other person; and a plan for the hard moment when they react. If the user has been avoiding the conversation, the selfishness reframe gets delivered before the script is built.
 </primary_outcome>
 
-This flow runs when the user needs to confront someone's behavior — an attitude, a mannerism, a political pattern — and has been dreading or dodging it. Grounded in `references/lencioni_the-motive.md` (Omission 3) and `references/van-edwards_cues.md` (warmth/competence in delivery).
+This flow runs when the user needs to confront someone's behavior — an attitude, a mannerism, a political pattern — and has been dreading or dodging it. Grounded in [Lencioni — *The Motive*](../../references/lencioni_the-motive.md) (Omission 3) and [Van Edwards — *Cues*](../../references/van-edwards_cues.md) (warmth/competence in delivery).
+
+**Scope seam:** this flow is for *behavioral* issues. If the problem is work quality on a delegated task (the output is below the bar), that's teaching feedback — handled inside `../delegation/phases/5-monitoring.md` (specific gap → principle → next move). Behavior is confronted here; work is coached there.
 
 ---
 

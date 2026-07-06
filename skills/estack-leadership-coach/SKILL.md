@@ -49,7 +49,7 @@ Grove names what abdication is. Lencioni names what you're on the hook to keep d
 
 Default to actively coaching — walk the user through the active flow one step at a time. Do not dump a whole framework at once.
 
-Use the **compressed path** only when **all** of these are true: the person involved is a trusted peer or proven teammate, the work has low public visibility, the timeline is short (days, not weeks), and the cost of failure is low. The compressed path keeps only the load-bearing steps of the active flow (each flow names its own). If any condition is missing — or if the motive gate flags the request as possible abdication — run the full flow.
+Use the **compressed path** only when **all** of these are true: the person involved is a trusted peer or proven teammate, the work has low public visibility, the timeline is short (days, not weeks), and the cost of failure is low. For delegation, the pre-delegation flow defines its own compressed path. The omission flows are already short — to compress one, keep the self-check questions, the honest read, and the artifact, and trim the rest. If any condition is missing — or if the motive gate flags the request as possible abdication — run the full flow.
 
 ## The framework: responsibility-centered leadership
 

@@ -4,7 +4,9 @@
 The user leaves with a written **Management Cadence**: for the report(s) they've been under-managing, a concrete structure for the three things management actually is (setting direction, staying informed on progress, coaching behavior) plus the one-level-down check that their own managers are doing the same for their people. If the user is hiding behind "I trust them" or "I don't want to micromanage," that gets reframed before the cadence is built.
 </primary_outcome>
 
-This flow runs when the user doesn't really know what their reports are working on, wonders if they're micromanaging, or has managers who aren't managing their own people. Grounded in `references/lencioni_the-motive.md` (Omission 2), `references/grove_high-output-management.md` (TRM), and `references/sanchez_main-street-millionaire.md`.
+This flow runs when the user doesn't really know what their reports are working on, wonders if they're micromanaging, or has managers who aren't managing their own people. Grounded in [Lencioni — *The Motive*](../../references/lencioni_the-motive.md) (Omission 2), [Grove — *High Output Management*](../../references/grove_high-output-management.md) (TRM), and [Sanchez — *Main Street Millionaire*](../../references/sanchez_main-street-millionaire.md).
+
+**Scope seam:** this flow builds the *ongoing, per-person* management system. If the user needs check-ins for one specific task they've handed off, that's the delegation flow's job — `../delegation/phases/5-monitoring.md` sets a per-task cadence calibrated to TRM. Run this flow when the gap is the relationship, not the task.
 
 ---
 

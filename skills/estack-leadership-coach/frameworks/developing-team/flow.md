@@ -4,7 +4,7 @@
 The user leaves with a written **Team Development Plan**: the one team-health gap they'll work on first (interpersonal dynamics, honesty/conflict, or peer accountability), the specific leader-owned intervention to close it (not something handed to HR), and a scheduled first move. If the user is trying to outsource team-building, that gets named before the plan is built.
 </primary_outcome>
 
-This flow runs when the user wants their leadership team to work better together — or when the motive gate caught them trying to hand team-building to HR or an offsite facilitator. Grounded in `references/lencioni_the-motive.md` (Omission 1) and `references/deci-ryan_self-determination-theory.md`.
+This flow runs when the user wants their leadership team to work better together — or when the motive gate caught them trying to hand team-building to HR or an offsite facilitator. Grounded in [Lencioni — *The Motive*](../../references/lencioni_the-motive.md) (Omission 1) and [Deci & Ryan — Self-Determination Theory](../../references/deci-ryan_self-determination-theory.md).
 
 ---
 

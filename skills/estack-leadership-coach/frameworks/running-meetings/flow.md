@@ -4,7 +4,7 @@
 The user leaves with a written **Meeting Redesign**: the meeting's real purpose, what gets cut, how conflict and decisions get forced into the room, and the specific change in how the user shows up. If the user treats meetings as drudgery to get through, the surgery reframe gets delivered before the redesign.
 </primary_outcome>
 
-This flow runs when the user's meetings are boring, decision-free, or dreaded — theirs or the ones they run. Grounded in `references/lencioni_the-motive.md` (Omission 4) and `references/doerr_measure-what-matters.md` (decisions and priorities).
+This flow runs when the user's meetings are boring, decision-free, or dreaded — theirs or the ones they run. Grounded in [Lencioni — *The Motive*](../../references/lencioni_the-motive.md) (Omission 4) and [Doerr — *Measure What Matters*](../../references/doerr_measure-what-matters.md) (decisions and priorities).
 
 ---
 

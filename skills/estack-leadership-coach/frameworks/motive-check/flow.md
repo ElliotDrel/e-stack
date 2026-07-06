@@ -6,7 +6,7 @@ The user leaves with a written **Motive Diagnosis**: which motive is driving the
 
 This is the front-door flow of the coach. It runs when the user is stuck, defensive, or unsure whether they're dropping a responsibility — or when the motive gate in `SKILL.md` couldn't resolve cleanly in one turn. It exists to answer one question honestly: *are you doing the hard thing because it's your job, or avoiding it because it isn't rewarding?*
 
-Grounded in `references/lencioni_the-motive.md`. Read it when you need the original language or want to cite a source.
+Grounded in [Lencioni — *The Motive*](../../references/lencioni_the-motive.md). Read it when you need the original language or want to cite a source.
 
 ---
 

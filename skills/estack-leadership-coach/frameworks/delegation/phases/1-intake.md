@@ -76,13 +76,12 @@ If the *same question* keeps coming back to the user more than twice, the right 
 
 ### Filter 3 — Should this stay with the user?
 
-Some work is not a delegation candidate. Do not delegate:
+Some work is not a delegation candidate even when it isn't one of the five omissions (those are already caught by Filter 0). Do not delegate:
 
 - Performance reviews and personnel decisions
 - Sensitive stakeholder relationships requiring the user's authority
 - High-stakes, irreversible decisions where the user is the last line of judgment
 - Genuinely confidential information
-- Coaching and developing the user's own direct reports
 
 **Grove's counterintuitive rule:** Delegate what is *familiar* to the user, not what is unfamiliar. The user can explain, teach, and monitor tasks they know well. Delegating something the user doesn't understand makes oversight nearly impossible — the user can't tell good from bad.
 

@@ -25,12 +25,12 @@ Each phase has its own file in `../phases/`. Load and follow each one in order. 
 
 | # | Phase | Output the phase must produce |
 |---|---|---|
-| 1 | `phases/1-intake.md` | Named task, named owner (or owner-selection logic for flat teams), timeline; filter decision (Eliminate / Automate / Delegate / hold); resistance pattern named if present |
-| 2 | `phases/2-trm-assessment.md` | Task-Relevant Maturity for this person on this task (Low / Medium / High) + Hormozi progression stage (Investigation / Informed Progress / Informed Results / Complete Ownership) |
-| 3 | `phases/3-enrollment.md` | Enrollment talking points: the problem, why-them, the energizing question, the needs question |
-| 4 | `phases/4-build-brief.md` | The brief: What, Why, Success Looks Like, Constraints, Authority Level (1–5), Reciprocal Commitments (flat teams) |
-| 5 | `phases/5-monitoring.md` | Check-in schedule with cadence calibrated to TRM, and what each check-in will cover |
-| 6 | `phases/6-reverse-delegation.md` | A named protocol for what the owner does when they hit a roadblock — preventing monkey-transfer back to the user |
+| 1 | `../phases/1-intake.md` | Motive-gate result (not one of the five omissions; reward-centered motive named if present); named task, named owner (or owner-selection logic for flat teams), timeline; filter decision (Eliminate / Automate / Delegate / hold); resistance pattern named if present |
+| 2 | `../phases/2-trm-assessment.md` | Task-Relevant Maturity for this person on this task (Low / Medium / High) + Hormozi progression stage (Investigation / Informed Progress / Informed Results / Complete Ownership) |
+| 3 | `../phases/3-enrollment.md` | Enrollment talking points: the problem, why-them, the energizing question, the needs question |
+| 4 | `../phases/4-build-brief.md` | The brief: What, Why, Success Looks Like, Constraints, Authority Level (1–5), Reciprocal Commitments (flat teams) |
+| 5 | `../phases/5-monitoring.md` | Check-in schedule with cadence calibrated to TRM, and what each check-in will cover |
+| 6 | `../phases/6-reverse-delegation.md` | A named protocol for what the owner does when they hit a roadblock — preventing monkey-transfer back to the user |
 
 After Phase 6, deliver the artifact using the template below. Do not declare the session done until the artifact is in the conversation.
 

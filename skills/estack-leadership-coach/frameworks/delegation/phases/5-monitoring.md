@@ -85,6 +85,8 @@ The structure of teaching feedback:
 
 This is the difference between *building taste* (which compounds over time, raises the owner's TRM, and reduces future check-ins) and *correcting output* (which produces this version but doesn't change the next one).
 
+**Two scope seams.** Teaching feedback here is about the *work on this task*. If what actually needs addressing is the person's *behavior* (attitude, mannerisms, politics), don't fold it into a check-in — route to `../../difficult-conversations/flow.md` and script it properly. And if the user realizes the real gap is that they have no ongoing management structure for this person at all (beyond this one task), route to `../../managing-subordinates/flow.md` to build the per-person cadence.
+
 ---
 
 ## Real-world case: the customer pays the tuition

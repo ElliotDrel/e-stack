@@ -4,7 +4,9 @@
 The user leaves with a written **Communication Plan**: the one core message that has to land, a repetition schedule across channels and occasions built on the rule of seven, and the user's commitment to being the Chief Reminding Officer of that message — including how they'll keep it fresh without abandoning it. If the user thinks they've already communicated enough, the rule-of-seven reframe gets delivered first.
 </primary_outcome>
 
-This flow runs when a message isn't landing — a strategy, a change, a value — and the user is frustrated their people "didn't get it," or bored of repeating themselves. Grounded in `references/lencioni_the-motive.md` (Omission 5) and `references/doerr_measure-what-matters.md` (a single clear priority to communicate).
+This flow runs when a message isn't landing — a strategy, a change, a value — and the user is frustrated their people "didn't get it," or bored of repeating themselves. Grounded in [Lencioni — *The Motive*](../../references/lencioni_the-motive.md) (Omission 5) and [Doerr — *Measure What Matters*](../../references/doerr_measure-what-matters.md) (a single clear priority to communicate).
+
+**Scope seam:** this flow is for a message that has to reach and stick with *many people over time*. If the "message" is the why behind one specific handoff to one person, that's enrollment — `../delegation/phases/3-enrollment.md` handles it.
 
 ---
 
