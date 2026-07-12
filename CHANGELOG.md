@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-cold-message-writer` skill — writes cold outreach messages (LinkedIn, email, X DMs) that read as hand-typed for one recipient instead of a templated blast, with channel-specific mechanics, an anti-pattern self-check, and follow-up/situation templates for when the first message gets ghosted.
+
 ---
 
 ## [1.0.50] - 2026-07-06
