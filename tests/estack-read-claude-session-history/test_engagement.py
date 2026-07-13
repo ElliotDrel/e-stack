@@ -16,6 +16,11 @@ from lib import parser as PR
 def _run_cli(cli_path, *args, env_overrides=None):
     env = dict(os.environ)
     env["PYTHONIOENCODING"] = "utf-8"
+    # Tests run inside a real Claude Code session inherit a real
+    # CLAUDE_CODE_SESSION_ID from the ambient environment — scrub both session-id
+    # vars first so a test's fake env_overrides isn't silently outranked by it.
+    env.pop("CLAUDE_CODE_SESSION_ID", None)
+    env.pop("CLAUDE_SESSION_ID", None)
     if env_overrides:
         env.update(env_overrides)
     return subprocess.run(

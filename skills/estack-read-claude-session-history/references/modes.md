@@ -144,16 +144,16 @@ For byte-identical v1 output, use the legacy `--list` flag.
 
 ### `whoami`
 
-Resolve the CURRENT live session (via the `CLAUDE_SESSION_ID` env var) to its absolute `.jsonl` path — no listing, no eyeballing timestamps.
+Resolve the CURRENT live session (via the `CLAUDE_CODE_SESSION_ID` env var — the real OS variable Claude Code sets in a live session's process environment, checked first; `CLAUDE_SESSION_ID` is checked second as a compatibility fallback) to its absolute `.jsonl` path — no listing, no eyeballing timestamps.
 
 ```bash
 python read_transcript.py --mode whoami [--cwd <path>]
 ```
 
-- `--cwd` scopes the lookup to one project first (fast path); omitted, it scans every project under `--root` until the UUID matches.
+- `--cwd` scopes the lookup to one project first (fast path); if that misses (wrong or nonexistent project dir) or is omitted, it scans every project under `--root` until the UUID matches — never fails just because `--cwd` didn't resolve.
 - Exit 0: prints `<uuid>` / `<path>` / `project: <name>` (three lines), or the JSON equivalent with `--format json`.
-- Exit 1: `CLAUDE_SESSION_ID` is unset (not running inside a live session), or the env var is set but no matching file was found under `--root`.
-- SKILL.md's `${CLAUDE_SESSION_ID}` template variable already gives you the raw UUID for free when this skill's Markdown is loaded — reach for `whoami` when you need the actual file *path* (or a JSON-shaped result), or when resolving from a context (e.g. a subagent) where that substitution isn't visible.
+- Exit 1: neither env var is set (not running inside a live session), or one is set but no matching file was found under `--root`.
+- SKILL.md's `${CLAUDE_SESSION_ID}` template variable already gives you the raw UUID for free when this skill's Markdown is loaded — that's a *different* mechanism (a text substitution the harness performs on SKILL.md itself, never a real env var). Reach for `whoami` when you need the actual file *path* (or a JSON-shaped result), or when resolving from a context (e.g. a subagent) where that substitution isn't visible.
 
 ### `lookup`
 

@@ -17,6 +17,11 @@ import pytest
 def _run_cli(cli_path, *args, env_overrides=None):
     env = dict(os.environ)
     env["PYTHONIOENCODING"] = "utf-8"
+    # Tests run inside a real Claude Code session inherit a real
+    # CLAUDE_CODE_SESSION_ID from the ambient environment — scrub both session-id
+    # vars first so a test's fake env_overrides isn't silently outranked by it.
+    env.pop("CLAUDE_CODE_SESSION_ID", None)
+    env.pop("CLAUDE_SESSION_ID", None)
     if env_overrides:
         env.update(env_overrides)
     return subprocess.run(
@@ -270,8 +275,9 @@ def test_lookup_no_match(cli_path, fixtures_dir, tmp_path):
 
 
 def test_whoami_no_session_id(cli_path, tmp_path):
-    # CLAUDE_SESSION_ID unset (or blanked out) — no live session to resolve.
+    # Both env vars unset (or blanked out) — no live session to resolve.
     env = dict(os.environ)
+    env.pop("CLAUDE_CODE_SESSION_ID", None)
     env.pop("CLAUDE_SESSION_ID", None)
     r = subprocess.run(
         [sys.executable, str(cli_path), "--root", str(tmp_path), "--mode", "whoami"],
@@ -279,7 +285,41 @@ def test_whoami_no_session_id(cli_path, tmp_path):
         env={**env, "PYTHONIOENCODING": "utf-8"},
     )
     assert r.returncode == 1
-    assert "CLAUDE_SESSION_ID" in r.stdout
+    assert "CLAUDE_CODE_SESSION_ID" in r.stdout
+
+
+def test_whoami_resolves_via_real_claude_code_env_var(cli_path, fixtures_dir, tmp_path):
+    # CLAUDE_CODE_SESSION_ID is the actual OS env var Claude Code sets in a live
+    # session (confirmed against a real session's process environment).
+    # CLAUDE_SESSION_ID is a DIFFERENT thing — a SKILL.md text substitution,
+    # never exported as a real env var — so this is the path real usage hits.
+    fake_root = tmp_path / "projects"
+    fake_proj = fake_root / "C--fake-proj"
+    fake_proj.mkdir(parents=True)
+    shutil.copy(fixtures_dir / "basic-session.jsonl", fake_proj / "real.jsonl")
+    r = _run_cli(
+        cli_path, "--root", str(fake_root), "--cwd", "C:\\fake\\proj", "--mode", "whoami",
+        env_overrides={"CLAUDE_CODE_SESSION_ID": "real"},
+    )
+    assert r.returncode == 0
+    assert "real.jsonl" in r.stdout
+
+
+def test_whoami_wrong_cwd_falls_back_to_full_scan(cli_path, fixtures_dir, tmp_path):
+    # --cwd points at a project dir that doesn't exist (or doesn't hold the
+    # session) — whoami must still find it by scanning every project under
+    # --root, not just report failure because the fast path missed.
+    fake_root = tmp_path / "projects"
+    right_proj = fake_root / "C--right-proj"
+    right_proj.mkdir(parents=True)
+    (fake_root / "C--other-proj").mkdir(parents=True)
+    shutil.copy(fixtures_dir / "basic-session.jsonl", right_proj / "cur.jsonl")
+    r = _run_cli(
+        cli_path, "--root", str(fake_root), "--cwd", "C:\\nonexistent\\proj", "--mode", "whoami",
+        env_overrides={"CLAUDE_SESSION_ID": "cur"},
+    )
+    assert r.returncode == 0
+    assert "cur.jsonl" in r.stdout
 
 
 def test_whoami_resolves_with_cwd(cli_path, fixtures_dir, tmp_path):

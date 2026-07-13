@@ -399,19 +399,21 @@ def mode_lookup(uuid_prefix: str, root: Path, fmt: str = "text") -> tuple[int, o
 
 
 def mode_whoami(root: Path, cwd: str | None, fmt: str = "text") -> tuple[int, object]:
-    """Resolve the CURRENT live session (via CLAUDE_SESSION_ID) to its .jsonl path.
+    """Resolve the CURRENT live session (via CLAUDE_CODE_SESSION_ID) to its .jsonl path.
 
-    The system prompt's scratchpad path and the CLAUDE_SESSION_ID env var both
-    carry the running session's UUID — this turns that into a path directly,
-    without listing every session in the project and guessing by recency.
+    The system prompt's scratchpad path and the CLAUDE_CODE_SESSION_ID env var
+    both carry the running session's UUID — this turns that into a path
+    directly, without listing every session in the project and guessing by
+    recency. See lib.paths.current_session_id for why that's the env var
+    (not the similarly-named ${CLAUDE_SESSION_ID} SKILL.md substitution).
     """
     uuid = P.current_session_id()
     if not uuid:
         msg = (
-            "CLAUDE_SESSION_ID is not set — there's no live session to resolve. "
+            "CLAUDE_CODE_SESSION_ID is not set — there's no live session to resolve. "
             "Use --mode list or --mode find to locate a session by recency or content."
         )
-        return 1, ({"error": msg} if fmt == "json" else msg)
+        return 1, ({"error": msg, "uuid": None} if fmt == "json" else msg)
 
     path = None
     if cwd:
@@ -431,7 +433,7 @@ def mode_whoami(root: Path, cwd: str | None, fmt: str = "text") -> tuple[int, ob
 
     if path is None:
         msg = (
-            f"CLAUDE_SESSION_ID={uuid} but no matching .jsonl was found under {root}. "
+            f"Current session ID {uuid} but no matching .jsonl was found under {root}. "
             "The transcript may not be written yet, or --root points elsewhere."
         )
         return 1, ({"error": msg, "uuid": uuid} if fmt == "json" else msg)
@@ -1794,7 +1796,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # Behavior flags
     p.add_argument("--exclude-current", action="store_true",
-                   help="Drop the current session (via CLAUDE_SESSION_ID) from output")
+                   help="Drop the current session (via CLAUDE_CODE_SESSION_ID) from output")
     p.add_argument("--include-subagents", action="store_true",
                    help="Fold subagent finals into brief/last/dump output; "
                         "fold subagent tool calls into tool-usage tallies")

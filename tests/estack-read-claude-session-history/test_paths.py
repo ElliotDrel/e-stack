@@ -55,13 +55,32 @@ def test_resolve_root_absolute_passes_through(tmp_path: Path):
 
 
 def test_current_session_id_unset(monkeypatch):
+    monkeypatch.delenv("CLAUDE_CODE_SESSION_ID", raising=False)
     monkeypatch.delenv("CLAUDE_SESSION_ID", raising=False)
     assert P.current_session_id() is None
 
 
-def test_current_session_id_set(monkeypatch):
+def test_current_session_id_real_claude_code_var(monkeypatch):
+    # CLAUDE_CODE_SESSION_ID is the actual env var Claude Code sets in a live
+    # session's process environment — this is the primary, real-world path.
+    monkeypatch.delenv("CLAUDE_SESSION_ID", raising=False)
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "abc-123")
+    assert P.current_session_id() == "abc-123"
+
+
+def test_current_session_id_fallback_var(monkeypatch):
+    # CLAUDE_SESSION_ID is checked only as a compatibility fallback when the
+    # real var isn't set — it is NOT what Claude Code actually exports (that's
+    # a separate SKILL.md text-substitution mechanism, not an env var at all).
+    monkeypatch.delenv("CLAUDE_CODE_SESSION_ID", raising=False)
     monkeypatch.setenv("CLAUDE_SESSION_ID", "abc-123")
     assert P.current_session_id() == "abc-123"
+
+
+def test_current_session_id_real_var_takes_priority(monkeypatch):
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "real-id")
+    monkeypatch.setenv("CLAUDE_SESSION_ID", "fallback-id")
+    assert P.current_session_id() == "real-id"
 
 
 def test_parse_timespec_relative():

@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `estack-read-claude-session-history` skill — new `--mode whoami` resolves the current live session (via `CLAUDE_SESSION_ID`) straight to its `.jsonl` path, and SKILL.md now surfaces the session ID directly so you don't have to run `--mode list` and eyeball timestamps to find "this" conversation.
 
 ### Fixed
-- `estack-better-title` skill — `rename.sh` now retries the session-file append with backoff instead of failing outright on a transient Windows file lock ("Device or resource busy"), and SKILL.md documents an optional permission allow-rule for the sanctioned rename command.
+- `estack-better-title` skill — `rename.sh` now retries the session-file append with backoff instead of failing outright on a transient Windows file lock ("Device or resource busy"), and correctly surfaces the real error (instead of a misleading "transient lock" message) when the failure is permanent (bad path, permissions). SKILL.md documents an optional permission allow-rule for the sanctioned rename command.
+- `estack-read-claude-session-history` skill — `current_session_id()` now reads `CLAUDE_CODE_SESSION_ID`, the actual OS env var Claude Code sets in a live session (`CLAUDE_SESSION_ID` is a different thing — a SKILL.md text substitution, never a real env var — kept as a fallback). This was silently broken since it shipped, affecting `--exclude-current`/`is_current` detection across `list`/`journal`/`search`/`count`/`timeline` in addition to the new `whoami` mode.
 
 ---
 

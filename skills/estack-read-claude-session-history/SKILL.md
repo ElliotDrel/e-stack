@@ -41,7 +41,7 @@ That answers "which .jsonl is *this* conversation" instantly — no need to run 
 python "$PY" --mode whoami --cwd "<this project's cwd>"
 ```
 
-Prints `<uuid>` / `<path>` / `project: <name>` (or the JSON equivalent with `--format json`) by matching `CLAUDE_SESSION_ID` from the environment against session files directly. `--cwd` is optional — omit it to search every project, at the cost of a full scan.
+Prints `<uuid>` / `<path>` / `project: <name>` (or the JSON equivalent with `--format json`) by matching `CLAUDE_CODE_SESSION_ID` — the real OS env var Claude Code sets in the process environment — against session files directly. That's a *different* name than `${CLAUDE_SESSION_ID}` above: the `${...}` form is a SKILL.md text substitution the harness performs on this file's own body before the model reads it, never exported as an actual env var, so a script has to read the other name instead (with `CLAUDE_SESSION_ID` also checked as a fallback). `--cwd` is optional — omit it to search every project, at the cost of a full scan.
 
 ## Quick start
 
@@ -163,7 +163,7 @@ What are you trying to do?
 | `debug` | `--file` | Entry/block type distributions + probes |
 | `brief` | `--file` | 6-line summary: uuid·project·mtime·status / intent / last / edits / tools / subagents |
 | `list` | `--cwd` or `--all-projects` | Rich table: mtime, size, uuid, msg count, flags, status, title |
-| `whoami` | none (uses `CLAUDE_SESSION_ID` from env) | THIS session's `<uuid>` / `<path>` / `project:` (exit 1 if unresolved) |
+| `whoami` | none (uses `CLAUDE_CODE_SESSION_ID` from env) | THIS session's `<uuid>` / `<path>` / `project:` (exit 1 if unresolved) |
 | `lookup` | `--uuid <prefix>` | Absolute path (exit 1 missing, exit 2 ambiguous) |
 | `find` | `--title` or `--first-prompt` | Sessions ranked by recency |
 | `resume-cmd` | `--uuid <prefix>` | `cd <cwd>; claude --resume <uuid>` snippet |
@@ -197,7 +197,7 @@ What are you trying to do?
 - `--break <spec>` — break threshold for `engagement` (`10m` default; `5m` strict, `20m` forgiving). Gaps between your prompts longer than this count as breaks unless you replied right after Claude finished working.
 - `--tz <spec>` — display timezone override (IANA name, `UTC`, or offset like `-4`). Default: system local time.
 - `--format json` (or `--json`) — structured JSON output on every mode (except the legacy `--list`/`--list-subagents` aliases). Pipe-friendly: paths are strings, timestamps ISO.
-- `--exclude-current` — drop the current session (detected via `CLAUDE_SESSION_ID`) from `list`, `journal`, `search`, `count`, `timeline`, `engagement`, `session-report`, and `tool-usage`. Useful for `tool-usage` so the very commands you're running now don't skew the tally.
+- `--exclude-current` — drop the current session (detected via `CLAUDE_CODE_SESSION_ID`) from `list`, `journal`, `search`, `count`, `timeline`, `engagement`, `session-report`, and `tool-usage`. Useful for `tool-usage` so the very commands you're running now don't skew the tally.
 - `--include-subagents` — fold subagent finals into `brief`, `last`, `dump` output, each tagged `[subagent <id-short> · <agentType>]`. For `tool-usage`, folds each session's subagent `tool_use` calls into the tally (the subagent is not counted as a separate session).
 - `--force-dump` — bypass the 5 MB `dump` guard.
 - `-n N` — count modifier (default 5 for `last`, 80 for `dump`, 10 for `resume-prev`).

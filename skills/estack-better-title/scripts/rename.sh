@@ -52,18 +52,29 @@ fi
 # Append-only: never rewrite the file, just add new entries at the end.
 # On Windows, the live Claude Code process can hold a transient exclusive lock
 # on its own session file while it writes ("Device or resource busy") — retry
-# briefly with backoff instead of failing on the first collision.
+# briefly with backoff instead of failing on the first collision. Capture
+# stderr (instead of discarding it) so a *permanent* failure — bad path,
+# permissions, disk full — is reported accurately rather than misreported as
+# a transient lock after silently burning through every retry.
 MAX_ATTEMPTS=6
 attempt=1
-until printf '%s\n%s\n' "$CUSTOM_LINE" "$AGENT_LINE" >> "$SESSION_FILE" 2>/dev/null; do
+APPEND_ERR="$(mktemp)"
+until { printf '%s\n%s\n' "$CUSTOM_LINE" "$AGENT_LINE" >> "$SESSION_FILE"; } 2>"$APPEND_ERR"; do
   if [[ $attempt -ge $MAX_ATTEMPTS ]]; then
+    LAST_ERR="$(cat "$APPEND_ERR")"
+    rm -f "$APPEND_ERR"
     echo "Error: could not append to the session file after ${MAX_ATTEMPTS} attempts." >&2
-    echo "It looks locked by the active Claude Code process (common on Windows) — this is usually transient." >&2
-    echo "Just try the rename again in a few seconds; no further diagnosis needed." >&2
+    echo "Last error: ${LAST_ERR}" >&2
+    if [[ "$LAST_ERR" == *[Bb]usy* ]]; then
+      echo "This looks like a transient Windows file lock — try the rename again in a few seconds." >&2
+    else
+      echo "This doesn't look like a transient lock — check the session file path and permissions." >&2
+    fi
     exit 1
   fi
   attempt=$((attempt + 1))
   sleep 0.3
 done
+rm -f "$APPEND_ERR"
 
 echo "Renamed session to: ${TITLE}"

@@ -57,11 +57,19 @@ def decode_project_name(encoded: str) -> str:
 
 
 def current_session_id() -> str | None:
-    """Return the current Claude Code session UUID from CLAUDE_SESSION_ID env var.
+    """Return the current Claude Code session UUID from the environment.
 
-    Returns None when called outside a Claude Code session.
+    Claude Code sets ``CLAUDE_CODE_SESSION_ID`` in the actual OS process
+    environment (verified against a live session) — that's checked first.
+    ``CLAUDE_SESSION_ID`` is a DIFFERENT thing: a SKILL.md text substitution
+    the harness performs on the markdown body before the model reads it, never
+    exported as a real env var. It's checked second only as a compatibility
+    fallback (e.g. a caller that exported it manually, or a future/alternate
+    harness that uses that name). Returns None outside a Claude Code session.
     """
-    val = os.environ.get("CLAUDE_SESSION_ID", "").strip()
+    val = os.environ.get("CLAUDE_CODE_SESSION_ID", "").strip()
+    if not val:
+        val = os.environ.get("CLAUDE_SESSION_ID", "").strip()
     return val or None
 
 
