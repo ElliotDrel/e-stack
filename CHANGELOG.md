@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.52] - 2026-07-13
+
 ### Added
-- `estack-read-claude-session-history` skill — new `--mode whoami` resolves the current live session (via `CLAUDE_SESSION_ID`) straight to its `.jsonl` path, and SKILL.md now surfaces the session ID directly so you don't have to run `--mode list` and eyeball timestamps to find "this" conversation.
+- `estack-read-claude-session-history` skill — new `--mode whoami` resolves the current live session (via `CLAUDE_CODE_SESSION_ID`) straight to its `.jsonl` path, and SKILL.md now surfaces the session ID directly (`${CLAUDE_SESSION_ID}`) so you don't have to run `--mode list` and eyeball timestamps to find "this" conversation.
 
 ### Fixed
 - `estack-better-title` skill — `rename.sh` now retries the session-file append with backoff instead of failing outright on a transient Windows file lock ("Device or resource busy"), and correctly surfaces the real error (instead of a misleading "transient lock" message) when the failure is permanent (bad path, permissions). SKILL.md documents an optional permission allow-rule for the sanctioned rename command.
@@ -457,7 +461,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.51...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.52...HEAD
+[1.0.52]: https://github.com/ElliotDrel/e-stack/compare/v1.0.51...v1.0.52
 [1.0.51]: https://github.com/ElliotDrel/e-stack/compare/v1.0.50...v1.0.51
 [1.0.50]: https://github.com/ElliotDrel/e-stack/compare/v1.0.49...v1.0.50
 [1.0.49]: https://github.com/ElliotDrel/e-stack/compare/v1.0.48...v1.0.49
