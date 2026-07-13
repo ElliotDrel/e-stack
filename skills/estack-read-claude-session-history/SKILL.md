@@ -1,6 +1,6 @@
 ---
 name: estack-read-claude-session-history
-version: 1.3.2
+version: 1.4.0
 description: >-
   (read-claude-session-history) Invoke for ANY task involving Claude Code
   session history, transcripts, or .jsonl files - this is the only way to read,
@@ -31,10 +31,25 @@ Search, read, recover, and compare Claude Code session history — across the cu
 
 Sessions are stored as `.jsonl` files. Reading them raw is hopeless: 1,000–5,000+ lines of dense JSON per session, 33+ project directories, hundreds of historical sessions. This skill wraps a single CLI that knows the entry schema and exposes ~20 modes.
 
+## This session's ID
+
+The current session ID is: ${CLAUDE_SESSION_ID}
+
+That answers "which .jsonl is *this* conversation" instantly — no need to run `--mode list` and eyeball mtimes/first-prompts across every session to guess which one is live. To turn that UUID into an absolute transcript path (or resolve it from a context where the variable above isn't substituted, e.g. a fresh subagent), use:
+
+```bash
+python "$PY" --mode whoami --cwd "<this project's cwd>"
+```
+
+Prints `<uuid>` / `<path>` / `project: <name>` (or the JSON equivalent with `--format json`) by matching `CLAUDE_SESSION_ID` from the environment against session files directly. `--cwd` is optional — omit it to search every project, at the cost of a full scan.
+
 ## Quick start
 
 ```bash
 PY="$HOME/.claude/skills/estack-read-claude-session-history/scripts/read_transcript.py"
+
+# Resolve THIS session's path without listing/guessing (see "This session's ID" above)
+python "$PY" --mode whoami --cwd "<this project's cwd>"
 
 # What was the last thing the agent said in this session?
 python "$PY" --file <current-session.jsonl> --mode last
@@ -101,6 +116,7 @@ What are you trying to do?
 │  └─ Schema/structural diagnosis ─────────────── --mode debug
 │
 ├─ Find a session I don't have the path for
+│  ├─ THIS live session, by UUID ──────────────── --mode whoami (or just read ${CLAUDE_SESSION_ID})
 │  ├─ By UUID prefix ──────────────────────────── --mode lookup --uuid <prefix>
 │  ├─ By title or first prompt ────────────────── --mode find --title|--first-prompt
 │  └─ Generate a `claude --resume` command ───── --mode resume-cmd --uuid <prefix>
@@ -147,6 +163,7 @@ What are you trying to do?
 | `debug` | `--file` | Entry/block type distributions + probes |
 | `brief` | `--file` | 6-line summary: uuid·project·mtime·status / intent / last / edits / tools / subagents |
 | `list` | `--cwd` or `--all-projects` | Rich table: mtime, size, uuid, msg count, flags, status, title |
+| `whoami` | none (uses `CLAUDE_SESSION_ID` from env) | THIS session's `<uuid>` / `<path>` / `project:` (exit 1 if unresolved) |
 | `lookup` | `--uuid <prefix>` | Absolute path (exit 1 missing, exit 2 ambiguous) |
 | `find` | `--title` or `--first-prompt` | Sessions ranked by recency |
 | `resume-cmd` | `--uuid <prefix>` | `cd <cwd>; claude --resume <uuid>` snippet |

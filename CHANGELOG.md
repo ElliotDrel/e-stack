@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-read-claude-session-history` skill — new `--mode whoami` resolves the current live session (via `CLAUDE_SESSION_ID`) straight to its `.jsonl` path, and SKILL.md now surfaces the session ID directly so you don't have to run `--mode list` and eyeball timestamps to find "this" conversation.
+
+### Fixed
+- `estack-better-title` skill — `rename.sh` now retries the session-file append with backoff instead of failing outright on a transient Windows file lock ("Device or resource busy"), and SKILL.md documents an optional permission allow-rule for the sanctioned rename command.
+
 ---
 
 ## [1.0.51] - 2026-07-12

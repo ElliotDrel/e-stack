@@ -142,6 +142,19 @@ Columns: marker (`[*]` if current), mtime, size, uuid-short, msg count, flags (`
 
 For byte-identical v1 output, use the legacy `--list` flag.
 
+### `whoami`
+
+Resolve the CURRENT live session (via the `CLAUDE_SESSION_ID` env var) to its absolute `.jsonl` path — no listing, no eyeballing timestamps.
+
+```bash
+python read_transcript.py --mode whoami [--cwd <path>]
+```
+
+- `--cwd` scopes the lookup to one project first (fast path); omitted, it scans every project under `--root` until the UUID matches.
+- Exit 0: prints `<uuid>` / `<path>` / `project: <name>` (three lines), or the JSON equivalent with `--format json`.
+- Exit 1: `CLAUDE_SESSION_ID` is unset (not running inside a live session), or the env var is set but no matching file was found under `--root`.
+- SKILL.md's `${CLAUDE_SESSION_ID}` template variable already gives you the raw UUID for free when this skill's Markdown is loaded — reach for `whoami` when you need the actual file *path* (or a JSON-shaped result), or when resolving from a context (e.g. a subagent) where that substitution isn't visible.
+
 ### `lookup`
 
 Resolve a UUID prefix to an absolute path.

@@ -269,6 +269,75 @@ def test_lookup_no_match(cli_path, fixtures_dir, tmp_path):
     assert r.returncode == 1
 
 
+def test_whoami_no_session_id(cli_path, tmp_path):
+    # CLAUDE_SESSION_ID unset (or blanked out) — no live session to resolve.
+    env = dict(os.environ)
+    env.pop("CLAUDE_SESSION_ID", None)
+    r = subprocess.run(
+        [sys.executable, str(cli_path), "--root", str(tmp_path), "--mode", "whoami"],
+        capture_output=True, text=True, encoding="utf-8",
+        env={**env, "PYTHONIOENCODING": "utf-8"},
+    )
+    assert r.returncode == 1
+    assert "CLAUDE_SESSION_ID" in r.stdout
+
+
+def test_whoami_resolves_with_cwd(cli_path, fixtures_dir, tmp_path):
+    fake_root = tmp_path / "projects"
+    fake_proj = fake_root / "C--fake-proj"
+    fake_proj.mkdir(parents=True)
+    shutil.copy(fixtures_dir / "basic-session.jsonl", fake_proj / "cur.jsonl")
+    r = _run_cli(
+        cli_path, "--root", str(fake_root), "--cwd", "C:\\fake\\proj", "--mode", "whoami",
+        env_overrides={"CLAUDE_SESSION_ID": "cur"},
+    )
+    assert r.returncode == 0
+    assert "cur" in r.stdout
+    assert "cur.jsonl" in r.stdout
+
+
+def test_whoami_resolves_without_cwd(cli_path, fixtures_dir, tmp_path):
+    # No --cwd: falls back to scanning every project under --root.
+    fake_root = tmp_path / "projects"
+    fake_proj = fake_root / "C--fake-proj"
+    fake_proj.mkdir(parents=True)
+    shutil.copy(fixtures_dir / "basic-session.jsonl", fake_proj / "cur.jsonl")
+    r = _run_cli(
+        cli_path, "--root", str(fake_root), "--mode", "whoami",
+        env_overrides={"CLAUDE_SESSION_ID": "cur"},
+    )
+    assert r.returncode == 0
+    assert "cur.jsonl" in r.stdout
+
+
+def test_whoami_json(cli_path, fixtures_dir, tmp_path):
+    fake_root = tmp_path / "projects"
+    fake_proj = fake_root / "C--fake-proj"
+    fake_proj.mkdir(parents=True)
+    shutil.copy(fixtures_dir / "basic-session.jsonl", fake_proj / "cur.jsonl")
+    r = _run_cli(
+        cli_path, "--root", str(fake_root), "--cwd", "C:\\fake\\proj",
+        "--mode", "whoami", "--format", "json",
+        env_overrides={"CLAUDE_SESSION_ID": "cur"},
+    )
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["uuid"] == "cur"
+    assert data["path"].endswith("cur.jsonl")
+    assert "project" in data
+
+
+def test_whoami_session_id_set_but_no_file(cli_path, tmp_path):
+    fake_root = tmp_path / "projects"
+    fake_root.mkdir(parents=True)
+    r = _run_cli(
+        cli_path, "--root", str(fake_root), "--mode", "whoami",
+        env_overrides={"CLAUDE_SESSION_ID": "ghost"},
+    )
+    assert r.returncode == 1
+    assert "ghost" in r.stdout
+
+
 def test_list_legacy_format(cli_path, fixtures_dir, tmp_path):
     # Build a fake project root + cwd that matches encoding
     fake_root = tmp_path / "projects"

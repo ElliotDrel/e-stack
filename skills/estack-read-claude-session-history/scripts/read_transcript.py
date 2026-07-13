@@ -398,6 +398,50 @@ def mode_lookup(uuid_prefix: str, root: Path, fmt: str = "text") -> tuple[int, o
     return 0, str(matches[0])
 
 
+def mode_whoami(root: Path, cwd: str | None, fmt: str = "text") -> tuple[int, object]:
+    """Resolve the CURRENT live session (via CLAUDE_SESSION_ID) to its .jsonl path.
+
+    The system prompt's scratchpad path and the CLAUDE_SESSION_ID env var both
+    carry the running session's UUID — this turns that into a path directly,
+    without listing every session in the project and guessing by recency.
+    """
+    uuid = P.current_session_id()
+    if not uuid:
+        msg = (
+            "CLAUDE_SESSION_ID is not set — there's no live session to resolve. "
+            "Use --mode list or --mode find to locate a session by recency or content."
+        )
+        return 1, ({"error": msg} if fmt == "json" else msg)
+
+    path = None
+    if cwd:
+        try:
+            pd = P.find_project_dir(cwd, root)
+            candidate = pd / f"{uuid}.jsonl"
+            if candidate.exists():
+                path = candidate
+        except FileNotFoundError:
+            pass
+    if path is None:
+        for pd in P.list_projects(root):
+            candidate = pd / f"{uuid}.jsonl"
+            if candidate.exists():
+                path = candidate
+                break
+
+    if path is None:
+        msg = (
+            f"CLAUDE_SESSION_ID={uuid} but no matching .jsonl was found under {root}. "
+            "The transcript may not be written yet, or --root points elsewhere."
+        )
+        return 1, ({"error": msg, "uuid": uuid} if fmt == "json" else msg)
+
+    project = P.decode_project_name(path.parent.name)
+    if fmt == "json":
+        return 0, {"uuid": uuid, "path": str(path), "project": project}
+    return 0, f"{uuid}\n{path}\nproject: {project}"
+
+
 def mode_find(
     root: Path,
     title_q: str | None,
@@ -1685,7 +1729,7 @@ def json_debug(lines: list[dict]) -> dict:
 LEGACY_MODES = {"last", "advisor", "pre-compact", "dump", "search", "debug"}
 
 NEW_MODES = {
-    "list", "lookup", "find", "resume-cmd", "brief",
+    "list", "lookup", "find", "resume-cmd", "whoami", "brief",
     "changelog", "file-edits", "tool-calls", "tool-usage",
     "subagent-list", "subagent-finals", "subagent-tools", "subagent-files",
     "resume-prev", "count", "journal", "diff", "timeline", "engagement",
@@ -1827,6 +1871,10 @@ def main() -> int:
         return 0
     if mode == "lookup":
         code, out = mode_lookup(args.uuid or "", root, fmt=fmt)
+        _emit(out)
+        return code
+    if mode == "whoami":
+        code, out = mode_whoami(root, args.cwd, fmt=fmt)
         _emit(out)
         return code
     if mode == "find":

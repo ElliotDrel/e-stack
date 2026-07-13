@@ -49,7 +49,21 @@ if [[ "$LAST_CUSTOM" == "$CUSTOM_LINE" && "$LAST_AGENT" == "$AGENT_LINE" ]]; the
   exit 0
 fi
 
-# Append-only: never rewrite the file, just add new entries at the end
-printf '%s\n%s\n' "$CUSTOM_LINE" "$AGENT_LINE" >> "$SESSION_FILE"
+# Append-only: never rewrite the file, just add new entries at the end.
+# On Windows, the live Claude Code process can hold a transient exclusive lock
+# on its own session file while it writes ("Device or resource busy") — retry
+# briefly with backoff instead of failing on the first collision.
+MAX_ATTEMPTS=6
+attempt=1
+until printf '%s\n%s\n' "$CUSTOM_LINE" "$AGENT_LINE" >> "$SESSION_FILE" 2>/dev/null; do
+  if [[ $attempt -ge $MAX_ATTEMPTS ]]; then
+    echo "Error: could not append to the session file after ${MAX_ATTEMPTS} attempts." >&2
+    echo "It looks locked by the active Claude Code process (common on Windows) — this is usually transient." >&2
+    echo "Just try the rename again in a few seconds; no further diagnosis needed." >&2
+    exit 1
+  fi
+  attempt=$((attempt + 1))
+  sleep 0.3
+done
 
 echo "Renamed session to: ${TITLE}"

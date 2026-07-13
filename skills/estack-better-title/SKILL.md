@@ -1,6 +1,6 @@
 ---
 name: estack-better-title
-version: 1.0.3
+version: 1.0.4
 description: (better-title) Suggest better chat session titles and rename the session
 disable-model-invocation: true
 allowed-tools: Bash, AskUserQuestion
@@ -61,6 +61,20 @@ __CLAUDE_TITLE__
 Replace `<chosen title>` with the actual chosen title. The quoted heredoc (`<<'__CLAUDE_TITLE__'`) prevents the shell from interpreting any special characters in the title — quotes, apostrophes, dollar signs, backticks, etc. are all passed through literally. After running, confirm the rename succeeded.
 
 **Important:** The live UI border won't update until the next session resume — the persisted title will show in the session list and on next `/resume`.
+
+### If the append fails or is blocked
+
+`rename.sh` already retries a locked append a few times with backoff (Windows can hold a transient exclusive lock on the session file it's actively writing to — usually resolves in under two seconds). If it still fails after retrying, or a permission prompt interrupts this exact command, do NOT go inspect, open, or probe the session `.jsonl` directly to figure out why — that departs from this skill's single sanctioned append operation and is far more likely to need manual approval or get blocked outright than the retry itself. Just tell the user the rename didn't go through and suggest running it again in a few seconds.
+
+If prompts on this exact command are a recurring annoyance (permission mode other than `auto`), the user can add an allow rule scoped to just this invocation to `settings.json`:
+
+```json
+{
+  "permissions": {
+    "allow": ["Bash(bash */scripts/rename.sh*)"]
+  }
+}
+```
 
 ---
 
