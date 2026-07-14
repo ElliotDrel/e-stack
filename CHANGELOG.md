@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.53] - 2026-07-13
+
+### Changed
+- `estack-repo-search` skill — the "Available repos" listing now force-syncs every cached repo to its remote's current default-branch tip (`git fetch` + `git reset --hard FETCH_HEAD` + `git clean -fdx`) instead of a plain `git pull --ff-only`, so a repo with local edits or one that fell behind (fast-forward would've failed silently) is always brought to a clean, current state before you search it. Also added an explicit read-only note: the sandbox is for `Read`/`Grep`/`Explore` only, never for editing.
+
+---
+
 ## [1.0.52] - 2026-07-13
 
 ### Added
@@ -461,7 +468,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.52...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.53...HEAD
+[1.0.53]: https://github.com/ElliotDrel/e-stack/compare/v1.0.52...v1.0.53
 [1.0.52]: https://github.com/ElliotDrel/e-stack/compare/v1.0.51...v1.0.52
 [1.0.51]: https://github.com/ElliotDrel/e-stack/compare/v1.0.50...v1.0.51
 [1.0.50]: https://github.com/ElliotDrel/e-stack/compare/v1.0.49...v1.0.50
