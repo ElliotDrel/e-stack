@@ -1,6 +1,6 @@
 ---
 name: estack-repo-search
-version: 1.0.3
+version: 1.1.0
 description: >-
   (repo-search) Clone and search external GitHub repositories to answer questions about their
   code. Use this skill whenever the user references a repo you don't have local
@@ -17,6 +17,8 @@ description: >-
 
 Search external repositories by cloning them into a persistent sandbox and exploring with subagents.
 
+**Read-only sandbox — never edit, write, or delete files inside `~/repo-search-storage/`.** This directory holds cloned copies of other people's repos purely for you to `Read`/`Grep`/`Explore`. It is not a workspace to modify, patch, or "fix" anything in. It's fine to be extra careful here: on every invocation this skill hard-resets each repo to match its remote HEAD (see below), so any local edits would be silently discarded anyway — but the point stands regardless of that safety net. If the user wants to *change* code in one of these repos, that's a different task (fork it, clone it elsewhere as a real working copy) — not something this skill does.
+
 ## Available repos
 
 ```!
@@ -30,8 +32,15 @@ for dir in ~/repo-search-storage/*/; do
   name=$(basename "$dir")
   url=$(cd "$dir" && git remote get-url origin 2>/dev/null || echo "(no remote)")
   echo "- $name  →  $url"
-  echo "  Updating..."
-  (cd "$dir" && git pull --ff-only 2>&1) | sed 's/^/  /'
+  echo "  Resetting to latest origin state..."
+  (
+    cd "$dir" || exit 1
+    default_branch=$(git ls-remote --symref origin HEAD 2>/dev/null | sed -n 's#^ref: refs/heads/\(.*\)\tHEAD#\1#p')
+    [ -z "$default_branch" ] && default_branch="main"
+    git fetch --depth 1 origin "$default_branch" 2>&1
+    git reset --hard FETCH_HEAD 2>&1
+    git clean -fdx 2>&1
+  ) | sed 's/^/  /'
   echo ""
 done
 if [ "$found" -eq 0 ]; then
@@ -39,7 +48,7 @@ if [ "$found" -eq 0 ]; then
 fi
 ```
 
-Present the user with the repos listed above and offer to search any of them or clone a new one.
+Every repo listed above is force-synced to its remote's current default-branch tip before you see it — this covers both a repo that drifted out of local sync and one that picked up stray local changes (from a prior session, a crash, whatever). You're always searching fresh, unmodified upstream state. Present the user with the repos listed above and offer to search any of them or clone a new one.
 
 ## Finding the correct repo
 
