@@ -1,6 +1,6 @@
 ---
 name: estack-vscode-file-recovery
-version: 1.2.0
+version: 1.2.1
 description: >
   (vscode-file-recovery) Recover files that were permanently deleted (via rm, bash delete, or any method that bypasses the Recycle Bin) using VS Code's or Cursor's Local History snapshots, or from Claude session transcripts.
   Use this skill immediately whenever: a file was deleted and git can't recover it (untracked or not committed), the user says "get it back", "restore that file", "I lost that file", "can you undo that delete", or any variation of wanting a deleted file recovered. Also use proactively after any rm or bash delete of files that weren't committed to git.
@@ -62,7 +62,7 @@ Search `entries.json` files in both VS Code and Cursor History directories.
     Get-ChildItem $histPath -Recurse |
       Where-Object { $_.Name -eq "entries.json" } |
       ForEach-Object {
-        $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue
+        $content = Get-Content $_.FullName -Raw -Encoding UTF8 -ErrorAction SilentlyContinue
         if ($content -like "*FILENAME_OR_PATH_PATTERN*") {
           $_.FullName
           $content
@@ -102,11 +102,13 @@ The **last entry** in the array is the most recent snapshot. Take its `id` field
 
 ### Step 4: Read the snapshot content
 
+Prefer the Read tool with the full path — it always decodes UTF-8 correctly. If you use PowerShell instead, you MUST pass `-Encoding UTF8`:
+
 ```powershell
-Get-Content "C:\Users\[username]\AppData\Roaming\Code\User\History\[hash-folder]\[id]"
+Get-Content "C:\Users\[username]\AppData\Roaming\Code\User\History\[hash-folder]\[id]" -Raw -Encoding UTF8
 ```
 
-Or use the Read tool with the full path.
+Snapshots are UTF-8 without a BOM, and Windows PowerShell 5.1 decodes BOM-less files as ANSI (Windows-1252) by default. Without `-Encoding UTF8`, every non-ASCII character (curly quotes, em dashes, box-drawing, accents) turns into mojibake like `â€™` — and since Step 5 writes this content back to disk, the corruption becomes permanent in the restored file.
 
 ### Step 5: Restore the file
 
@@ -143,15 +145,15 @@ If editor history doesn't have the file, fall back to:
 Get-ChildItem "$env:APPDATA\Code\User\History" -Recurse |
   Where-Object { $_.Name -eq "entries.json" } |
   ForEach-Object {
-    $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue
+    $content = Get-Content $_.FullName -Raw -Encoding UTF8 -ErrorAction SilentlyContinue
     if ($content -like "*Untitled-1*") { $_.FullName; $content }
   }
 
 # Result shows: C:\...\History\-6e228c75\entries.json
 # entries.json has latest id: "dtgz.md"
 
-# Read snapshot
-Get-Content "C:\Users\2supe\AppData\Roaming\Code\User\History\-6e228c75\dtgz.md"
+# Read snapshot (Read tool preferred; -Encoding UTF8 required if using PowerShell)
+Get-Content "C:\Users\2supe\AppData\Roaming\Code\User\History\-6e228c75\dtgz.md" -Raw -Encoding UTF8
 
 # Restore
 # (Use Write tool to recreate the file at original path)
