@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.55] - 2026-07-15
+
+### Fixed
+- `estack-vscode-file-recovery` skill — all `Get-Content` commands in the recovery instructions now pass `-Encoding UTF8`. Windows PowerShell 5.1 decodes BOM-less UTF-8 files as ANSI (Windows-1252) by default, so any non-ASCII character in a recovered snapshot (curly quotes, em dashes, accents) came through as mojibake like `â€™` — and because the restore step writes that content back to disk, the corruption became permanent in the restored file. Step 4 now also recommends the Read tool as the primary way to read snapshots.
+
+---
+
 ## [1.0.54] - 2026-07-15
 
 ### Added
@@ -478,7 +485,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.54...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.55...HEAD
+[1.0.55]: https://github.com/ElliotDrel/e-stack/compare/v1.0.54...v1.0.55
 [1.0.54]: https://github.com/ElliotDrel/e-stack/compare/v1.0.53...v1.0.54
 [1.0.53]: https://github.com/ElliotDrel/e-stack/compare/v1.0.52...v1.0.53
 [1.0.52]: https://github.com/ElliotDrel/e-stack/compare/v1.0.51...v1.0.52
