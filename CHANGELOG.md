@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.54] - 2026-07-15
+
 ### Added
 - `estack-read-claude-session-history` skill — `--mode last` now takes `--role user|assistant|both` (default `assistant`, unchanged), so "what was the last thing I said" is one deterministic command instead of a `--mode dump` + grep bridge; `--role user` excludes compact continuations and hook/skill `isMeta` injections.
 
@@ -474,7 +478,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.53...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.54...HEAD
+[1.0.54]: https://github.com/ElliotDrel/e-stack/compare/v1.0.53...v1.0.54
 [1.0.53]: https://github.com/ElliotDrel/e-stack/compare/v1.0.52...v1.0.53
 [1.0.52]: https://github.com/ElliotDrel/e-stack/compare/v1.0.51...v1.0.52
 [1.0.51]: https://github.com/ElliotDrel/e-stack/compare/v1.0.50...v1.0.51
