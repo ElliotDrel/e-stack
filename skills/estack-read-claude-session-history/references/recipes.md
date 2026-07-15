@@ -94,7 +94,7 @@ python "$PY" --root snapshot-1w  --mode lookup --uuid <prefix>
 python "$PY" --root snapshot-1mo --mode lookup --uuid <prefix>
 ```
 
-The four backup roots (`mirror`, `snapshot-24h`, `snapshot-1w`, `snapshot-1mo`) are managed by the daily backup task documented in `reference_claude_backup_system.md`.
+The four backup roots (`mirror`, `snapshot-24h`, `snapshot-1w`, `snapshot-1mo`) are maintained by a scheduled backup task on this machine.
 
 ---
 

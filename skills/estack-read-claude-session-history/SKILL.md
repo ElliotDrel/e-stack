@@ -7,25 +7,21 @@ description: >-
   lives, the pitfalls, and a CLI + Python library to build on — use the CLI
   when a mode fits, post-process its JSON when one almost fits, write a
   scratchpad script on the library when none does. Never use the Read tool on
-  a .jsonl directly (1,000–5,000+ lines of dense JSON per session). Use for:
-  recovering context after /compact ("what were we doing before compact"),
-  advisor response retrieval ("what did the advisor say"), subagent output
-  collection ("get all subagent finals"), cross-project session search by
-  keyword, session listing and triage, UUID and title lookup, resume-command
-  generation, file-edit and tool-call forensics, tool- and skill-usage tallies
-  ("which skills do I actually use"), session diff between two sessions or
-  subagents, weekly work journal, day timeline of activity blocks and idle
-  gaps, engagement/attention-time accounting (active vs elapsed time, break
-  detection, parallel-chat-safe totals), recovering from .claude-backups after
-  data loss, session count queries, and reading the last user or agent message
-  before a crash or interrupt. Trigger phrases: "session history", "before
-  compact", "what did claude do", "what did I work on", "search my sessions",
-  "find that session", "what did the advisor say", "what did the agent edit",
-  "from the backup", "list my sessions", "subagent outputs", "session
-  journal", "resume previous", "which files did claude touch", "go back and
-  look", "what did I do yesterday", "where did my day go", "timeline of my
-  day", "give me an overview", "how much time on", "how long did that actually
-  take", "how much did I actually work", "active time", "time I spent".
+  a .jsonl directly. Use for: recovering context after /compact, advisor
+  response retrieval, subagent output collection, cross-project keyword
+  search, session listing and triage, UUID and title lookup, resume-command
+  generation, file-edit and tool-call forensics, tool/skill-usage tallies,
+  session diffs, weekly work journal, day timeline of activity blocks and
+  idle gaps, engagement/attention-time accounting (active vs elapsed,
+  parallel-chat-safe), recovering from .claude-backups, session counts, and
+  reading the last user or agent message before a crash or interrupt. Trigger
+  phrases: "session history", "before compact", "what did claude do", "what
+  did I work on", "search my sessions", "find that session", "what did the
+  advisor say", "from the backup", "list my sessions", "subagent outputs",
+  "session journal", "resume previous", "which files did claude touch", "what
+  did I do yesterday", "where did my day go", "timeline of my day", "give me
+  an overview", "how much time on", "how long did that actually take", "how
+  much did I actually work", "active time", "time I spent".
 ---
 
 # Read Claude Session History
