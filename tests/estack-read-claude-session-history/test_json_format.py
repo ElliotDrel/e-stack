@@ -44,6 +44,16 @@ def test_last_json(cli_path, fixtures_dir):
     assert "Here is help" in data[-1]["text"]
 
 
+def test_last_json_role_user(cli_path, fixtures_dir):
+    data = _json(_run_cli(
+        cli_path, "--file", str(fixtures_dir / "role-mix.jsonl"),
+        "--mode", "last", "--role", "user", "--format", "json",
+    ))
+    assert [m["role"] for m in data] == ["user", "user"]
+    assert data[-1]["n_from_end"] == 1
+    assert data[-1]["text"] == "Second real prompt"
+
+
 def test_json_alias_flag(cli_path, fixtures_dir):
     data = _json(_run_cli(
         cli_path, "--file", str(fixtures_dir / "basic-session.jsonl"),

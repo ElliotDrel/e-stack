@@ -1,0 +1,7 @@
+{"type":"user","timestamp":"2026-05-01T10:00:00Z","message":{"role":"user","content":"First real prompt"}}
+{"type":"assistant","timestamp":"2026-05-01T10:00:05Z","message":{"role":"assistant","content":[{"type":"text","text":"Reply one"}]}}
+{"type":"user","isMeta":true,"timestamp":"2026-05-01T10:00:06Z","message":{"role":"user","content":[{"type":"text","text":"Injected hook context, not typed by the human"}]}}
+{"type":"user","timestamp":"2026-05-01T10:00:07Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"tu_1","content":"tool output envelope"}]}}
+{"type":"user","timestamp":"2026-05-01T10:00:08Z","message":{"role":"user","content":"This session is being continued from a previous conversation that ran out of context."}}
+{"type":"user","timestamp":"2026-05-01T10:01:00Z","message":{"role":"user","content":"Second real prompt"}}
+{"type":"assistant","timestamp":"2026-05-01T10:01:05Z","message":{"role":"assistant","content":[{"type":"text","text":"Reply two"}]}}

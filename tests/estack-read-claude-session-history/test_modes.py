@@ -45,6 +45,40 @@ def test_last_mode(cli_path, fixtures_dir):
     assert "Here is help" in r.stdout
 
 
+def test_last_default_role_is_assistant(cli_path, fixtures_dir):
+    r = _run_cli(cli_path, "--file", str(fixtures_dir / "role-mix.jsonl"), "--mode", "last")
+    assert r.returncode == 0
+    assert "Assistant message" in r.stdout
+    assert "User message" not in r.stdout
+    assert "Second real prompt" not in r.stdout
+
+
+def test_last_role_user_excludes_meta_and_compact(cli_path, fixtures_dir):
+    r = _run_cli(
+        cli_path, "--file", str(fixtures_dir / "role-mix.jsonl"),
+        "--mode", "last", "--role", "user",
+    )
+    assert r.returncode == 0
+    assert "Second real prompt" in r.stdout
+    assert "First real prompt" in r.stdout
+    assert "Injected hook context" not in r.stdout          # isMeta
+    assert "tool output envelope" not in r.stdout           # tool_result envelope
+    assert "being continued from a previous" not in r.stdout  # compact marker
+    assert "Assistant message" not in r.stdout
+
+
+def test_last_role_both_interleaves(cli_path, fixtures_dir):
+    r = _run_cli(
+        cli_path, "--file", str(fixtures_dir / "role-mix.jsonl"),
+        "--mode", "last", "--role", "both", "-n", "10",
+    )
+    assert r.returncode == 0
+    assert "User message" in r.stdout
+    assert "Assistant message" in r.stdout
+    # Chronological: last message is the assistant's, preceded by the user's.
+    assert r.stdout.index("Second real prompt") < r.stdout.index("Reply two")
+
+
 def test_advisor_mode(cli_path, fixtures_dir):
     r = _run_cli(cli_path, "--file", str(fixtures_dir / "with-advisor.jsonl"), "--mode", "advisor")
     assert r.returncode == 0
