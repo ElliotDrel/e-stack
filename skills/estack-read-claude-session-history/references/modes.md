@@ -1,8 +1,10 @@
-# Mode reference
+# Mode reference (convenience CLI)
 
 Every mode of `read_transcript.py`, with all flags, exit codes, and worked examples.
 
-For the high-level decision tree, see `../SKILL.md`. For the JSONL schema, see `jsonl-schema.md`. For multi-step workflows, see `recipes.md`.
+When a question is close to a mode but not identical, run the mode with `--format json` and post-process, or read the mode's source and adapt it in a scratchpad script on `scripts/lib/` — don't contort the question to fit these flags.
+
+For the JSONL schema, see `jsonl-schema.md`. For multi-step workflows, see `recipes.md`.
 
 ## CLI grammar
 
@@ -31,14 +33,16 @@ Legacy flags are preserved unchanged:
 
 ### `last`
 
-Last N assistant text outputs.
+Last N messages with text, filtered by role.
 
 ```bash
-python read_transcript.py --file <path> --mode last [-n 5]
+python read_transcript.py --file <path> --mode last [-n 5] [--role user|assistant|both]
 ```
 
-- Default N = 5.
+- Default N = 5; default role = `assistant` (backwards-compatible).
+- `--role user` answers "what was the last thing *I* said" — real typed prompts only: compact continuations and hook/skill `isMeta` injections are excluded. `--role both` interleaves.
 - With `--include-subagents`, appends each subagent's final assistant message tagged `[subagent <id-short> · <agentType>]`.
+- JSON shape includes a `role` field per message.
 
 ### `advisor`
 
@@ -434,6 +438,19 @@ path, first, last, elapsed_minutes, active_minutes, user_messages,
 assistant_messages, edits, intent, last_message}], totals: {sessions,
 active_minutes, span_minutes}}`. Sessions are ordered chronologically.
 
+#### Presentation defaults for a human day-review
+
+When the user asks a natural-language "what did I do" / "review my day" question, lead with `session-report` and present it this way unless told otherwise:
+
+- **Number the sessions** into clear blocks; drop UUIDs (noise in a human review — surface them only for resume/lookup).
+- **One to two sentences per session**, synthesized from `intent` + `last` + files — not a raw dump of either.
+- **Show both clocks and name the overlap once**: `active` is deduped attention (parallel chats never double-counted); `ran`/elapsed is the session's own span and *will* overlap others.
+- **Trust the mode's counts** — never hand-count raw `type:user`/`type:assistant` entries (tool-result envelopes inflate "user"; multi-block turns inflate "assistant").
+- **12-hour time** as the report modes emit it (`7:00pm (19:00)`); switch to 24-hour only on request.
+- Sub-window of a day: pass `--since/--until` and omit `--date` (`--date` wins).
+
+For a normal day (16–20 sessions) `session-report` text output stays well within the read budget; prefer it over `--mode list --format json`.
+
 ### `tool-usage`
 
 Tally tool calls by tool name; `Skill` calls are sub-tallied by skill name. Answers "which tools / skills do I actually use".
@@ -491,7 +508,7 @@ Output is prefixed `A>` / `B>` (or with subagent id shorts).
 
 | Mode | Shape |
 |---|---|
-| `last` | `[{n_from_end, timestamp, text}]` |
+| `last` | `[{n_from_end, role, timestamp, text}]` |
 | `advisor` | `[<advisor text>, …]` |
 | `pre-compact` | `{found_compact, messages: [{role, timestamp, is_compact, text}]}` |
 | `dump` | `[{role, timestamp, is_compact, text}]` |

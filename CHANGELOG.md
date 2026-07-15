@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-read-claude-session-history` skill — `--mode last` now takes `--role user|assistant|both` (default `assistant`, unchanged), so "what was the last thing I said" is one deterministic command instead of a `--mode dump` + grep bridge; `--role user` excludes compact continuations and hook/skill `isMeta` injections.
+
+### Changed
+- `estack-read-claude-session-history` skill — SKILL.md rewritten (2.0.0) around an escalation ladder: use a CLI mode when one fits, post-process its `--format json` output when one almost fits, write a scratchpad script on `scripts/lib/` when none does, and fold a recurring gap back into the CLI as a small deterministic mode. Pitfalls (UTC timestamps, dishonest raw entry counts, lossy path encoding, truncated trailing lines, Windows path/BOM traps) now live front and center, and a standing mandate tells the agent to update the skill at the source repo with techniques that work or fail in the field. Day-review presentation defaults moved into `references/modes.md`.
+
 ---
 
 ## [1.0.53] - 2026-07-13

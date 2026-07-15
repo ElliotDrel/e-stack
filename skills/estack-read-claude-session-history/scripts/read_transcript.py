@@ -47,15 +47,36 @@ SEARCH_SUMMARY_SESSION_CAP = 200
 # Legacy mode implementations (kept byte-identical to v1 for backwards-compat)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def mode_last(lines, n=5):
+def _last_messages(lines, n, role):
+    """Last n messages with text for a role ('assistant' default, 'user', 'both').
+
+    User-side messages exclude compact continuations and hook/skill isMeta
+    injections — "last user message" means the human's actual typed prompt.
+    """
     messages = PR.get_messages(lines)
-    assistant_msgs = [m for m in messages if m["role"] == "assistant" and m["texts"]]
-    recent = assistant_msgs[-n:]
+    out = []
+    for m in messages:
+        if not m["texts"]:
+            continue
+        if role != "both" and m["role"] != role:
+            continue
+        if m["role"] == "user":
+            if m["is_compact"] or lines[m["line_index"]].get("isMeta"):
+                continue
+        out.append(m)
+    return out[-n:]
+
+
+def mode_last(lines, n=5, role="assistant"):
+    recent = _last_messages(lines, n, role)
     output = []
     for i, m in enumerate(recent, 1):
-        output.append(f"=== Assistant message -{len(recent) - i + 1} from end ===")
+        label = "User" if m["role"] == "user" else "Assistant"
+        output.append(f"=== {label} message -{len(recent) - i + 1} from end ===")
         output.append("\n".join(m["texts"]))
-    return "\n\n".join(output) if output else "No assistant messages found."
+    if output:
+        return "\n\n".join(output)
+    return "No messages found." if role == "both" else f"No {role} messages found."
 
 
 def mode_advisor(lines):
@@ -1647,13 +1668,12 @@ def session_report_json(data: dict) -> dict:
 # JSON builders for legacy single-file modes
 # ─────────────────────────────────────────────────────────────────────────────
 
-def json_last(lines: list[dict], n: int) -> list[dict]:
-    messages = PR.get_messages(lines)
-    assistant_msgs = [m for m in messages if m["role"] == "assistant" and m["texts"]]
-    recent = assistant_msgs[-n:]
+def json_last(lines: list[dict], n: int, role: str = "assistant") -> list[dict]:
+    recent = _last_messages(lines, n, role)
     return [
         {
             "n_from_end": len(recent) - i,
+            "role": m["role"],
             "timestamp": _ts_iso(m.get("timestamp")),
             "text": "\n".join(m["texts"]),
         }
@@ -1785,7 +1805,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--uuid", help="UUID prefix (for lookup/resume-cmd modes)")
     p.add_argument("--title", help="Title substring (for find mode)")
     p.add_argument("--first-prompt", dest="first_prompt", help="First-prompt substring (for find mode)")
-    p.add_argument("--role", default="both", choices=["user", "assistant", "both"])
+    # No hardcoded default: search treats unset as "both", last as "assistant".
+    p.add_argument("--role", default=None, choices=["user", "assistant", "both"])
     p.add_argument("--in", dest="in_channel", default="text",
                    choices=["text", "tool_use", "tool_result", "thinking", "all"])
     p.add_argument("--tool", help="Comma-separated tool names (for tool-calls / tool-usage)")
@@ -1898,7 +1919,7 @@ def main() -> int:
             print("--query required for count", file=sys.stderr)
             return 1
         counts = mode_count(root, args.cwd, args.all_projects, args.query,
-                            args.role, args.in_channel, since, until,
+                            args.role or "both", args.in_channel, since, until,
                             project=args.project,
                             exclude_current=args.exclude_current,
                             current_uuid=current_uuid)
@@ -2025,7 +2046,7 @@ def main() -> int:
             return 1
         fp = Path(args.file) if args.file else None
         _emit(mode_search_v2(root, args.cwd, args.all_projects, fp, args.query,
-                             args.role, args.in_channel, since, until,
+                             args.role or "both", args.in_channel, since, until,
                              project=args.project, fmt=fmt,
                              exclude_current=args.exclude_current,
                              current_uuid=current_uuid, full=args.full))
@@ -2084,7 +2105,7 @@ def main() -> int:
 
     if fmt == "json":
         if mode == "last":
-            _print_json(json_last(lines, args.n))
+            _print_json(json_last(lines, args.n, args.role or "assistant"))
         elif mode == "advisor":
             _print_json(json_advisor(lines))
         elif mode == "pre-compact":
@@ -2098,7 +2119,7 @@ def main() -> int:
     print(f"[{path.name} — {len(lines)} entries]\n")
 
     if mode == "last":
-        body = mode_last(lines, args.n)
+        body = mode_last(lines, args.n, args.role or "assistant")
         if args.include_subagents:
             body += _append_subagents(path)
         print(body)

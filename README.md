@@ -30,7 +30,7 @@ This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/sk
 | **Productivity Prioritization Coach** | `/estack-productivity-prioritization-coach` | Coaches you through outcome-focused planning using RPM (Result, Purpose, Massive Action Plan) and five leverage filters — including an MVP anchor and a speed-to-outcome cut — to find the fastest path to a shippable result, plus a high-agency momentum engine for when you're stuck on execution, not choice |
 | **PDF to Markdown** | `/estack-pdf-to-md` | Converts PDFs to Markdown or plain text using the RunPulse API — parallel page batching, cost-saving blank-page filter, scanned-PDF OCR support, and encrypted-PDF handling |
 | **Prompt Builder Coach** | `/estack-prompt-builder-coach` | Four-part kit for shaping, building, auditing, and scoping prompts for AI agents |
-| **Read Claude Session History** | `/estack-read-claude-session-history` | Searches, reads, recovers, and compares Claude Code session history across sessions, projects, and backups |
+| **Read Claude Session History** | `/estack-read-claude-session-history` | Searches, reads, recovers, and analyzes Claude Code session history across sessions, projects, and backups — a CLI for common lookups and reports, plus a Python library the agent builds custom queries on when no mode fits |
 | **Repo Search** | `/estack-repo-search` | Clones and searches external GitHub repos to answer questions about their code |
 | **VS Code File Recovery** | `/estack-vscode-file-recovery` | Recovers permanently deleted files from VS Code or Cursor Local History, Claude session transcripts, or Windows Shadow Copies |
 

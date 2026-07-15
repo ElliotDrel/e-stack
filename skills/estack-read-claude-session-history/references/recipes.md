@@ -2,6 +2,10 @@
 
 Multi-step workflows. For per-mode flag reference, see `modes.md`. For schema, see `jsonl-schema.md`.
 
+These recipes use the CLI where a mode fits the step exactly. When a step needs different filtering, joining, or output shape, post-process the mode's `--format json` output, or switch to a scratchpad script importing `scripts/lib/` (docstrings are the API reference) — don't chain three CLI calls to approximate what ten lines of Python answer directly.
+
+**Found a new workflow that worked (or one below that misled you)?** Update this file at the source repo — see SKILL.md § "Update this skill with what you learn".
+
 In all examples, `$PY` refers to:
 ```
 ~/.claude/skills/estack-read-claude-session-history/scripts/read_transcript.py
@@ -304,3 +308,31 @@ Look for:
 - Unfamiliar `type:` values appearing in the distribution (parser might be dropping them as noise).
 - An absent `advisor_tool_result` block when you expected advisor output.
 - Missing `compact` markers in a session you know got compacted.
+
+If the drift is real (a new entry type, a changed block shape), document it in `jsonl-schema.md` at the source repo and adjust `lib/parser.py` — see SKILL.md § "Update this skill with what you learn".
+
+---
+
+## 11. When no recipe fits: the scratch-script pattern
+
+Most real questions don't map to a canned mode ("which sessions edited files under src/ but never ran tests?", "average time between my prompt and Claude's first reply, per project"). Don't approximate them with CLI flags — write the exact query:
+
+```python
+# <scratchpad>/query.py
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.home() / ".claude/skills/estack-read-claude-session-history/scripts"))
+from lib import parser, paths, search, subagents, tools
+
+since = paths.parse_timespec("7d")
+for pd in paths.list_projects():                 # or filter_projects(None, "keel")
+    for f in paths.list_transcripts(pd, since=since):
+        lines = parser.parse_lines(f)            # cached — cheap to re-call
+        # …exactly the question being asked…
+```
+
+Rules of the pattern:
+- Script lives in the scratchpad, never the user's project.
+- Use the lib for classification, timestamps, and discovery (its docstrings explain the traps each function handles); write only the question-specific logic yourself.
+- Print a bounded, per-session summary first; expand details selectively — a raw dump of a cross-project sweep blows the output cap.
+- If the script's technique is reusable, promote it into these recipes at the source repo; if the same gap keeps recurring, add a small mode or flag to the CLI instead.
