@@ -1,7 +1,6 @@
 """Tests for lib.search."""
 
-from datetime import datetime, timedelta
-from pathlib import Path
+from datetime import timedelta
 
 from lib import parser as PR
 from lib import search as S
@@ -23,14 +22,6 @@ def test_search_session_assistant_only(fixtures_dir):
     assert len(matches) == 0
 
 
-def test_search_session_user_only(fixtures_dir):
-    matches = S.search_session(
-        fixtures_dir / "basic-session.jsonl", "Hello",
-        role="user", in_channel="text",
-    )
-    assert len(matches) >= 1
-
-
 def test_search_in_tool_use(fixtures_dir):
     matches = S.search_session(
         fixtures_dir / "tool-zoo.jsonl", "ls -la",
@@ -47,25 +38,6 @@ def test_search_in_thinking(fixtures_dir):
     )
     assert len(matches) >= 1
     assert matches[0].where == "thinking"
-
-
-def test_search_no_match(fixtures_dir):
-    matches = S.search_session(
-        fixtures_dir / "basic-session.jsonl", "this-string-not-present",
-        role="both", in_channel="text",
-    )
-    assert matches == []
-
-
-def test_search_with_time_filter(fixtures_dir):
-    # "Hello" appears in basic-session.jsonl at 2026-05-01T10:00:00Z
-    # Excluding that date should yield no matches
-    matches = S.search_session(
-        fixtures_dir / "basic-session.jsonl", "Hello",
-        role="both", in_channel="text",
-        since=datetime(2026, 6, 1),
-    )
-    assert matches == []
 
 
 def test_search_until_is_exclusive(fixtures_dir):

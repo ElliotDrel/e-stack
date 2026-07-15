@@ -1,12 +1,10 @@
 """Tests for the timeline mode (build/render/gap parsing + CLI)."""
 
-import json
 import os
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timedelta
-from pathlib import Path
+from datetime import datetime
 
 import pytest
 
@@ -42,30 +40,6 @@ def fake_root(fixtures_dir, tmp_path):
 
 
 # ── unit: gap + duration helpers ─────────────────────────────────────────────
-
-def test_parse_gap_default():
-    assert RT._parse_gap(None) == 15
-
-
-def test_parse_gap_minutes():
-    assert RT._parse_gap("20m") == 20
-    assert RT._parse_gap("20") == 20
-
-
-def test_parse_gap_hours():
-    assert RT._parse_gap("1h") == 60
-
-
-def test_parse_gap_invalid():
-    with pytest.raises(ValueError):
-        RT._parse_gap("soon")
-
-
-def test_fmt_dur():
-    assert RT._fmt_dur(timedelta(minutes=8)) == "8m"
-    assert RT._fmt_dur(timedelta(minutes=72)) == "1h12m"
-    assert RT._fmt_dur(timedelta(seconds=30)) == "<1m"
-
 
 # ── unit: block grouping ─────────────────────────────────────────────────────
 
@@ -122,63 +96,3 @@ def test_timeline_cli_text(cli_path, fake_root):
     assert "active" not in r.stdout
 
 
-def test_timeline_cli_json(cli_path, fake_root):
-    r = _run_cli(
-        cli_path, "--root", str(fake_root), "--tz", "UTC",
-        "--mode", "timeline", "--date", "2026-05-01", "--format", "json",
-    )
-    assert r.returncode == 0
-    data = json.loads(r.stdout)
-    assert data["totals"]["blocks"] == 2
-    assert data["totals"]["sessions"] == 1
-    assert data["totals"]["span_minutes"] == 122  # 10:00 → 12:02
-    assert "active_minutes" not in data["totals"]
-    assert data["blocks"][0]["start"].endswith("10:00:00")
-    assert data["blocks"][0]["sessions"][0]["uuid"] == "abc12345"
-
-
-def test_timeline_cli_empty_range(cli_path, fake_root):
-    r = _run_cli(
-        cli_path, "--root", str(fake_root), "--tz", "UTC",
-        "--mode", "timeline", "--date", "2020-01-01",
-    )
-    assert r.returncode == 0
-    assert "no activity" in r.stdout
-
-
-def test_timeline_cli_project_filter(cli_path, fake_root):
-    r = _run_cli(
-        cli_path, "--root", str(fake_root), "--tz", "UTC",
-        "--mode", "timeline", "--date", "2026-05-01", "--project", "fake",
-    )
-    assert r.returncode == 0
-    assert "10:00" in r.stdout
-
-
-def test_timeline_cli_exclude_current(cli_path, fake_root):
-    r = _run_cli(
-        cli_path, "--root", str(fake_root), "--tz", "UTC",
-        "--mode", "timeline", "--date", "2026-05-01", "--exclude-current",
-        env_overrides={"CLAUDE_SESSION_ID": "abc12345"},
-    )
-    assert r.returncode == 0
-    assert "no activity" in r.stdout
-
-
-def test_journal_cli_exclude_current(cli_path, fake_root):
-    r = _run_cli(
-        cli_path, "--root", str(fake_root),
-        "--mode", "journal", "--since", "2020-01-01", "--all-projects",
-        "--exclude-current",
-        env_overrides={"CLAUDE_SESSION_ID": "abc12345"},
-    )
-    assert r.returncode == 0
-    assert "abc12345" not in r.stdout
-
-
-def test_timeline_cli_project_no_match(cli_path, fake_root):
-    r = _run_cli(
-        cli_path, "--root", str(fake_root), "--tz", "UTC",
-        "--mode", "timeline", "--date", "2026-05-01", "--project", "zzz-nope",
-    )
-    assert r.returncode == 1

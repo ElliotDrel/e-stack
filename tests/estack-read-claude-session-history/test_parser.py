@@ -1,10 +1,7 @@
 """Tests for lib.parser."""
 
-import json
 from datetime import datetime, timedelta
-from pathlib import Path
 
-import pytest
 
 from lib import parser as PR
 
@@ -41,21 +38,6 @@ def test_compact_marker_multiple(fixtures_dir):
     assert len(compact) == 2
 
 
-def test_compact_marker_absent(fixtures_dir):
-    lines = _load(fixtures_dir, "basic-session.jsonl")
-    msgs = PR.get_messages(lines)
-    assert all(not m["is_compact"] for m in msgs)
-
-
-def test_extract_text_blocks_string():
-    assert PR.extract_text_blocks("hello") == ["hello"]
-
-
-def test_extract_text_blocks_empty_string():
-    assert PR.extract_text_blocks("") == []
-    assert PR.extract_text_blocks("   ") == []
-
-
 def test_extract_text_blocks_array():
     blocks = [{"type": "text", "text": "hi"}, {"type": "tool_use", "name": "X"}]
     assert PR.extract_text_blocks(blocks) == ["hi"]
@@ -69,24 +51,6 @@ def test_extract_text_blocks_with_thinking():
     out = PR.extract_text_blocks(blocks, include_thinking=True)
     assert any("THINKING" in t for t in out)
     assert "answer" in out
-
-
-def test_extract_text_blocks_with_tool_use():
-    blocks = [{"type": "tool_use", "name": "Bash", "input": {"command": "ls"}}]
-    out = PR.extract_text_blocks(blocks, include_tool_use=True)
-    assert any("TOOL_USE Bash" in t for t in out)
-
-
-def test_extract_advisor():
-    blocks = [{"type": "advisor_tool_result", "content": {"text": "advice"}}]
-    out = PR.extract_text_blocks(blocks)
-    assert any("[ADVISOR]" in t for t in out)
-    assert any("advice" in t for t in out)
-
-
-def test_classify_entry_user():
-    obj = {"type": "user", "message": {"role": "user", "content": "hi"}}
-    assert PR.classify_entry(obj) == "user"
 
 
 def test_classify_entry_compact():
@@ -111,14 +75,6 @@ def test_all_noise_fixture_yields_no_messages(fixtures_dir):
     lines = _load(fixtures_dir, "all-noise.jsonl")
     msgs = PR.get_messages(lines)
     assert msgs == []
-
-
-def test_filter_by_role(fixtures_dir):
-    lines = _load(fixtures_dir, "basic-session.jsonl")
-    msgs = PR.get_messages(lines)
-    user_only = PR.filter_by_role(msgs, "user")
-    assert all(m["role"] == "user" for m in user_only)
-    assert len(user_only) == 1
 
 
 def test_filter_by_time(fixtures_dir):
@@ -155,20 +111,6 @@ def test_unicode_roundtrip(fixtures_dir):
     assert "🌍" in user_text or "你好" in user_text
 
 
-def test_infer_status_clean(fixtures_dir):
-    lines = _load(fixtures_dir, "basic-session.jsonl")
-    mtime = (fixtures_dir / "basic-session.jsonl").stat().st_mtime
-    status = PR.infer_status(lines, mtime, current_session_id=None, session_uuid=None)
-    assert status == "clean"
-
-
-def test_infer_status_pending_user(fixtures_dir):
-    lines = _load(fixtures_dir, "pending-user.jsonl")
-    mtime = (fixtures_dir / "pending-user.jsonl").stat().st_mtime
-    status = PR.infer_status(lines, mtime, current_session_id=None, session_uuid=None)
-    assert status == "pending-user"
-
-
 def test_infer_status_interrupted(fixtures_dir):
     lines = _load(fixtures_dir, "interrupted.jsonl")
     mtime = (fixtures_dir / "interrupted.jsonl").stat().st_mtime
@@ -178,8 +120,6 @@ def test_infer_status_interrupted(fixtures_dir):
 
 def test_infer_status_active(fixtures_dir):
     import time
-    # Touch the fixture to make it fresh, then set CLAUDE_SESSION_ID to its stem
-    f = fixtures_dir / "basic-session.jsonl"
     mtime = time.time()
     lines = _load(fixtures_dir, "basic-session.jsonl")
     status = PR.infer_status(

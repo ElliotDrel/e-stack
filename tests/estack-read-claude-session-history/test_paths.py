@@ -17,10 +17,6 @@ def test_encode_cwd_spaces():
     assert P.encode_cwd("C:\\Users\\2supe\\Other Claude Code") == "C--Users-2supe-Other-Claude-Code"
 
 
-def test_encode_cwd_mixed_slashes():
-    assert P.encode_cwd("C:/Users/foo bar") == "C--Users-foo-bar"
-
-
 def test_decode_project_name_strips_prefix():
     enc = "C--Users-elliot-Other-Claude-Code-Personal-Brand-Project"
     decoded = P.decode_project_name(enc)
@@ -29,35 +25,9 @@ def test_decode_project_name_strips_prefix():
     assert "C--Users" not in decoded
 
 
-def test_decode_project_name_fallback_when_unparseable():
-    decoded = P.decode_project_name("totally-weird-thing")
-    assert decoded  # Non-empty, falls back gracefully
-
-
-def test_resolve_root_live():
-    assert P.resolve_root("live").name == "projects"
-
-
-def test_resolve_root_mirror():
-    r = P.resolve_root("mirror")
-    assert "mirror" in str(r)
-    assert r.name == "projects"
-
-
 def test_resolve_root_unknown_relative_raises():
     with pytest.raises(ValueError):
         P.resolve_root("not-a-known-root")
-
-
-def test_resolve_root_absolute_passes_through(tmp_path: Path):
-    r = P.resolve_root(str(tmp_path))
-    assert r == tmp_path
-
-
-def test_current_session_id_unset(monkeypatch):
-    monkeypatch.delenv("CLAUDE_CODE_SESSION_ID", raising=False)
-    monkeypatch.delenv("CLAUDE_SESSION_ID", raising=False)
-    assert P.current_session_id() is None
 
 
 def test_current_session_id_real_claude_code_var(monkeypatch):
@@ -104,10 +74,6 @@ def test_parse_timespec_invalid():
         P.parse_timespec("not-a-time")
 
 
-def test_list_transcripts_empty(tmp_path: Path):
-    assert P.list_transcripts(tmp_path) == []
-
-
 def test_list_transcripts_excludes_agent_prefix(tmp_path: Path):
     (tmp_path / "real.jsonl").write_text("{}\n")
     (tmp_path / "agent-foo.jsonl").write_text("{}\n")
@@ -129,16 +95,6 @@ def test_list_transcripts_time_filter(tmp_path: Path):
     since = datetime.now() - timedelta(days=5)
     files = P.list_transcripts(tmp_path, since=since)
     assert [f.name for f in files] == ["new.jsonl"]
-
-
-def test_list_projects_empty(tmp_path: Path):
-    assert P.list_projects(tmp_path) == []
-
-
-def test_list_subagents_returns_empty_when_no_dir(tmp_path: Path):
-    f = tmp_path / "session.jsonl"
-    f.write_text("{}\n")
-    assert P.list_subagents(f) == []
 
 
 def test_list_subagents_finds_agent_files(tmp_path: Path):

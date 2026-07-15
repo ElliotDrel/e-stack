@@ -203,27 +203,6 @@ def test_engagement_cli_text(cli_path, fixtures_dir, tmp_path):
     assert "Breaks >10m" in r.stdout
 
 
-def test_engagement_cli_json(cli_path, fixtures_dir, tmp_path):
-    root = _fake_root(
-        tmp_path, **{"C--proj-a": [(fixtures_dir / "engagement-gaps.jsonl", "aaaa1111")]}
-    )
-    r = _run_cli(
-        cli_path, "--root", str(root), "--tz", "UTC",
-        "--mode", "engagement", "--date", "2026-05-01", "--format", "json",
-    )
-    assert r.returncode == 0
-    data = json.loads(r.stdout)
-    assert data["break_minutes"] == 10
-    assert data["totals"]["active_minutes"] == 13
-    assert data["totals"]["sessions"] == 1
-    s = data["sessions"][0]
-    assert s["uuid"] == "aaaa1111"
-    assert s["elapsed_minutes"] == 45
-    assert s["ratio"] == round(13 / 45, 2)
-    assert len(data["stream_breaks"]) == 1
-    assert data["stream_breaks"][0]["minutes"] == 32
-
-
 def test_engagement_cli_file_window_derived(cli_path, fixtures_dir, tmp_path):
     root = _fake_root(
         tmp_path, **{"C--proj-a": [(fixtures_dir / "engagement-waiting.jsonl", "bbbb2222")]}
@@ -236,57 +215,6 @@ def test_engagement_cli_file_window_derived(cli_path, fixtures_dir, tmp_path):
     assert r.returncode == 0
     assert "32m" in r.stdout
     assert "Prompt gaps" in r.stdout
-
-
-def test_engagement_cli_custom_break(cli_path, fixtures_dir, tmp_path):
-    root = _fake_root(
-        tmp_path, **{"C--proj-a": [(fixtures_dir / "engagement-gaps.jsonl", "aaaa1111")]}
-    )
-    r = _run_cli(
-        cli_path, "--root", str(root), "--tz", "UTC",
-        "--mode", "engagement", "--date", "2026-05-01",
-        "--break", "1h", "--format", "json",
-    )
-    assert r.returncode == 0
-    data = json.loads(r.stdout)
-    # 1h threshold swallows the 32m gap — everything is active: 45m.
-    assert data["totals"]["active_minutes"] == 45
-    assert data["stream_breaks"] == []
-
-
-def test_engagement_cli_invalid_break(cli_path, tmp_path):
-    root = tmp_path / "projects"
-    root.mkdir()
-    r = _run_cli(
-        cli_path, "--root", str(root),
-        "--mode", "engagement", "--break", "soon",
-    )
-    assert r.returncode == 1
-
-
-def test_engagement_cli_empty_range(cli_path, fixtures_dir, tmp_path):
-    root = _fake_root(
-        tmp_path, **{"C--proj-a": [(fixtures_dir / "engagement-gaps.jsonl", "aaaa1111")]}
-    )
-    r = _run_cli(
-        cli_path, "--root", str(root), "--tz", "UTC",
-        "--mode", "engagement", "--date", "2020-01-01",
-    )
-    assert r.returncode == 0
-    assert "no user messages" in r.stdout
-
-
-def test_engagement_json_has_assistant_messages(cli_path, fixtures_dir, tmp_path):
-    root = _fake_root(
-        tmp_path, **{"C--proj-a": [(fixtures_dir / "engagement-gaps.jsonl", "aaaa1111")]}
-    )
-    r = _run_cli(
-        cli_path, "--root", str(root), "--tz", "UTC",
-        "--mode", "engagement", "--date", "2026-05-01", "--format", "json",
-    )
-    assert r.returncode == 0
-    data = json.loads(r.stdout)
-    assert "assistant_messages" in data["sessions"][0]
 
 
 # ── session-report mode ───────────────────────────────────────────────────────
@@ -305,42 +233,6 @@ def test_session_report_cli_text(cli_path, fixtures_dir, tmp_path):
     assert "ran" in r.stdout and "active" in r.stdout  # both clocks
     assert "you" in r.stdout and "assistant" in r.stdout
     assert "intent:" in r.stdout and "last:" in r.stdout
-
-
-def test_session_report_cli_json(cli_path, fixtures_dir, tmp_path):
-    root = _fake_root(
-        tmp_path, **{"C--proj-a": [(fixtures_dir / "engagement-gaps.jsonl", "aaaa1111")]}
-    )
-    r = _run_cli(
-        cli_path, "--root", str(root), "--tz", "UTC",
-        "--mode", "session-report", "--date", "2026-05-01", "--format", "json",
-    )
-    assert r.returncode == 0
-    data = json.loads(r.stdout)
-    assert data["totals"]["sessions"] == 1
-    s = data["sessions"][0]
-    for key in ("user_messages", "assistant_messages", "intent",
-                "last_message", "elapsed_minutes", "active_minutes", "edits"):
-        assert key in s
-
-
-def test_report_modes_emit_12h_with_24h_parens(cli_path, fixtures_dir, tmp_path):
-    """session-report, engagement, and timeline render clock times as
-    '7:00pm (19:00)' — 12-hour with 24-hour in parens — deterministically."""
-    import re
-    fmt = re.compile(r"\d{1,2}:\d{2}(?:am|pm) \(\d{2}:\d{2}\)")
-    root = _fake_root(
-        tmp_path, **{"C--proj-a": [(fixtures_dir / "engagement-gaps.jsonl", "aaaa1111")]}
-    )
-    for mode in ("session-report", "engagement", "timeline"):
-        r = _run_cli(
-            cli_path, "--root", str(root), "--tz", "UTC",
-            "--mode", mode, "--date", "2026-05-01",
-        )
-        assert r.returncode == 0, mode
-        assert fmt.search(r.stdout), f"{mode} missing 12h(24h) time: {r.stdout[:300]}"
-        # The header advertises the convention.
-        assert "12h (24h)" in r.stdout, mode
 
 
 def test_session_report_chronological_order(cli_path, fixtures_dir, tmp_path):

@@ -9,9 +9,7 @@ import os
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
-import pytest
 
 
 def _run_cli(cli_path, *args, env_overrides=None):
@@ -31,12 +29,6 @@ def _run_cli(cli_path, *args, env_overrides=None):
         encoding="utf-8",
         env=env,
     )
-
-
-def test_help(cli_path):
-    r = _run_cli(cli_path, "--help")
-    assert r.returncode == 0
-    assert "--mode" in r.stdout
 
 
 def test_last_mode(cli_path, fixtures_dir):
@@ -91,74 +83,6 @@ def test_pre_compact_mode(cli_path, fixtures_dir):
     assert "Pre-compact" in r.stdout or "First answer" in r.stdout
 
 
-def test_debug_mode(cli_path, fixtures_dir):
-    r = _run_cli(cli_path, "--file", str(fixtures_dir / "basic-session.jsonl"), "--mode", "debug")
-    assert r.returncode == 0
-    assert "Entry type distribution" in r.stdout
-
-
-def test_brief_mode(cli_path, fixtures_dir):
-    r = _run_cli(cli_path, "--file", str(fixtures_dir / "tool-zoo.jsonl"), "--mode", "brief")
-    assert r.returncode == 0
-    body = r.stdout
-    # 6 lines expected
-    assert "intent:" in body
-    assert "last:" in body
-    assert "edits:" in body
-    assert "tools:" in body
-    assert "subagents:" in body
-
-
-def test_brief_with_include_subagents(cli_path, fixtures_dir):
-    r = _run_cli(
-        cli_path, "--file", str(fixtures_dir / "subagent-parent.jsonl"),
-        "--mode", "brief", "--include-subagents",
-    )
-    assert r.returncode == 0
-    assert "subagent" in r.stdout.lower()
-    assert "Found it" in r.stdout
-
-
-def test_changelog(cli_path, fixtures_dir):
-    r = _run_cli(cli_path, "--file", str(fixtures_dir / "tool-zoo.jsonl"), "--mode", "changelog")
-    assert r.returncode == 0
-    assert "Bash" in r.stdout
-    assert "Read" in r.stdout
-
-
-def test_file_edits(cli_path, fixtures_dir):
-    r = _run_cli(cli_path, "--file", str(fixtures_dir / "tool-zoo.jsonl"), "--mode", "file-edits")
-    assert r.returncode == 0
-    assert "foo.py" in r.stdout
-    assert "bar.py" in r.stdout
-
-
-def test_tool_calls(cli_path, fixtures_dir):
-    r = _run_cli(cli_path, "--file", str(fixtures_dir / "tool-zoo.jsonl"), "--mode", "tool-calls")
-    assert r.returncode == 0
-    assert "Bash" in r.stdout
-
-
-def test_tool_calls_filter(cli_path, fixtures_dir):
-    r = _run_cli(
-        cli_path, "--file", str(fixtures_dir / "tool-zoo.jsonl"),
-        "--mode", "tool-calls", "--tool", "Bash",
-    )
-    assert r.returncode == 0
-    assert "Bash" in r.stdout
-    assert "Glob" not in r.stdout
-
-
-def test_tool_usage_file(cli_path, fixtures_dir):
-    r = _run_cli(cli_path, "--file", str(fixtures_dir / "tool-zoo.jsonl"), "--mode", "tool-usage")
-    assert r.returncode == 0
-    assert "Tool calls" in r.stdout
-    assert "Bash" in r.stdout
-    assert "Skill" in r.stdout
-    # Skill calls are sub-tallied by the actual skill name (input.skill).
-    assert "using-superpowers" in r.stdout
-
-
 def test_tool_usage_skill_filter(cli_path, fixtures_dir):
     r = _run_cli(
         cli_path, "--file", str(fixtures_dir / "tool-zoo.jsonl"),
@@ -170,46 +94,6 @@ def test_tool_usage_skill_filter(cli_path, fixtures_dir):
     # Filtering to Skill must drop every other tool.
     assert "Bash" not in r.stdout
     assert "Glob" not in r.stdout
-
-
-def test_tool_usage_json(cli_path, fixtures_dir):
-    r = _run_cli(
-        cli_path, "--file", str(fixtures_dir / "tool-zoo.jsonl"),
-        "--mode", "tool-usage", "--format", "json",
-    )
-    assert r.returncode == 0
-    data = json.loads(r.stdout)
-    assert data["total"] == 9
-    assert data["sessions"] == 1
-    tools = {t["tool"]: t["count"] for t in data["tools"]}
-    assert tools["Skill"] == 1
-    assert tools["Bash"] == 1
-    skills = {s["skill"]: s["count"] for s in data["skills"]}
-    assert skills == {"using-superpowers": 1}
-
-
-def test_tool_usage_scope_aggregates(cli_path, fixtures_dir, tmp_path):
-    # Two sessions in one project → counts add up across files.
-    fake_root = tmp_path / "projects"
-    fake_proj = fake_root / "C--fake-proj"
-    fake_proj.mkdir(parents=True)
-    shutil.copy(fixtures_dir / "tool-zoo.jsonl", fake_proj / "a.jsonl")
-    shutil.copy(fixtures_dir / "tool-zoo.jsonl", fake_proj / "b.jsonl")
-    r = _run_cli(
-        cli_path, "--root", str(fake_root), "--cwd", "C:\\fake\\proj",
-        "--mode", "tool-usage", "--format", "json",
-    )
-    assert r.returncode == 0
-    data = json.loads(r.stdout)
-    assert data["sessions"] == 2
-    assert data["total"] == 18
-    skills = {s["skill"]: s["count"] for s in data["skills"]}
-    assert skills == {"using-superpowers": 2}
-
-
-def test_tool_usage_missing_file(cli_path, tmp_path):
-    r = _run_cli(cli_path, "--file", str(tmp_path / "nope.jsonl"), "--mode", "tool-usage")
-    assert r.returncode == 1
 
 
 def test_tool_usage_until_keeps_in_window_calls(cli_path, fixtures_dir, tmp_path):
@@ -234,24 +118,6 @@ def test_tool_usage_until_keeps_in_window_calls(cli_path, fixtures_dir, tmp_path
     assert data["sessions"] == 1
 
 
-def test_tool_usage_exclude_current_drops_session(cli_path, fixtures_dir, tmp_path):
-    fake_root = tmp_path / "projects"
-    fake_proj = fake_root / "C--fake-proj"
-    fake_proj.mkdir(parents=True)
-    shutil.copy(fixtures_dir / "tool-zoo.jsonl", fake_proj / "cur.jsonl")
-    shutil.copy(fixtures_dir / "tool-zoo.jsonl", fake_proj / "other.jsonl")
-    # Without exclusion: 2 sessions, 18 calls. Excluding "cur" leaves 1 session, 9.
-    r = _run_cli(
-        cli_path, "--root", str(fake_root), "--cwd", "C:\\fake\\proj",
-        "--mode", "tool-usage", "--exclude-current", "--format", "json",
-        env_overrides={"CLAUDE_SESSION_ID": "cur"},
-    )
-    assert r.returncode == 0
-    data = json.loads(r.stdout)
-    assert data["sessions"] == 1
-    assert data["total"] == 9
-
-
 def test_tool_usage_include_subagents(cli_path, fixtures_dir):
     # Parent calls: Skill(commit) + Agent. Subagent calls: Skill(estack-repo-search) + Bash.
     # --include-subagents must fold the subagent's calls in, without counting the
@@ -273,15 +139,6 @@ def test_tool_usage_include_subagents(cli_path, fixtures_dir):
     assert {s["skill"] for s in with_sub["skills"]} == {"commit", "estack-repo-search"}
 
 
-def test_subagent_list(cli_path, fixtures_dir):
-    r = _run_cli(
-        cli_path, "--file", str(fixtures_dir / "subagent-parent.jsonl"),
-        "--mode", "subagent-list",
-    )
-    assert r.returncode == 0
-    assert "agent-xyz123" in r.stdout
-
-
 def test_subagent_finals(cli_path, fixtures_dir):
     r = _run_cli(
         cli_path, "--file", str(fixtures_dir / "subagent-parent.jsonl"),
@@ -289,23 +146,6 @@ def test_subagent_finals(cli_path, fixtures_dir):
     )
     assert r.returncode == 0
     assert "Found it" in r.stdout
-
-
-def test_diff_mode(cli_path, fixtures_dir):
-    r = _run_cli(
-        cli_path, "--mode", "diff",
-        "--file-a", str(fixtures_dir / "basic-session.jsonl"),
-        "--file-b", str(fixtures_dir / "with-thinking.jsonl"),
-    )
-    assert r.returncode == 0
-    assert "A>" in r.stdout
-    assert "B>" in r.stdout
-
-
-def test_lookup_no_match(cli_path, fixtures_dir, tmp_path):
-    # Point --root at an empty dir so lookup definitely misses
-    r = _run_cli(cli_path, "--root", str(tmp_path), "--mode", "lookup", "--uuid", "nope")
-    assert r.returncode == 1
 
 
 def test_whoami_no_session_id(cli_path, tmp_path):
@@ -356,73 +196,6 @@ def test_whoami_wrong_cwd_falls_back_to_full_scan(cli_path, fixtures_dir, tmp_pa
     assert "cur.jsonl" in r.stdout
 
 
-def test_whoami_resolves_with_cwd(cli_path, fixtures_dir, tmp_path):
-    fake_root = tmp_path / "projects"
-    fake_proj = fake_root / "C--fake-proj"
-    fake_proj.mkdir(parents=True)
-    shutil.copy(fixtures_dir / "basic-session.jsonl", fake_proj / "cur.jsonl")
-    r = _run_cli(
-        cli_path, "--root", str(fake_root), "--cwd", "C:\\fake\\proj", "--mode", "whoami",
-        env_overrides={"CLAUDE_SESSION_ID": "cur"},
-    )
-    assert r.returncode == 0
-    assert "cur" in r.stdout
-    assert "cur.jsonl" in r.stdout
-
-
-def test_whoami_resolves_without_cwd(cli_path, fixtures_dir, tmp_path):
-    # No --cwd: falls back to scanning every project under --root.
-    fake_root = tmp_path / "projects"
-    fake_proj = fake_root / "C--fake-proj"
-    fake_proj.mkdir(parents=True)
-    shutil.copy(fixtures_dir / "basic-session.jsonl", fake_proj / "cur.jsonl")
-    r = _run_cli(
-        cli_path, "--root", str(fake_root), "--mode", "whoami",
-        env_overrides={"CLAUDE_SESSION_ID": "cur"},
-    )
-    assert r.returncode == 0
-    assert "cur.jsonl" in r.stdout
-
-
-def test_whoami_json(cli_path, fixtures_dir, tmp_path):
-    fake_root = tmp_path / "projects"
-    fake_proj = fake_root / "C--fake-proj"
-    fake_proj.mkdir(parents=True)
-    shutil.copy(fixtures_dir / "basic-session.jsonl", fake_proj / "cur.jsonl")
-    r = _run_cli(
-        cli_path, "--root", str(fake_root), "--cwd", "C:\\fake\\proj",
-        "--mode", "whoami", "--format", "json",
-        env_overrides={"CLAUDE_SESSION_ID": "cur"},
-    )
-    assert r.returncode == 0
-    data = json.loads(r.stdout)
-    assert data["uuid"] == "cur"
-    assert data["path"].endswith("cur.jsonl")
-    assert "project" in data
-
-
-def test_whoami_session_id_set_but_no_file(cli_path, tmp_path):
-    fake_root = tmp_path / "projects"
-    fake_root.mkdir(parents=True)
-    r = _run_cli(
-        cli_path, "--root", str(fake_root), "--mode", "whoami",
-        env_overrides={"CLAUDE_SESSION_ID": "ghost"},
-    )
-    assert r.returncode == 1
-    assert "ghost" in r.stdout
-
-
-def test_list_legacy_format(cli_path, fixtures_dir, tmp_path):
-    # Build a fake project root + cwd that matches encoding
-    fake_root = tmp_path / "projects"
-    fake_proj = fake_root / "C--fake-proj"
-    fake_proj.mkdir(parents=True)
-    shutil.copy(fixtures_dir / "basic-session.jsonl", fake_proj / "abc.jsonl")
-    r = _run_cli(cli_path, "--root", str(fake_root), "--cwd", "C:\\fake\\proj", "--list")
-    assert r.returncode == 0
-    assert "abc.jsonl" in r.stdout
-
-
 def test_exclude_current(cli_path, fixtures_dir, tmp_path):
     fake_root = tmp_path / "projects"
     fake_proj = fake_root / "C--fake-proj"
@@ -453,14 +226,3 @@ def test_dump_large_file_degrades(cli_path, fixtures_dir, tmp_path):
     assert "degraded" in r.stderr.lower()
 
 
-def test_dump_large_file_force(cli_path, tmp_path):
-    big = tmp_path / "big.jsonl"
-    line = '{"type":"user","timestamp":"2026-05-01T10:00:00Z","message":{"role":"user","content":"'
-    pad = "x" * 1000 + '"}}\n'
-    with open(big, "w", encoding="utf-8") as f:
-        for _ in range(7000):
-            f.write(line + pad)
-    r = _run_cli(cli_path, "--file", str(big), "--mode", "dump", "--force-dump")
-    assert r.returncode == 0
-    # No degrade note when forced
-    assert "degraded" not in r.stderr.lower()

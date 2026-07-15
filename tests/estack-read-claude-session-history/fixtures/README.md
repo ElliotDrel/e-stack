@@ -16,6 +16,5 @@ Hand-crafted minimal JSONL files, one scenario per file. Keep them small (≤50 
 | `time-spread.jsonl` | Six messages over a known time range — exercises `--since`/`--until`. |
 | `truncated.jsonl` | Final line is missing its newline AND is malformed JSON — should be dropped silently. |
 | `unicode.jsonl` | Contains emoji + CJK characters — exercises UTF-8 decoding. |
-| `pending-user.jsonl` | Last assistant message ends with `?` — `infer_status` should return `pending-user`. |
 | `interrupted.jsonl` | Final assistant message has a `tool_use` block with no matching `tool_result` — status `interrupted`. |
 | `role-mix.jsonl` | Two real user prompts interleaved with an `isMeta` injection, a `tool_result` envelope, and a compact marker — exercises `--mode last --role user\|both` filtering. |

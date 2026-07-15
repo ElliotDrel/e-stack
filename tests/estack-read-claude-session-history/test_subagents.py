@@ -1,6 +1,5 @@
 """Tests for lib.subagents."""
 
-from pathlib import Path
 
 from lib import subagents as SA
 from lib import paths as P
