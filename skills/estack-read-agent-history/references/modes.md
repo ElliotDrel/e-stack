@@ -10,7 +10,7 @@ For the JSONL schema, see `jsonl-schema.md`. For multi-step workflows, see `reci
 
 ```
 python read_transcript.py [--root <root>] [--cwd <path> | --all-projects | --project <name> | --file <path>]
-                          [--since <spec>] [--until <spec>] [--tz <spec>]
+                          [--since <spec>] [--until <spec>] [--tz <spec>] [--agent claude|codex|both]
                           --mode <mode> [mode-specific flags]
                           [--format json] [--exclude-current] [--include-subagents] [-n N]
                           [--force-dump]
@@ -20,6 +20,7 @@ Global flag notes:
 - `--since <spec>` / `--until <spec>` — the time window is half-open `[since, until)`: `since` is inclusive, `until` is exclusive, so an event stamped exactly at `--until` is not included. This holds for every message-level mode (`search`, `timeline`, `engagement`, `session-report`, `tool-usage`). Session-level modes (`list`, `journal`, `count`) instead filter whole sessions by file mtime, so a session last written at or before `--until` is shown.
 - `--project <name>` — case-insensitive substring filter on project directory names (encoded or decoded form). Applies to `list`, `journal`, `search`, `count`, `find`, `timeline`, `engagement`, `session-report`, `tool-usage`. Exit 1 when nothing matches.
 - `--tz <spec>` — display timezone: IANA name (`America/New_York`), `UTC`, or fixed offset (`+5`, `-4`, `+05:30`, `UTC-4`). Default is system local time. All displayed timestamps AND `--since/--until/--date` interpretation use this zone.
+- `--agent {claude,codex,both}` — which agent's history the **cross-session** modes read. Default `both`. Applies to `list`, `journal`, `timeline`, `engagement`, `session-report`, `count`, `tool-usage`, `lookup`, `find`, and `search`. Codex sessions live at `~/.codex/sessions` (see `codex-history.md`); they are folded into the SAME merged stream as Claude for timeline/engagement/session-report, so parallel Claude/Codex chats split the clock rather than double-count. `--agent` is ignored by Claude-only modes (`whoami`, `resume-cmd`, `subagent-*`) and by single-`--file` modes (a Codex rollout passed via `--file` is auto-detected). JSON output tags every session with `source: "claude"|"codex"`; text output prefixes Codex sessions with `codex ▹`. Codex discovery is enabled only against the live `--root` (or when `ESTACK_CODEX_SESSIONS_DIR` is set) — backups/custom roots have no Codex tree.
 - **Clock format:** the report modes (`session-report`, `engagement`, `timeline`) render every time-of-day as 12-hour with the 24-hour value in parens — `7:00pm (19:00)` — and date-prefix it (`2026-06-19 7:00pm (19:00)`) when the window spans more than one day; their headers carry a `12h (24h)` label. Forensic modes (`changelog`, `tool-calls`) keep `HH:MM:SS` for density. JSON output is always ISO-8601 (unaffected by the 12-hour rendering).
 - `--format json` (alias `--json`) — structured output on every mode except the legacy `--list`/`--list-subagents` aliases. Shapes per mode are listed below.
 

@@ -26,11 +26,62 @@ _THIS_DIR = Path(__file__).resolve().parent
 if str(_THIS_DIR) not in sys.path:
     sys.path.insert(0, str(_THIS_DIR))
 
+import os  # noqa: E402
+
 from lib import paths as P  # noqa: E402
 from lib import parser as PR  # noqa: E402
 from lib import tools as T  # noqa: E402
 from lib import search as S  # noqa: E402
 from lib import subagents as SA  # noqa: E402
+from lib import codex as CX  # noqa: E402
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Codex (OpenAI codex-cli) integration
+#
+# Codex sessions live at ~/.codex/sessions (a FIXED path, not under --root), so
+# --agent selects which agents' histories a cross-session mode merges, and Codex
+# discovery is enabled only against the live root (or the test env override) —
+# backups/custom roots have no Codex tree, and enabling it there would let the
+# real ~/.codex leak into fixture-scoped runs.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _wants_claude(agent: str) -> bool:
+    return agent in ("claude", "both")
+
+
+def _wants_codex(agent: str) -> bool:
+    return agent in ("codex", "both")
+
+
+def _codex_enabled(root: Path) -> bool:
+    return bool(os.environ.get("ESTACK_CODEX_SESSIONS_DIR")) or root == P.DEFAULT_LIVE_PROJECTS
+
+
+def _codex_sessions(
+    root: Path,
+    agent: str,
+    since: datetime | None,
+    until: datetime | None,
+    cwd: str | None,
+    all_projects: bool,
+    project: str | None,
+    default_all: bool = False,
+) -> list[Path]:
+    """Codex rollout files matching a scope, honoring --agent and the root gate.
+
+    --project / --cwd both narrow by the session's working directory (substring);
+    --all-projects (or default_all) returns every Codex session in the window.
+    """
+    if not _wants_codex(agent) or not _codex_enabled(root):
+        return []
+    if project:
+        return CX.list_codex_sessions(since, until, project=project)
+    if cwd:
+        return CX.list_codex_sessions(since, until, project=cwd)
+    if all_projects or default_all:
+        return CX.list_codex_sessions(since, until)
+    return []
 
 
 # Wide-scope search output budget. Full match windows across many sessions can
@@ -315,7 +366,8 @@ def list_session_row(
     marker = "[*]" if summary.get("is_current") else "   "
     proj = ""
     if show_project:
-        proj = f"  {summary.get('decoded_project', summary.get('cwd', ''))}"
+        src = "codex▹ " if summary.get("source") == "codex" else ""
+        proj = f"  {src}{summary.get('decoded_project', summary.get('cwd', ''))}"
     title = summary.get("title") or summary.get("first_prompt", "")
     title = title[:80]
     return (
@@ -372,35 +424,49 @@ def mode_list(
     current_uuid: str | None,
     project: str | None = None,
     fmt: str = "text",
+    agent: str = "both",
 ):
     """Enriched v2 list — columns: marker, mtime, size, uuid-short, msgs, flags, status, project, title."""
-    project_dirs = _scoped_project_dirs(root, cwd, all_projects, project)
-    if project_dirs is None:
+    if not (all_projects or project or cwd):
         return "--cwd, --project, or --all-projects required"
-    rows = []
+    project_dirs = (
+        _scoped_project_dirs(root, cwd, all_projects, project) or []
+    ) if _wants_claude(agent) else []
+    codex_sessions = _codex_sessions(root, agent, since, until, cwd, all_projects, project)
+    files: list[Path] = []
     for pd in project_dirs:
-        for f in P.list_transcripts(pd, since=since, until=until):
-            summary = PR.session_summary(f, current_session_id=current_uuid)
-            if exclude_current and summary.get("is_current"):
-                continue
-            rows.append(summary)
+        files.extend(P.list_transcripts(pd, since=since, until=until))
+    files.extend(codex_sessions)
+    rows = []
+    for f in files:
+        summary = PR.session_summary(f, current_session_id=current_uuid)
+        if exclude_current and summary.get("is_current"):
+            continue
+        rows.append(summary)
     rows.sort(key=lambda s: s["mtime"], reverse=True)
     if fmt == "json":
         return [_summary_json(r) for r in rows]
     if not rows:
         return "No transcript files found."
-    show_proj = all_projects or bool(project) or len(project_dirs) > 1
+    show_proj = all_projects or bool(project) or len(project_dirs) > 1 or bool(codex_sessions)
     return "\n".join(list_session_row(r, show_proj, current_uuid) for r in rows)
 
 
-def mode_lookup(uuid_prefix: str, root: Path, fmt: str = "text") -> tuple[int, object]:
+def mode_lookup(
+    uuid_prefix: str, root: Path, fmt: str = "text", agent: str = "both"
+) -> tuple[int, object]:
     """Resolve a UUID prefix to an absolute path. Returns (exit_code, output)."""
     if not uuid_prefix:
         return 1, ({"error": "--uuid required"} if fmt == "json" else "--uuid required")
     matches: list[Path] = []
-    for pd in P.list_projects(root):
-        for f in P.list_transcripts(pd):
-            if f.stem.startswith(uuid_prefix):
+    if _wants_claude(agent):
+        for pd in P.list_projects(root):
+            for f in P.list_transcripts(pd):
+                if f.stem.startswith(uuid_prefix):
+                    matches.append(f)
+    if _wants_codex(agent) and _codex_enabled(root):
+        for f in CX.list_codex_sessions():
+            if CX.rollout_uuid(f).startswith(uuid_prefix):
                 matches.append(f)
     if fmt == "json":
         code = 0 if len(matches) == 1 else (1 if not matches else 2)
@@ -472,22 +538,28 @@ def mode_find(
     current_uuid: str | None,
     project: str | None = None,
     fmt: str = "text",
+    agent: str = "both",
 ):
     """Search session metadata by title or first prompt."""
     if not (title_q or first_prompt_q):
         return "--title or --first-prompt required"
-    project_dirs = _scoped_project_dirs(root, None, False, project, default_all=True)
-    rows = []
+    project_dirs = _scoped_project_dirs(
+        root, None, False, project, default_all=True
+    ) if _wants_claude(agent) else []
+    files: list[Path] = []
     for pd in project_dirs:
-        for f in P.list_transcripts(pd):
-            summary = PR.session_summary(f, current_session_id=current_uuid)
-            hit = False
-            if title_q and title_q.lower() in (summary.get("title", "") or "").lower():
-                hit = True
-            if first_prompt_q and first_prompt_q.lower() in (summary.get("first_prompt", "") or "").lower():
-                hit = True
-            if hit:
-                rows.append(summary)
+        files.extend(P.list_transcripts(pd))
+    files.extend(_codex_sessions(root, agent, None, None, None, False, project, default_all=True))
+    rows = []
+    for f in files:
+        summary = PR.session_summary(f, current_session_id=current_uuid)
+        hit = False
+        if title_q and title_q.lower() in (summary.get("title", "") or "").lower():
+            hit = True
+        if first_prompt_q and first_prompt_q.lower() in (summary.get("first_prompt", "") or "").lower():
+            hit = True
+        if hit:
+            rows.append(summary)
     rows.sort(key=lambda s: s["mtime"], reverse=True)
     if fmt == "json":
         return [_summary_json(r) for r in rows]
@@ -498,7 +570,7 @@ def mode_find(
 
 def mode_resume_cmd(uuid_prefix: str, root: Path, fmt: str = "text") -> tuple[int, object]:
     """Generate `cd <cwd>; claude --resume <uuid>` for a UUID prefix."""
-    code, out = mode_lookup(uuid_prefix, root)
+    code, out = mode_lookup(uuid_prefix, root, agent="claude")
     if code != 0:
         if fmt == "json":
             return code, {"error": out}
@@ -644,6 +716,15 @@ def _one_line(text: str, n: int) -> str:
     return s[:n] + ("…" if len(s) > n else "")
 
 
+def _search_project_label(path: Path) -> str:
+    """Project label for a search hit — Codex-aware (parent dir is a date for Codex)."""
+    if CX.is_codex_rollout(path):
+        cwd = CX.codex_cwd(path)
+        base = P.decode_project_name(P.encode_cwd(cwd)) if cwd else "codex"
+        return f"codex ▹ {base}"
+    return P.decode_project_name(path.parent.name)
+
+
 def _sessions_by_mtime(matches) -> list:
     """Group matches by session, return (session_path, matches) sorted newest first."""
     by_session: dict[Path, list] = {}
@@ -679,8 +760,8 @@ def _render_search_summary(query: str, matches, already_full: bool = False) -> s
     sess_w = "session" if total_sessions == 1 else "sessions"
     lines = [f'=== "{query}": {total_hits} {hit_w} across {total_sessions} {sess_w} ===']
     for sp, ms in shown:
-        uuid8 = sp.stem[:8]
-        project = P.decode_project_name(sp.parent.name)
+        uuid8 = (CX.rollout_uuid(sp) if CX.is_codex_rollout(sp) else sp.stem)[:8]
+        project = _search_project_label(sp)
         snippet = _one_line(ms[0].window_text, 120)
         n = len(ms)
         # Pad the unit so singular ("hit ") and plural ("hits") align the snippet column.
@@ -703,8 +784,9 @@ def _search_summary_json(matches) -> list:
     return [
         {
             "session": str(sp),
-            "uuid": sp.stem,
-            "project": P.decode_project_name(sp.parent.name),
+            "uuid": CX.rollout_uuid(sp) if CX.is_codex_rollout(sp) else sp.stem,
+            "source": "codex" if CX.is_codex_rollout(sp) else "claude",
+            "project": _search_project_label(sp),
             "mtime_iso": _fmt_mtime(ms[0].mtime),
             "hits": len(ms),
             "first_snippet": _one_line(ms[0].window_text, 120),
@@ -728,24 +810,36 @@ def mode_search_v2(
     exclude_current: bool = False,
     current_uuid: str | None = None,
     full: bool = False,
+    agent: str = "both",
 ):
-    """Cross-scope search with role/in-channel filters."""
+    """Cross-scope search with role/in-channel filters (Claude Code + Codex)."""
     matches: list = []
     if file_path:
         matches = S.search_session(file_path, query, role, in_channel, since, until)
     elif project:
-        for pd in _scoped_project_dirs(root, None, False, project):
-            matches.extend(S.search_project(pd, query, role, in_channel, since, until))
+        if _wants_claude(agent):
+            for pd in _scoped_project_dirs(root, None, False, project):
+                matches.extend(S.search_project(pd, query, role, in_channel, since, until))
     elif all_projects:
-        matches = list(S.search_all_projects(root, query, role, in_channel, since, until))
+        if _wants_claude(agent):
+            matches = list(S.search_all_projects(root, query, role, in_channel, since, until))
     elif cwd:
-        pd = P.find_project_dir(cwd, root)
-        matches = list(S.search_project(pd, query, role, in_channel, since, until))
+        if _wants_claude(agent):
+            pd = P.find_project_dir(cwd, root)
+            matches = list(S.search_project(pd, query, role, in_channel, since, until))
     else:
         # Unreachable from the CLI (the dispatch guarantees a scope flag), but keep
         # the direct-call contract honest: JSON callers get a JSON object.
         msg = "Provide --file, --cwd, --project, or --all-projects"
         return {"error": msg} if fmt == "json" else msg
+
+    # Fold Codex rollouts into wide-scope searches (single-file --file is handled above).
+    if not file_path:
+        # until=None: search_session applies the message-timestamp window itself.
+        for f in _codex_sessions(
+            root, agent, since, None, cwd, all_projects, project, default_all=all_projects
+        ):
+            matches.extend(S.search_session(f, query, role, in_channel, since, until))
 
     if exclude_current and current_uuid:
         matches = [m for m in matches if m.session_path.stem != current_uuid]
@@ -870,14 +964,17 @@ def mode_count(
     project: str | None = None,
     exclude_current: bool = False,
     current_uuid: str | None = None,
+    agent: str = "both",
 ) -> dict:
     sessions = 0
     matches = 0
     total_msgs = 0
     sources: list[Path] = []
-    project_dirs = _scoped_project_dirs(root, cwd, all_projects, project)
+    project_dirs = _scoped_project_dirs(root, cwd, all_projects, project) if _wants_claude(agent) else None
     for pd in (project_dirs or []):
         sources.extend(P.list_transcripts(pd, since=since, until=until))
+    # until=None: search_session filters by message timestamp, not file mtime.
+    sources.extend(_codex_sessions(root, agent, since, None, cwd, all_projects, project))
     if exclude_current and current_uuid:
         sources = [f for f in sources if f.stem != current_uuid]
     for f in sources:
@@ -956,6 +1053,7 @@ def mode_tool_usage(
     include_subagents: bool = False,
     current_uuid: str | None = None,
     fmt: str = "text",
+    agent: str = "both",
 ):
     """Tally tool_use blocks by tool name; Skill calls sub-tallied by skill name.
 
@@ -963,21 +1061,24 @@ def mode_tool_usage(
     not text occurrences. Scope is --file (one session) or the usual
     --cwd/--project/--all-projects. --tool narrows to a subset (e.g. --tool Skill).
     --include-subagents folds each session's agent-*.jsonl tool calls into its tally.
+    Codex tool calls (exec, wait, applied edits) fold in under --agent both/codex.
     """
     if file_path:
         parents = [file_path]
     else:
-        project_dirs = _scoped_project_dirs(root, cwd, all_projects, project)
-        if project_dirs is None:
+        if not (all_projects or project or cwd):
             return "--file, --cwd, --project, or --all-projects required"
+        project_dirs = _scoped_project_dirs(root, cwd, all_projects, project) if _wants_claude(agent) else []
         parents = []
-        for pd in project_dirs:
+        for pd in (project_dirs or []):
             # `since` is a safe lower-bound mtime pre-filter (a session whose last
             # event predates `since` holds no in-window calls). `until` is NOT a
             # safe mtime filter — a session modified after `until` can still hold
             # calls inside the window — so the upper bound is applied per-call in
             # _tally_tool_usage, mirroring timeline/engagement.
             parents.extend(P.list_transcripts(pd, since=since))
+        # until=None: per-call window filter runs in _tally_tool_usage.
+        parents.extend(_codex_sessions(root, agent, since, None, cwd, all_projects, project))
         if exclude_current and current_uuid:
             parents = [f for f in parents if f.stem != current_uuid]
 
@@ -1024,25 +1125,30 @@ def mode_journal(
     project: str | None = None,
     fmt: str = "text",
     exclude_current: bool = False,
+    agent: str = "both",
 ):
-    pds = _scoped_project_dirs(root, cwd, all_projects, project)
-    if pds is None:
+    if not (all_projects or project or cwd):
         return "--cwd, --project, or --all-projects required"
+    pds = _scoped_project_dirs(root, cwd, all_projects, project) if _wants_claude(agent) else []
     blocks = []
     rows = []
-    for pd in pds:
-        for f in P.list_transcripts(pd, since=since, until=until):
-            summary = PR.session_summary(f, current_session_id=current_uuid)
-            if exclude_current and summary.get("is_current"):
-                continue
-            rows.append(summary)
+    files: list[Path] = []
+    for pd in (pds or []):
+        files.extend(P.list_transcripts(pd, since=since, until=until))
+    files.extend(_codex_sessions(root, agent, since, until, cwd, all_projects, project))
+    for f in files:
+        summary = PR.session_summary(f, current_session_id=current_uuid)
+        if exclude_current and summary.get("is_current"):
+            continue
+        rows.append(summary)
     rows.sort(key=lambda s: s["mtime"], reverse=True)
     if fmt == "json":
         return [_summary_json(s) for s in rows]
     for s in rows:
         day = PR.epoch_to_display(s["mtime"]).strftime("%Y-%m-%d")
+        src = "codex ▹ " if s.get("source") == "codex" else ""
         blocks.append(
-            f"=== {day} · {s['uuid'][:8]} · {s['decoded_project']} ===\n"
+            f"=== {day} · {s['uuid'][:8]} · {src}{s['decoded_project']} ===\n"
             f"  prompt: {s['first_prompt'] or '(none)'}\n"
             f"  ended:  {s['last_assistant'] or '(none)'}\n"
             f"  edits:  {s['edit_count']} files\n"
@@ -1139,31 +1245,38 @@ def build_timeline(
     gap_minutes: int,
     current_uuid: str | None,
     exclude_current: bool = False,
+    codex_sessions: list[Path] | None = None,
 ) -> dict:
     """Cross-session activity blocks for a time window.
 
     Every signal-message timestamp in [since, until) is an activity event.
-    Events across all sessions are merged chronologically and grouped into
-    blocks separated by gaps > gap_minutes.
+    Events across all sessions (Claude Code + Codex) are merged chronologically
+    and grouped into blocks separated by gaps > gap_minutes.
     """
     sessions: dict[Path, dict] = {}
     events: list[tuple[datetime, Path]] = []
+
+    def _add_file(f: Path) -> None:
+        if exclude_current and current_uuid and f.stem == current_uuid:
+            return
+        stamps = []
+        for m in PR.get_messages(PR.parse_lines(f)):
+            ts = PR._parse_timestamp(m.get("timestamp"))
+            if ts is None or ts < since or ts >= until:
+                continue
+            stamps.append(ts)
+        if not stamps:
+            return
+        sessions[f] = PR.session_summary(f, current_session_id=current_uuid)
+        events.extend((ts, f) for ts in stamps)
+
     for pd in project_dirs:
         # Filter by mtime >= since only; a session still active after `until`
         # may contain events inside the window, so no upper mtime bound.
         for f in P.list_transcripts(pd, since=since):
-            if exclude_current and current_uuid and f.stem == current_uuid:
-                continue
-            stamps = []
-            for m in PR.get_messages(PR.parse_lines(f)):
-                ts = PR._parse_timestamp(m.get("timestamp"))
-                if ts is None or ts < since or ts >= until:
-                    continue
-                stamps.append(ts)
-            if not stamps:
-                continue
-            sessions[f] = PR.session_summary(f, current_session_id=current_uuid)
-            events.extend((ts, f) for ts in stamps)
+            _add_file(f)
+    for f in codex_sessions or []:
+        _add_file(f)
     events.sort(key=lambda e: e[0])
 
     blocks: list[dict] = []
@@ -1187,7 +1300,8 @@ def build_timeline(
 
 def _session_label(s: dict) -> str:
     title = s.get("title") or s.get("first_prompt") or "(untitled)"
-    return f"{s['decoded_project']} · {title[:60]} [{s['uuid'][:8]}]"
+    src = "codex ▹ " if s.get("source") == "codex" else ""
+    return f"{src}{s['decoded_project']} · {title[:60]} [{s['uuid'][:8]}]"
 
 
 def render_timeline(data: dict, tz_label: str) -> str:
@@ -1234,6 +1348,7 @@ def timeline_json(data: dict) -> dict:
             "sessions": [
                 {
                     "uuid": sessions[f]["uuid"],
+                    "source": sessions[f].get("source", "claude"),
                     "project": sessions[f]["decoded_project"],
                     "title": sessions[f].get("title") or sessions[f].get("first_prompt") or "",
                     "path": str(f),
@@ -1348,6 +1463,9 @@ def build_engagement(
     break_minutes: int,
     current_uuid: str | None,
     exclude_current: bool = False,
+    include_claude: bool = True,
+    codex_stream: list[Path] | None = None,
+    codex_report: list[Path] | None = None,
 ) -> dict:
     """Attention-time accounting over ONE merged user-prompt stream.
 
@@ -1371,12 +1489,15 @@ def build_engagement(
     user_events: dict[Path, list[datetime]] = {}
     claude_events: dict[Path, list[datetime]] = {}
     assistant_events: dict[Path, list[datetime]] = {}
-    walk_dirs = P.list_projects(root)
     files: list[Path] = []
-    for pd in walk_dirs:
-        # mtime >= since only; a session still active after `until` may hold
-        # events inside the window (same reasoning as timeline).
-        files.extend(P.list_transcripts(pd, since=since))
+    if include_claude:
+        for pd in P.list_projects(root):
+            # mtime >= since only; a session still active after `until` may hold
+            # events inside the window (same reasoning as timeline).
+            files.extend(P.list_transcripts(pd, since=since))
+    # Codex sessions join the SAME global stream so parallel Claude/Codex chats
+    # split the clock instead of double-counting a moment of wall time.
+    files.extend(codex_stream or [])
     if report_file:
         report_file = report_file.resolve()
         files = [f.resolve() for f in files]
@@ -1414,14 +1535,21 @@ def build_engagement(
 
     # Reporting scope
     report_dir_set = {d.resolve() for d in report_dirs} if report_dirs else None
+    codex_report_set = {p.resolve() for p in (codex_report or [])}
     sessions: dict[Path, dict] = {}
     for f, evs in user_events.items():
         if not evs:
             continue
-        if report_file and f != report_file:
-            continue
-        if report_dir_set is not None and f.parent.resolve() not in report_dir_set:
-            continue
+        fr = f.resolve()
+        if report_file:
+            if fr != report_file:
+                continue
+        elif CX.is_codex_rollout(f):
+            if fr not in codex_report_set:
+                continue
+        else:
+            if report_dir_set is not None and f.parent.resolve() not in report_dir_set:
+                continue
         sessions[f] = {
             "summary": PR.session_summary(f, current_session_id=current_uuid),
             "first": evs[0],
@@ -1527,6 +1655,7 @@ def engagement_json(data: dict) -> dict:
         summary = s["summary"]
         sessions_out.append({
             "uuid": summary["uuid"],
+            "source": summary.get("source", "claude"),
             "project": summary["decoded_project"],
             "title": summary.get("title") or summary.get("first_prompt") or "",
             "path": str(f),
@@ -1594,9 +1723,10 @@ def render_session_report(data: dict, tz_label: str) -> str:
         summary = s["summary"]
         elapsed = s["last"] - s["first"]
         title = summary.get("title") or summary.get("first_prompt") or "(untitled)"
+        src = "codex ▹ " if summary.get("source") == "codex" else ""
         out.append(f"{i}. {title}")
         out.append(
-            f"   {summary['decoded_project']}  ·  "
+            f"   {src}{summary['decoded_project']}  ·  "
             f"{_fmt_clock(s['first'], multi_day)}–{_fmt_tod(s['last'])}  "
             f"(ran {_fmt_dur(elapsed)} · active {_fmt_dur(s['active'])})"
         )
@@ -1633,6 +1763,7 @@ def session_report_json(data: dict) -> dict:
         total_active += s["active"]
         sessions_out.append({
             "uuid": summary["uuid"],
+            "source": summary.get("source", "claude"),
             "project": summary["decoded_project"],
             "title": summary.get("title") or summary.get("first_prompt") or "",
             "path": str(f),
@@ -1806,6 +1937,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--title", help="Title substring (for find mode)")
     p.add_argument("--first-prompt", dest="first_prompt", help="First-prompt substring (for find mode)")
     # No hardcoded default: search treats unset as "both", last as "assistant".
+    p.add_argument(
+        "--agent", default="both", choices=["claude", "codex", "both"],
+        help="Which agent's history to include for cross-session modes "
+             "(list/journal/timeline/engagement/session-report/count/tool-usage/"
+             "lookup/find/search). Default: both.",
+    )
     p.add_argument("--role", default=None, choices=["user", "assistant", "both"])
     p.add_argument("--in", dest="in_channel", default="text",
                    choices=["text", "tool_use", "tool_result", "thinking", "all"])
@@ -1890,10 +2027,10 @@ def main() -> int:
     if mode == "list":
         _emit(mode_list(root, args.cwd, args.all_projects, since, until,
                         args.exclude_current, current_uuid,
-                        project=args.project, fmt=fmt))
+                        project=args.project, fmt=fmt, agent=args.agent))
         return 0
     if mode == "lookup":
-        code, out = mode_lookup(args.uuid or "", root, fmt=fmt)
+        code, out = mode_lookup(args.uuid or "", root, fmt=fmt, agent=args.agent)
         _emit(out)
         return code
     if mode == "whoami":
@@ -1902,7 +2039,7 @@ def main() -> int:
         return code
     if mode == "find":
         _emit(mode_find(root, args.title, args.first_prompt, current_uuid,
-                        project=args.project, fmt=fmt))
+                        project=args.project, fmt=fmt, agent=args.agent))
         return 0
     if mode == "resume-cmd":
         code, out = mode_resume_cmd(args.uuid or "", root, fmt=fmt)
@@ -1922,7 +2059,7 @@ def main() -> int:
                             args.role or "both", args.in_channel, since, until,
                             project=args.project,
                             exclude_current=args.exclude_current,
-                            current_uuid=current_uuid)
+                            current_uuid=current_uuid, agent=args.agent)
         if fmt == "json":
             _print_json(counts)
         else:
@@ -1943,13 +2080,13 @@ def main() -> int:
             tool_filter=_split_tools(args.tool), project=args.project,
             exclude_current=args.exclude_current,
             include_subagents=args.include_subagents,
-            current_uuid=current_uuid, fmt=fmt,
+            current_uuid=current_uuid, fmt=fmt, agent=args.agent,
         ))
         return 0
     if mode == "journal":
         _emit(mode_journal(root, args.cwd, args.all_projects, since, until,
                            current_uuid, project=args.project, fmt=fmt,
-                           exclude_current=args.exclude_current))
+                           exclude_current=args.exclude_current, agent=args.agent))
         return 0
     if mode == "timeline":
         try:
@@ -1968,9 +2105,16 @@ def main() -> int:
         # Timeline is inherently cross-project — default to all projects.
         project_dirs = _scoped_project_dirs(
             root, args.cwd, args.all_projects, args.project, default_all=True
+        ) if _wants_claude(args.agent) else []
+        # until=None: a session active past t_until can still hold in-window
+        # events; the per-event timestamp filter in build_timeline bounds it.
+        codex_sessions = _codex_sessions(
+            root, args.agent, t_since, None, args.cwd, args.all_projects,
+            args.project, default_all=True,
         )
         data = build_timeline(project_dirs, t_since, t_until, gap_minutes, current_uuid,
-                              exclude_current=args.exclude_current)
+                              exclude_current=args.exclude_current,
+                              codex_sessions=codex_sessions)
         if fmt == "json":
             _print_json(timeline_json(data))
         else:
@@ -2006,13 +2150,32 @@ def main() -> int:
             e_until = e_until or P.parse_timespec("now")
         # Scope filters reporting only; the attention stream is always global.
         report_dirs = None
-        if not report_file:
+        if not report_file and _wants_claude(args.agent):
             report_dirs = _scoped_project_dirs(
                 root, args.cwd, args.all_projects, args.project, default_all=True
             )
+        # Codex: the whole in-window tree joins the global stream (dedup
+        # correctness); the scoped subset is what gets reported.
+        codex_stream: list[Path] = []
+        codex_report: list[Path] = []
+        if _wants_codex(args.agent) and _codex_enabled(root):
+            codex_stream = CX.list_codex_sessions(since=e_since)
+            if report_file and CX.is_codex_rollout(report_file):
+                codex_report = [report_file]
+            elif not report_file:
+                # until=None (same reasoning as timeline); the reporting set is
+                # further narrowed to sessions with in-window prompts downstream.
+                codex_report = _codex_sessions(
+                    root, args.agent, e_since, None, args.cwd,
+                    args.all_projects, args.project, default_all=True,
+                )
         data = build_engagement(
             root, report_dirs, report_file, e_since, e_until, break_minutes,
             current_uuid, exclude_current=args.exclude_current,
+            include_claude=_wants_claude(args.agent) and not (
+                report_file and CX.is_codex_rollout(report_file)
+            ),
+            codex_stream=codex_stream, codex_report=codex_report,
         )
         if mode == "session-report":
             if fmt == "json":
@@ -2049,7 +2212,8 @@ def main() -> int:
                              args.role or "both", args.in_channel, since, until,
                              project=args.project, fmt=fmt,
                              exclude_current=args.exclude_current,
-                             current_uuid=current_uuid, full=args.full))
+                             current_uuid=current_uuid, full=args.full,
+                             agent=args.agent))
         return 0
     if mode == "search":
         # Reached only when no scope flag was given — search needs one of these.

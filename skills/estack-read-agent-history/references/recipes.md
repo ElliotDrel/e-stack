@@ -8,7 +8,7 @@ These recipes use the CLI where a mode fits the step exactly. When a step needs 
 
 In all examples, `$PY` refers to:
 ```
-~/.claude/skills/estack-read-claude-session-history/scripts/read_transcript.py
+~/.claude/skills/estack-read-agent-history/scripts/read_transcript.py
 ```
 
 ---
@@ -204,6 +204,38 @@ Prefer Bash for any JSON chaining; prefer either shell for plain single commands
 
 ---
 
+## 5e. Cross-agent day review (Claude Code + Codex together)
+
+The day-accounting modes read **both** agents by default (`--agent both`), merging
+Claude and Codex into one deduped stream — so a "what did I do yesterday" answer
+covers everything, and overlapping Claude/Codex chats never double-count the clock.
+
+```bash
+# Everything yesterday, both agents, one merged timeline
+python "$PY" --mode timeline --date yesterday
+
+# Real attention time across both agents
+python "$PY" --mode engagement --date yesterday
+
+# Numbered per-session day review (Codex rows tagged "codex ▹")
+python "$PY" --mode session-report --date yesterday
+
+# Narrow to one agent
+python "$PY" --mode session-report --date yesterday --agent codex
+python "$PY" --mode timeline --date yesterday --agent claude
+
+# Read a single Codex session directly (auto-detected — no --agent needed)
+ls ~/.codex/sessions/2026/07/15/                       # the date folder IS the index
+python "$PY" --file ~/.codex/sessions/2026/07/15/rollout-*.jsonl --mode brief
+```
+
+Do NOT hand-roll the cross-agent active-time math with `grep '"timestamp"'` + `awk`
+(both agents share a top-level `timestamp`, which tempts it) — you'd re-derive the
+merge with a hardcoded UTC→local offset and lose the parallel-chat dedup the modes
+already do. Codex schema + traps: `codex-history.md`.
+
+---
+
 ## 6. Sibling-agent diff
 
 When you ran two subagents on the same task and want to see where they diverged:
@@ -321,7 +353,7 @@ Most real questions don't map to a canned mode ("which sessions edited files und
 # <scratchpad>/query.py
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path.home() / ".claude/skills/estack-read-claude-session-history/scripts"))
+sys.path.insert(0, str(Path.home() / ".claude/skills/estack-read-agent-history/scripts"))
 from lib import parser, paths, search, subagents, tools
 
 since = paths.parse_timespec("7d")

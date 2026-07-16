@@ -60,15 +60,23 @@ def iter_lines(path: Path) -> Iterator[dict]:
 
 
 def parse_lines(path: Path) -> list[dict]:
-    """Read all JSONL records from a file, with mtime-based caching."""
+    """Read all JSONL records from a file, with mtime-based caching.
+
+    A Codex rollout (``rollout-*.jsonl``) is transparently normalized into the
+    same entry shape Claude Code emits, so every downstream primitive works on
+    it unchanged. See ``lib/codex.py``.
+    """
+    from . import codex as _codex
+    is_codex = _codex.is_codex_rollout(path)
+    _load = _codex.normalize_rollout if is_codex else lambda p: list(iter_lines(p))
     try:
         mtime = path.stat().st_mtime
     except OSError:
-        return list(iter_lines(path))
+        return _load(path)
     cached = _PARSE_CACHE.get(path)
     if cached is not None and cached[0] == mtime:
         return cached[1]
-    records = list(iter_lines(path))
+    records = _load(path)
     _PARSE_CACHE[path] = (mtime, records)
     return records
 
@@ -374,15 +382,19 @@ def infer_status(
 def session_summary(path: Path, current_session_id: str | None = None) -> dict:
     """Compact per-session metrics for brief / list / journal / count modes."""
     from .tools import extract_tool_calls, files_touched  # local import to avoid cycle
-    from .paths import decode_project_name, list_subagents
+    from .paths import decode_project_name, list_subagents, encode_cwd
     from .subagents import load_meta
+    from . import codex as _codex
+
+    is_codex = _codex.is_codex_rollout(path)
 
     try:
         stat = path.stat()
     except OSError:
         return {
             "path": path,
-            "uuid": path.stem,
+            "uuid": _codex.rollout_uuid(path) if is_codex else path.stem,
+            "source": "codex" if is_codex else "claude",
             "mtime": 0,
             "size": 0,
             "exists": False,
@@ -427,16 +439,23 @@ def session_summary(path: Path, current_session_id: str | None = None) -> dict:
         subagent_types[atype] = subagent_types.get(atype, 0) + 1
 
     has_compact = any(m["is_compact"] for m in messages)
-    parent_dir_name = path.parent.name
-    decoded = decode_project_name(parent_dir_name)
+    if is_codex:
+        session_uuid = _codex.rollout_uuid(path)
+        cwd_name = encode_cwd(_codex.codex_cwd(path))
+        decoded = decode_project_name(cwd_name) if cwd_name else "codex"
+    else:
+        session_uuid = path.stem
+        cwd_name = path.parent.name
+        decoded = decode_project_name(cwd_name)
 
     status = infer_status(
-        lines, stat.st_mtime, current_session_id, path.stem
+        lines, stat.st_mtime, current_session_id, session_uuid
     )
 
     return {
         "path": path,
-        "uuid": path.stem,
+        "uuid": session_uuid,
+        "source": "codex" if is_codex else "claude",
         "mtime": stat.st_mtime,
         "size": stat.st_size,
         "exists": True,
@@ -452,10 +471,10 @@ def session_summary(path: Path, current_session_id: str | None = None) -> dict:
         "subagent_types": subagent_types,
         "has_compact": has_compact,
         "has_subagents": bool(subagents),
-        "cwd": parent_dir_name,
+        "cwd": cwd_name,
         "decoded_project": decoded,
         "status": status,
         "is_current": bool(
-            current_session_id and current_session_id == path.stem
+            current_session_id and current_session_id == session_uuid
         ),
     }

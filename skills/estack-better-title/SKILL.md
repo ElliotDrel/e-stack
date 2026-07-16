@@ -1,6 +1,6 @@
 ---
 name: estack-better-title
-version: 1.0.5
+version: 1.1.0
 description: (better-title) Suggest better chat session titles and rename the session
 disable-model-invocation: true
 allowed-tools: Bash, AskUserQuestion
@@ -9,6 +9,28 @@ allowed-tools: Bash, AskUserQuestion
 # Better Title
 
 The current session ID is: ${CLAUDE_SESSION_ID}
+
+## Current title
+
+```!
+SESSION_FILE=$(find "$HOME/.claude/projects/" -maxdepth 2 -name "${CLAUDE_SESSION_ID}.jsonl" -type f 2>/dev/null | head -1)
+LAST_CUSTOM=""
+[[ -n "$SESSION_FILE" ]] && LAST_CUSTOM=$(grep '"type":"custom-title"' "$SESSION_FILE" | tail -n 1)
+if [[ -n "$LAST_CUSTOM" ]]; then
+  node -e '
+    const line = process.argv[1];
+    try {
+      const o = JSON.parse(line);
+      if (o.customTitle) { console.log("Current title: " + o.customTitle); process.exit(0); }
+    } catch {}
+    console.log("No current title is set for this session.");
+  ' "$LAST_CUSTOM"
+else
+  echo "No current title is set for this session."
+fi
+```
+
+If the output above shows a current title, factor it into your suggestions — keep whatever part of it still fits, refine the parts that don't, and don't propose something that just re-describes what it already says. If it says no title is set, draft from scratch.
 
 ## Your task
 
@@ -21,6 +43,7 @@ Ask yourself:
 2. What **got built / decided / fixed** that the user might reference later?
 3. What was **noise** — mistakes, abandoned approaches, things they had to redirect you on, dead ends? (These do NOT belong in the title.)
 4. What's **temporary** vs. **lasting**? Temporary states should be mentioned briefly, not led with.
+5. If there's a current title: does it still hold up, or has the conversation moved past what it describes?
 
 Write the title from those answers, NOT from a chronological recap of the chat.
 

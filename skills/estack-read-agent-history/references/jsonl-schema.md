@@ -1,6 +1,6 @@
 # JSONL schema reference
 
-What's actually inside a Claude Code session `.jsonl`. Only relevant when extending the script or debugging an unexpected empty result.
+What's actually inside a **Claude Code** session `.jsonl`. Only relevant when extending the script or debugging an unexpected empty result. For **Codex** rollouts (a different schema — top-level `{timestamp, type, payload}` with `event_msg`/`response_item` layers) see `codex-history.md`.
 
 ## File location
 

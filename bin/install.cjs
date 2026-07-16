@@ -189,6 +189,7 @@ const DRY_RUN = process.argv.includes('--dry-run') ||
 // run so users don't end up with both the old and new name installed.
 const DEPRECATED_SKILLS = [
   'estack-prompt-builder', // renamed to estack-prompt-builder-coach
+  'estack-read-claude-session-history', // renamed to estack-read-agent-history
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────

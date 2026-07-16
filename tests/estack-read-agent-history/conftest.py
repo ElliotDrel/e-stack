@@ -18,7 +18,7 @@ for _stream in (sys.stdout, sys.stderr):
 
 
 THIS_DIR = Path(__file__).resolve().parent
-SCRIPTS_DIR = THIS_DIR.parent.parent / "skills" / "estack-read-claude-session-history" / "scripts"
+SCRIPTS_DIR = THIS_DIR.parent.parent / "skills" / "estack-read-agent-history" / "scripts"
 FIXTURES_DIR = THIS_DIR / "fixtures"
 
 if not SCRIPTS_DIR.is_dir():
