@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.56] - 2026-07-16
+
+### Added
+- `estack-read-agent-history` skill — now reads **Codex** (OpenAI codex-cli) session history alongside Claude Code. A new `lib/codex.py` adapter discovers Codex rollouts under `~/.codex/sessions/YYYY/MM/DD/` and normalizes each into the same entry shape Claude emits, so every single-`--file` mode (brief, dump, last, tool-calls, file-edits, search, …) works on a Codex rollout with no flag — the type is auto-detected. Cross-session modes (`timeline`, `engagement`, `session-report`, `list`, `journal`, `count`, `tool-usage`, `lookup`, `find`, `search`) take a new `--agent claude|codex|both` flag (default `both`) and merge both agents into one deduped attention stream, so a day timeline or active-time total covers Claude + Codex and parallel chats split the clock instead of double-counting. JSON output tags each session `source: "claude"|"codex"`; text output prefixes Codex rows with `codex ▹`. New `references/codex-history.md` documents the Codex schema and traps.
+- `estack-better-title` skill — an auto-run (`` ```! ``) block now looks up the session's existing custom title (if any) on skill load, same as `estack-repo-search` auto-refreshes its repo list, so the model always sees the current title before drafting suggestions instead of proposing titles blind.
+
+### Changed
+- Renamed `estack-read-claude-session-history` → `estack-read-agent-history` to reflect that it now reads both Claude Code and Codex history. The installer removes the old folder automatically (added to `DEPRECATED_SKILLS`); the invoke command is now `/estack-read-agent-history`.
+
+### Fixed
+- `estack-better-title` skill — `rename.sh`'s Windows file-lock retry now uses exponential backoff (0.3/0.6/1/1.5/2/3/4/4s, ~16s total) instead of a flat 6 × 0.3s (~1.8s total). The live CLI writes to the session's own `.jsonl` on nearly every turn/tool call, so in busy sessions the transient exclusive lock recurred faster than the old window could reliably outlast, causing the rename to fail repeatedly even though the underlying lock was genuinely transient.
+
+---
+
 ## [1.0.55] - 2026-07-15
 
 ### Fixed
@@ -485,7 +499,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.55...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.56...HEAD
+[1.0.56]: https://github.com/ElliotDrel/e-stack/compare/v1.0.55...v1.0.56
 [1.0.55]: https://github.com/ElliotDrel/e-stack/compare/v1.0.54...v1.0.55
 [1.0.54]: https://github.com/ElliotDrel/e-stack/compare/v1.0.53...v1.0.54
 [1.0.53]: https://github.com/ElliotDrel/e-stack/compare/v1.0.52...v1.0.53
