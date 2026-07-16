@@ -52,11 +52,19 @@ fi
 # Append-only: never rewrite the file, just add new entries at the end.
 # On Windows, the live Claude Code process can hold a transient exclusive lock
 # on its own session file while it writes ("Device or resource busy") — retry
-# briefly with backoff instead of failing on the first collision. Capture
-# stderr (instead of discarding it) so a *permanent* failure — bad path,
-# permissions, disk full — is reported accurately rather than misreported as
-# a transient lock after silently burning through every retry.
-MAX_ATTEMPTS=6
+# with backoff instead of failing on the first collision. Capture stderr
+# (instead of discarding it) so a *permanent* failure — bad path, permissions,
+# disk full — is reported accurately rather than misreported as a transient
+# lock after silently burning through every retry.
+#
+# The live CLI writes to this same file on essentially every turn/tool call,
+# so in a busy session the lock recurs faster than a short retry window can
+# outlast (a flat 6 x 0.3s ~= 1.8s total was measured to fail repeatedly in
+# practice). Backoff is exponential, capped at 4s per attempt, ~16s total —
+# long enough to reliably clear the real-world lock duration while still
+# resolving in under a second in the common case.
+BACKOFF=(0.3 0.6 1 1.5 2 3 4 4)
+MAX_ATTEMPTS=${#BACKOFF[@]}
 attempt=1
 APPEND_ERR="$(mktemp)"
 until { printf '%s\n%s\n' "$CUSTOM_LINE" "$AGENT_LINE" >> "$SESSION_FILE"; } 2>"$APPEND_ERR"; do
@@ -72,8 +80,8 @@ until { printf '%s\n%s\n' "$CUSTOM_LINE" "$AGENT_LINE" >> "$SESSION_FILE"; } 2>"
     fi
     exit 1
   fi
+  sleep "${BACKOFF[$((attempt - 1))]}"
   attempt=$((attempt + 1))
-  sleep 0.3
 done
 rm -f "$APPEND_ERR"
 
