@@ -7,14 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- `estack-pr-description` skill — rewrites a PR description for a maintainer who reviews product logic and risk, not implementation detail. Reads the actual diff, commits, tests, and PR state (never trusting the old description or commit titles as proof of behavior) and produces a short, decision-led writeup: key decisions with the why and tradeoff, verification that says what failure each check rules out, a high-level change summary, database/Supabase/migration status, operational behavior, and open calls for the reviewer. Scales down to Root cause / Fix / Verification for small changes. Ships with the same writing-style rules as the user's global CLAUDE.md baked in, so the output holds to them even outside that context.
-
 ---
 
-## [1.0.56] - 2026-07-16
+## [1.0.56] - 2026-07-20
 
 ### Added
+- `estack-pr-description` skill — rewrites a PR description for a maintainer who reviews product logic and risk, not implementation detail. Reads the actual diff, commits, tests, and PR state (never trusting the old description or commit titles as proof of behavior) and produces a short, decision-led writeup: key decisions with the why and tradeoff, verification that says what failure each check rules out, a high-level change summary, database/Supabase/migration status, operational behavior, and open calls for the reviewer. Scales down to Root cause / Fix / Verification for small changes. Ships with the same writing-style rules as the user's global CLAUDE.md baked in, so the output holds to them even outside that context.
 - `estack-read-agent-history` skill — now reads **Codex** (OpenAI codex-cli) session history alongside Claude Code. A new `lib/codex.py` adapter discovers Codex rollouts under `~/.codex/sessions/YYYY/MM/DD/` and normalizes each into the same entry shape Claude emits, so every single-`--file` mode (brief, dump, last, tool-calls, file-edits, search, …) works on a Codex rollout with no flag — the type is auto-detected. Cross-session modes (`timeline`, `engagement`, `session-report`, `list`, `journal`, `count`, `tool-usage`, `lookup`, `find`, `search`) take a new `--agent claude|codex|both` flag (default `both`) and merge both agents into one deduped attention stream, so a day timeline or active-time total covers Claude + Codex and parallel chats split the clock instead of double-counting. JSON output tags each session `source: "claude"|"codex"`; text output prefixes Codex rows with `codex ▹`. New `references/codex-history.md` documents the Codex schema and traps.
 - `estack-better-title` skill — an auto-run (`` ```! ``) block now looks up the session's existing custom title (if any) on skill load, same as `estack-repo-search` auto-refreshes its repo list, so the model always sees the current title before drafting suggestions instead of proposing titles blind.
 
