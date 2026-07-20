@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-pr-description` skill — rewrites a PR description for a maintainer who reviews product logic and risk, not implementation detail. Reads the actual diff, commits, tests, and PR state (never trusting the old description or commit titles as proof of behavior) and produces a short, decision-led writeup: key decisions with the why and tradeoff, verification that says what failure each check rules out, a high-level change summary, database/Supabase/migration status, operational behavior, and open calls for the reviewer. Scales down to Root cause / Fix / Verification for small changes. Ships with the same writing-style rules as the user's global CLAUDE.md baked in, so the output holds to them even outside that context.
+
 ---
 
 ## [1.0.56] - 2026-07-16
