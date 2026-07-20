@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.56] - 2026-07-20
+## [1.0.57] - 2026-07-20
 
 ### Added
 - `estack-pr-description` skill — rewrites a PR description for a maintainer who reviews product logic and risk, not implementation detail. Reads the actual diff, commits, tests, and PR state (never trusting the old description or commit titles as proof of behavior) and produces a short, decision-led writeup: key decisions with the why and tradeoff, verification that says what failure each check rules out, a high-level change summary, database/Supabase/migration status, operational behavior, and open calls for the reviewer. Scales down to Root cause / Fix / Verification for small changes. Ships with the same writing-style rules as the user's global CLAUDE.md baked in, so the output holds to them even outside that context.
@@ -501,8 +501,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.56...HEAD
-[1.0.56]: https://github.com/ElliotDrel/e-stack/compare/v1.0.55...v1.0.56
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.57...HEAD
+[1.0.57]: https://github.com/ElliotDrel/e-stack/compare/v1.0.55...v1.0.57
 [1.0.55]: https://github.com/ElliotDrel/e-stack/compare/v1.0.54...v1.0.55
 [1.0.54]: https://github.com/ElliotDrel/e-stack/compare/v1.0.53...v1.0.54
 [1.0.53]: https://github.com/ElliotDrel/e-stack/compare/v1.0.52...v1.0.53
