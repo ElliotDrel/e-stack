@@ -1,6 +1,6 @@
 ---
 name: estack-read-agent-history
-version: 3.0.0
+version: 3.0.1
 description: >-
   (read-agent-history) Invoke for ANY task involving local AI coding-agent
   session history — Claude Code AND Codex (OpenAI codex-cli) transcripts or

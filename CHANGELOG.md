@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `estack-better-title` skill — `rename.sh`'s Windows file-lock retry now uses exponential backoff (0.3/0.6/1/1.5/2/3/4/4s, ~16s total) instead of a flat 6 × 0.3s (~1.8s total). The live CLI writes to the session's own `.jsonl` on nearly every turn/tool call, so in busy sessions the transient exclusive lock recurred faster than the old window could reliably outlast, causing the rename to fail repeatedly even though the underlying lock was genuinely transient.
+- `estack-read-agent-history` skill — `files_touched()` now parses a Codex-recorded Windows path (`C:\Users\...`) with `PureWindowsPath` instead of the host OS's native `Path`, so basename extraction (`.name`) works correctly when the script runs on a different OS than the one the session was recorded on — e.g. reading a Windows-recorded Codex session from a Linux/macOS machine, where a bare `Path()` silently treated the whole backslash-separated string as one filename component.
 
 ---
 

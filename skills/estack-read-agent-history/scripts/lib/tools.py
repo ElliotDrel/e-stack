@@ -3,8 +3,25 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
+import re
+from pathlib import Path, PurePath, PureWindowsPath
 from typing import Optional
+
+_WINDOWS_PATH_RE = re.compile(r"^[A-Za-z]:\\|^\\\\")
+
+
+def _to_path(raw: str) -> PurePath:
+    """Parse a file path recorded in a transcript, independent of the host OS.
+
+    Claude and Codex sessions log the path style of the machine they ran on
+    (backslashes from Windows, forward slashes from POSIX), which may not
+    match the OS running this script. A bare `Path(raw)` uses the host OS's
+    separator rules, so a Windows-recorded path silently fails to split on a
+    POSIX host (and vice versa) and `.name` returns the whole raw string.
+    """
+    if _WINDOWS_PATH_RE.match(raw) or ("\\" in raw and "/" not in raw):
+        return PureWindowsPath(raw)
+    return Path(raw)
 
 
 def extract_tool_calls(
@@ -130,7 +147,7 @@ def extract_tool_results(
     return None
 
 
-def files_touched(lines: list[dict]) -> dict[Path, list[str]]:
+def files_touched(lines: list[dict]) -> dict[PurePath, list[str]]:
     """Map of file paths to the list of operations performed on them."""
     out: dict[str, list[str]] = {}
     for call in extract_tool_calls(lines):
@@ -141,4 +158,4 @@ def files_touched(lines: list[dict]) -> dict[Path, list[str]]:
             if fp:
                 out.setdefault(fp, []).append(name)
     # Convert to Path keys
-    return {Path(k): v for k, v in out.items()}
+    return {_to_path(k): v for k, v in out.items()}

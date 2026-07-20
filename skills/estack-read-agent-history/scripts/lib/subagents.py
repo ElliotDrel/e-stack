@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Optional
 
 from . import parser as _parser
@@ -60,7 +60,7 @@ def agent_tools(agent_path: Path, tool_filter: Optional[set[str]] = None) -> lis
     return _tools.extract_tool_calls(_parser.parse_lines(agent_path), tool_filter)
 
 
-def agent_files(agent_path: Path) -> dict[Path, list[str]]:
+def agent_files(agent_path: Path) -> dict[PurePath, list[str]]:
     return _tools.files_touched(_parser.parse_lines(agent_path))
 
 
