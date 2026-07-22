@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.58] - 2026-07-22
+
 ### Added
 - `estack-drive-cli-agent` skill — teaches the agent to drive another AI coding agent CLI programmatically: Codex (`codex exec`) and Claude Code headless (`claude -p`), both under existing logged-in subscriptions (never API-key billing). Ships a simple foreground template for quick calls and a backgrounded template for long/write-capable runs on each CLI, five hard rules distilled from documented failure modes (close stdin on Codex calls or they hang on Windows, enforce your own timeout, read results from output never exit codes, verify claimed effects against git/filesystem ground truth, set sandbox/approval/cwd explicitly per call), and two sourced reference files (`references/codex-exec.md`, `references/claude-headless.md`) where every claim carries the official doc or GitHub issue URL so the agent can fetch current truth when either CLI changes.
 
@@ -516,7 +520,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.57...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.58...HEAD
+[1.0.58]: https://github.com/ElliotDrel/e-stack/compare/v1.0.57...v1.0.58
 [1.0.57]: https://github.com/ElliotDrel/e-stack/compare/v1.0.55...v1.0.57
 [1.0.55]: https://github.com/ElliotDrel/e-stack/compare/v1.0.54...v1.0.55
 [1.0.54]: https://github.com/ElliotDrel/e-stack/compare/v1.0.53...v1.0.54
