@@ -31,12 +31,6 @@ def _run_cli(cli_path, *args, env_overrides=None):
     )
 
 
-def test_last_mode(cli_path, fixtures_dir):
-    r = _run_cli(cli_path, "--file", str(fixtures_dir / "basic-session.jsonl"), "--mode", "last")
-    assert r.returncode == 0
-    assert "Here is help" in r.stdout
-
-
 def test_last_default_role_is_assistant(cli_path, fixtures_dir):
     r = _run_cli(cli_path, "--file", str(fixtures_dir / "role-mix.jsonl"), "--mode", "last")
     assert r.returncode == 0

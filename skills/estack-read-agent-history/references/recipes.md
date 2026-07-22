@@ -78,8 +78,8 @@ When a live `.jsonl` has been wiped but the backup is intact:
 
 ```bash
 # Step 1: Find what's missing — list live vs snapshot side by side
-python "$PY" --root live        --cwd "C:\Users\2supe\Other Claude Code" --list > live.txt
-python "$PY" --root snapshot-24h --cwd "C:\Users\2supe\Other Claude Code" --list > snap.txt
+python "$PY" --root live        --cwd "C:\Users\2supe\Other Claude Code" --mode list > live.txt
+python "$PY" --root snapshot-24h --cwd "C:\Users\2supe\Other Claude Code" --mode list > snap.txt
 diff live.txt snap.txt
 
 # Step 2: For each missing UUID, locate it in the snapshot
@@ -147,11 +147,8 @@ claim about your attention time. For "how long did this actually take ME?", use
 
 ## 5d. Attention accounting ("how long did X actually take me?")
 
-`engagement` measures *your* time, not the session's. It merges your real
-prompts from ALL projects into one stream, so two parallel chats split the
-clock instead of double-counting it, and long Claude runs you sat waiting on
-are credited (you replied right after Claude finished) while runs you walked
-away from are not.
+`engagement` measures *your* time, not the session's. The full attribution
+rules (one merged stream, waiting-credit, breaks) are in `modes.md` § engagement.
 
 ```bash
 # How much focused time did today actually consume?
@@ -168,13 +165,8 @@ python "$PY" --mode engagement --date today --break 5m
 ```
 
 Reading the output: one row per session (`active / ratio / msgs / first–last`),
-a total line (sum of attributed time — already interval-merged, safe to quote),
-and the breaks in the merged stream. `ratio` = active/elapsed; 0.50 means half
-the wall-clock span was real attention.
-
-Scoping caveat: `--project`/`--file` filter which sessions are *reported*; the
-attention stream is always computed across all projects so the math stays
-honest. A scoped total can therefore be less than the same window's global total.
+a total line (already interval-merged, safe to quote), and the breaks in the
+merged stream.
 
 ---
 
@@ -206,9 +198,8 @@ Prefer Bash for any JSON chaining; prefer either shell for plain single commands
 
 ## 5e. Cross-agent day review (Claude Code + Codex together)
 
-The day-accounting modes read **both** agents by default (`--agent both`), merging
-Claude and Codex into one deduped stream — so a "what did I do yesterday" answer
-covers everything, and overlapping Claude/Codex chats never double-count the clock.
+The day-accounting modes read **both** agents by default (`--agent both`); see
+`modes.md` § `--agent` for the merge semantics.
 
 ```bash
 # Everything yesterday, both agents, one merged timeline
@@ -229,10 +220,9 @@ ls ~/.codex/sessions/2026/07/15/                       # the date folder IS the 
 python "$PY" --file ~/.codex/sessions/2026/07/15/rollout-*.jsonl --mode brief
 ```
 
-Do NOT hand-roll the cross-agent active-time math with `grep '"timestamp"'` + `awk`
-(both agents share a top-level `timestamp`, which tempts it) — you'd re-derive the
-merge with a hardcoded UTC→local offset and lose the parallel-chat dedup the modes
-already do. Codex schema + traps: `codex-history.md`.
+Do NOT hand-roll the cross-agent active-time math with `grep '"timestamp"'` + `awk` —
+you'd re-derive the merge with a hardcoded UTC→local offset and lose the dedup the
+modes already do. Codex schema + traps: `codex-history.md`.
 
 ---
 
@@ -289,11 +279,9 @@ Wide-scope search (`--all-projects`, `--cwd`, `--project`) returns a **per-sessi
 
 ## 8b. "Which skills (or tools) do I actually use?" — true invocation counts
 
-To decide which skills to keep or prune, you need real usage counts. Do **not**
-use `search`/`count` for this: they match the *string* (a skill name in a
-`CLAUDE.md` instruction, a bash command, even the search commands you're running
-right now), so they over-count. `tool-usage` counts real `tool_use` invocations —
-for skills, the `Skill` block's `input.skill` — and is immune to that.
+To decide which skills to keep or prune, you need real usage counts. Use
+`tool-usage`, never `search`/`count` — the why (string matches over-count;
+`tool-usage` keys on invocation structure) is in `modes.md` § tool-usage.
 
 ```bash
 # Skills you actually invoked, ranked, across every project
@@ -354,7 +342,7 @@ Most real questions don't map to a canned mode ("which sessions edited files und
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path.home() / ".claude/skills/estack-read-agent-history/scripts"))
-from lib import parser, paths, search, subagents, tools
+from lib import parser, paths, search, subagents, tools, codex
 
 since = paths.parse_timespec("7d")
 for pd in paths.list_projects():                 # or filter_projects(None, "keel")

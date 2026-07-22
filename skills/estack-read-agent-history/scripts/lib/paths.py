@@ -28,8 +28,8 @@ def encode_cwd(cwd: str) -> str:
 def decode_project_name(encoded: str) -> str:
     """Best-effort reverse for display.
 
-    Strips the `C--Users-<user>-` drive/home prefix when present, replaces
-    remaining hyphens with spaces, and joins path-like segments with " > ".
+    Strips the `C--Users-<user>-` drive/home prefix when present, collapses
+    hyphen runs, and replaces the remaining hyphens with spaces.
 
     Falls back to the raw encoded name if the heuristic fails. Display only —
     never use this to look up a real directory.

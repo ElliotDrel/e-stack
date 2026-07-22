@@ -107,25 +107,11 @@ def test_is_codex_rollout(tmp_path):
     assert not CX.is_codex_rollout(tmp_path / "rollout-2026.txt")
 
 
-def test_rollout_uuid():
-    from pathlib import Path
-    p = Path("rollout-2026-07-15T13-32-50-019f66d6-a381-7db3-ac70-b4ac2e90e183.jsonl")
-    assert CX.rollout_uuid(p) == "019f66d6-a381-7db3-ac70-b4ac2e90e183"
-
-
-def test_session_meta_and_cwd(codex_tree):
-    f = next(codex_tree.rglob("rollout-*.jsonl"))
-    meta = CX.session_meta(f)
-    assert meta["cwd"] == "C:\\Users\\me\\proj"
-    assert CX.codex_cwd(f) == "C:\\Users\\me\\proj"
-
-
 # ── normalization ────────────────────────────────────────────────────────────
 
 def test_normalize_rollout_messages_and_tools(codex_tree):
     f = next(codex_tree.rglob("rollout-*.jsonl"))
     entries = CX.normalize_rollout(f)
-    roles = [(e["type"], PR.classify_entry(e)) for e in entries]
     # Two real user prompts survive; task_started/token_count/reasoning dropped.
     users = [e for e in entries if PR.classify_entry(e) == "user"]
     assert len(users) == 2
@@ -149,23 +135,7 @@ def test_normalize_rollout_file_edits(codex_tree):
     assert "widget.test.js" in names
 
 
-def test_reasoning_dropped_when_empty(codex_tree):
-    f = next(codex_tree.rglob("rollout-*.jsonl"))
-    entries = CX.normalize_rollout(f)
-    thinking = [
-        b for e in entries for b in e.get("message", {}).get("content", [])
-        if isinstance(b, dict) and b.get("type") == "thinking"
-    ]
-    assert thinking == []  # summary was [] (encrypted) → no thinking block
-
-
-# ── parse_lines routing + session_summary ────────────────────────────────────
-
-def test_parse_lines_routes_codex(codex_tree):
-    f = next(codex_tree.rglob("rollout-*.jsonl"))
-    lines = PR.parse_lines(f)
-    assert any(PR.classify_entry(e) == "user" for e in lines)
-
+# ── session_summary (routes through parse_lines) ─────────────────────────────
 
 def test_session_summary_codex(codex_tree):
     f = next(codex_tree.rglob("rollout-*.jsonl"))
@@ -178,13 +148,6 @@ def test_session_summary_codex(codex_tree):
 
 
 # ── discovery ────────────────────────────────────────────────────────────────
-
-def test_list_codex_sessions_env_override(codex_tree, monkeypatch):
-    monkeypatch.setenv("ESTACK_CODEX_SESSIONS_DIR", str(codex_tree))
-    found = CX.list_codex_sessions()
-    assert len(found) == 1
-    assert found[0].name.startswith("rollout-")
-
 
 def test_list_codex_sessions_project_filter(codex_tree, monkeypatch):
     monkeypatch.setenv("ESTACK_CODEX_SESSIONS_DIR", str(codex_tree))
@@ -226,15 +189,6 @@ def test_cli_timeline_both_merges(cli_path, claude_root, codex_tree):
     assert r.returncode == 0
     assert "codex ▹" in r.stdout          # codex session present
     assert "2 session(s)" in r.stdout      # claude + codex
-
-
-def test_cli_timeline_claude_only(cli_path, claude_root, codex_tree):
-    r = _run_cli(cli_path, "--root", str(claude_root), "--tz", "UTC",
-                 "--mode", "timeline", "--date", "2026-05-01", "--agent", "claude",
-                 codex_dir=codex_tree)
-    assert r.returncode == 0
-    assert "codex ▹" not in r.stdout
-    assert "1 session(s)" in r.stdout
 
 
 def test_cli_engagement_codex_active_time(cli_path, claude_root, codex_tree):

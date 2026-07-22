@@ -102,7 +102,7 @@ A `/compact` event appears as a `type:"user"` entry whose first text content sta
 
 ## Timestamps
 
-Most entries carry a `timestamp` field in ISO-8601 form (`2026-05-01T10:00:05Z`). `_parse_timestamp` accepts ISO strings, naive ISO, and numeric epoch values. Timezone-aware values are stripped for comparison with `--since`/`--until` (which use local naive datetimes).
+Most entries carry a `timestamp` field in ISO-8601 form (`2026-05-01T10:00:05Z`). `_parse_timestamp` accepts ISO strings, naive ISO, and numeric epoch values, and converts aware values to the display timezone (system local, or `--tz`) as naive datetimes — the same zone `--since`/`--until` are interpreted in, so comparisons line up.
 
 ## Title entries
 

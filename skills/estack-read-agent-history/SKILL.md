@@ -1,6 +1,6 @@
 ---
 name: estack-read-agent-history
-version: 3.0.1
+version: 4.0.0
 description: >-
   (read-agent-history) Invoke for ANY task involving local AI coding-agent
   session history — Claude Code AND Codex (OpenAI codex-cli) transcripts or
@@ -9,21 +9,18 @@ description: >-
   (cross-agent modes take --agent claude|codex|both, default both), post-process
   its JSON when one almost fits, write a scratchpad script on the library when
   none does. Never use the Read tool on a raw .jsonl. Use for: recovering
-  context after /compact, advisor response retrieval, subagent output
-  collection, cross-project keyword search, session listing and triage, UUID and
-  title lookup, resume-command generation, file-edit and tool-call forensics,
-  tool/skill-usage tallies, session diffs, weekly work journal, day timeline of
-  activity blocks and idle gaps across BOTH agents, engagement/attention-time
-  accounting (active vs elapsed, parallel-chat-safe, Claude+Codex merged),
-  recovering from .claude-backups, session counts, and reading the last user or
-  agent message before a crash or interrupt. Trigger phrases: "session history",
-  "chat history", "before compact", "what did claude do", "what did codex do",
-  "what did I work on", "search my sessions", "find that session", "what did the
-  advisor say", "from the backup", "list my sessions", "subagent outputs",
-  "session journal", "resume previous", "which files did claude touch", "what
-  did I do yesterday", "where did my day go", "timeline of my day", "give me an
-  overview", "how much time on", "how long did that actually take", "active
-  time", "codex sessions", "codex history".
+  context after /compact, advisor responses, subagent outputs, cross-project
+  keyword search, session listing and triage, UUID/title lookup, resume
+  commands, file-edit and tool-call forensics, tool/skill-usage tallies, session
+  diffs, work journal, day timeline of activity and idle gaps across BOTH
+  agents, attention-time accounting (active vs elapsed, parallel-chat-safe,
+  Claude+Codex merged), .claude-backups recovery, and reading the last message
+  before a crash. Trigger phrases: "session history", "chat history", "before
+  compact", "what did claude do", "what did codex do", "what did I work on",
+  "search my sessions", "find that session", "list my sessions", "session
+  journal", "resume previous", "what did I do yesterday", "where did my day go",
+  "timeline of my day", "how much time on", "active time", "codex sessions",
+  "codex history".
 ---
 
 # Read Agent Session History
@@ -81,8 +78,7 @@ PY="$HOME/.claude/skills/estack-read-agent-history/scripts/read_transcript.py"
 | UUID prefix → path (either agent) | `python "$PY" --mode lookup --uuid abc123de` |
 | List sessions (both agents) | `python "$PY" --mode list --all-projects --since 7d` |
 | Keyword search everywhere | `python "$PY" --mode search --all-projects --query "supabase migration"` |
-| 6-line session summary | `python "$PY" --file <session.jsonl> --mode brief` |
-| Read one Codex session | `python "$PY" --file ~/.codex/sessions/…/rollout-*.jsonl --mode brief` |
+| 6-line session summary (either agent) | `python "$PY" --file <session-or-rollout.jsonl> --mode brief` |
 | Last assistant / **user** message | `python "$PY" --file <s.jsonl> --mode last [--role user\|both]` |
 | Pre-/compact recovery | `python "$PY" --file <session.jsonl> --mode pre-compact` |
 | All subagent finals | `python "$PY" --file <parent.jsonl> --mode subagent-finals` |
@@ -92,15 +88,15 @@ PY="$HOME/.claude/skills/estack-read-agent-history/scripts/read_transcript.py"
 | Just one agent | add `--agent codex` (or `--agent claude`) to any cross-agent mode |
 | `claude --resume` snippet | `python "$PY" --mode resume-cmd --uuid <prefix>` |
 
-**Both agents by default.** `timeline`, `engagement`, `session-report`, `list`, `journal`, `count`, `tool-usage`, `lookup`, `find`, and `search` merge Claude Code **and** Codex sessions (`--agent both`). A day timeline or attention-time total is computed over ONE merged prompt stream, so parallel Claude/Codex chats split the clock instead of double-counting. Narrow to one agent with `--agent claude` or `--agent codex`. Single-file modes (`--file`) auto-detect a Codex rollout — no flag needed.
+**Both agents by default.** The cross-session modes merge Claude Code **and** Codex over one deduped prompt stream (parallel chats split the clock, never double-count); narrow with `--agent claude|codex`. Single-file modes (`--file`) auto-detect a Codex rollout — no flag needed.
 
-Every mode takes `--format json` (a `source: "claude"|"codex"` field tags each session). Full reference (all ~20 modes, flags, exit codes, JSON shapes, the time-accounting semantics, `--agent`, and presentation defaults for day reviews): `references/modes.md`. Codex schema + gotchas: `references/codex-history.md`. Multi-step workflows: `references/recipes.md`.
+Every mode takes `--format json` (a `source: "claude"|"codex"` field tags each session). Full reference (every mode, flags, exit codes, JSON shapes, the time-accounting semantics, `--agent`, and presentation defaults for day reviews): `references/modes.md`. Codex schema + gotchas: `references/codex-history.md`. Multi-step workflows: `references/recipes.md`.
 
 ## Pitfalls
 
 - **Timestamps in both agents' .jsonl files are UTC.** CLI output and `lib.parser` conversions are already local — never mix raw with converted, never hand-add offsets. (Codex conveniently puts a top-level `timestamp` on every line; Claude on every entry.) Report times to the user in 12-hour format unless asked otherwise.
 - **Raw entry counts lie — in both agents.** Claude `type:user` includes tool-result envelopes and hook/skill `isMeta` injections; `type:assistant` includes tool-only turns. Codex has TWO parallel layers (`event_msg` vs `response_item`) that mirror the same messages — count from one, not both, or you double. The CLI/`lib.parser` already handle this; never hand-tally.
-- **Don't reach for the CLI's engagement/timeline math by hand for Codex.** A shared top-level `timestamp` tempts a `grep`+`awk` active-time hack (with a hardcoded UTC→local offset) — the modes already merge both agents into one deduped stream. Use `--agent both`.
+- **Never hand-roll cross-agent time math.** The shared top-level `timestamp` tempts a `grep`+`awk` hack with a hardcoded UTC offset — `timeline`/`engagement` already merge both agents correctly.
 - **A live transcript's last line may be truncated** — `lib.parser.iter_lines` handles it (Claude and Codex); bare `json.loads` per line crashes.
 - **Bound your output.** Cross-project/cross-agent sweeps can emit tens of thousands of tokens; summarize per session, expand selectively.
 - **Windows:** use `python` (not `python3`); pass Windows-style paths into Python (POSIX paths from Bash cause `FileNotFoundError`); run JSON pipe chains in Bash — PowerShell 5.1 pipes inject a BOM.

@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-"""Extract signal from Claude Code session transcripts.
+"""Extract signal from local agent session transcripts (Claude Code + Codex).
 
-See SKILL.md for the full mode reference. Legacy flags from the v1 script
-(``--list``, ``--list-subagents``, ``--mode {last,advisor,pre-compact,dump,search,debug}``)
-remain byte-compatible.
+See references/modes.md for the full mode reference.
 """
 
 from __future__ import annotations
@@ -95,7 +93,7 @@ SEARCH_SUMMARY_SESSION_CAP = 200
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Legacy mode implementations (kept byte-identical to v1 for backwards-compat)
+# Single-file mode implementations
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _last_messages(lines, n, role):
@@ -374,20 +372,6 @@ def list_session_row(
         f"{marker} {mtime}  {size_kb:6.0f}KB  {uuid_short}  msgs={msg_n:<4}  "
         f"{flags}  {status}{proj}  {title}"
     )
-
-
-def mode_list_legacy(cwd: str, root: Path) -> str:
-    """Original v1 list output — preserved byte-identically."""
-    project_dir = P.find_project_dir(cwd, root)
-    files = P.list_transcripts(project_dir)
-    if not files:
-        return "No transcript files found."
-    out = [f"Transcripts for {cwd}:"]
-    for f in files:
-        size_kb = f.stat().st_size / 1024
-        mtime = _fmt_mtime(f.stat().st_mtime)
-        out.append(f"  {mtime}  {size_kb:6.0f}KB  {f.name}")
-    return "\n".join(out)
 
 
 def _scoped_project_dirs(
@@ -972,8 +956,10 @@ def mode_count(
     sources: list[Path] = []
     project_dirs = _scoped_project_dirs(root, cwd, all_projects, project) if _wants_claude(agent) else None
     for pd in (project_dirs or []):
-        sources.extend(P.list_transcripts(pd, since=since, until=until))
-    # until=None: search_session filters by message timestamp, not file mtime.
+        # since-only mtime prefilter, same as search: a session modified after
+        # `until` can still hold in-window matches (the per-message window is
+        # applied inside search_session).
+        sources.extend(P.list_transcripts(pd, since=since))
     sources.extend(_codex_sessions(root, agent, since, None, cwd, all_projects, project))
     if exclude_current and current_uuid:
         sources = [f for f in sources if f.stem != current_uuid]
@@ -1565,7 +1551,6 @@ def build_engagement(
         "break_minutes": break_minutes,
         "sessions": sessions,
         "breaks": breaks,
-        "stream_events": len(stream),
     }
 
 
@@ -1796,7 +1781,7 @@ def session_report_json(data: dict) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# JSON builders for legacy single-file modes
+# JSON builders for the single-file modes
 # ─────────────────────────────────────────────────────────────────────────────
 
 def json_last(lines: list[dict], n: int, role: str = "assistant") -> list[dict]:
@@ -1879,17 +1864,14 @@ def json_debug(lines: list[dict]) -> dict:
 # CLI dispatch
 # ─────────────────────────────────────────────────────────────────────────────
 
-LEGACY_MODES = {"last", "advisor", "pre-compact", "dump", "search", "debug"}
-
-NEW_MODES = {
+ALL_MODES = {
+    "last", "advisor", "pre-compact", "dump", "search", "debug",
     "list", "lookup", "find", "resume-cmd", "whoami", "brief",
     "changelog", "file-edits", "tool-calls", "tool-usage",
     "subagent-list", "subagent-finals", "subagent-tools", "subagent-files",
     "resume-prev", "count", "journal", "diff", "timeline", "engagement",
     "session-report",
 }
-
-ALL_MODES = LEGACY_MODES | NEW_MODES
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1961,14 +1943,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--force-dump", action="store_true",
                    help="Bypass the 5MB dump-size guard")
     p.add_argument("--format", default="text", choices=["text", "json"],
-                   help="Output format (json works on every mode except the legacy aliases)")
-    p.add_argument("--json", action="store_true", help="Alias for --format json")
+                   help="Output format (json works on every mode)")
     p.add_argument("-n", type=int, default=5, help="Count modifier (last/dump/resume-prev)")
-
-    # Legacy alias flags
-    p.add_argument("--list", action="store_true", help="List transcripts (legacy alias for --mode list)")
-    p.add_argument("--list-subagents", action="store_true",
-                   help="List subagent files (legacy alias for --mode subagent-list)")
     return p
 
 
@@ -1990,31 +1966,7 @@ def main() -> int:
         print(str(e), file=sys.stderr)
         return 1
 
-    fmt = "json" if (args.format == "json" or args.json) else "text"
-
-    # Legacy alias translation — do NOT modify output for these paths.
-    if args.list:
-        if not args.cwd:
-            print("--cwd required with --list", file=sys.stderr)
-            return 1
-        root = P.resolve_root(args.root)
-        print(mode_list_legacy(args.cwd, root))
-        return 0
-
-    if args.list_subagents:
-        if not args.file:
-            print("--file required with --list-subagents", file=sys.stderr)
-            return 1
-        path = Path(args.file)
-        subs = P.list_subagents(path)
-        if not subs:
-            print("No subagent transcripts found.")
-            return 0
-        print(f"Subagents for {path.name}:")
-        for f in subs:
-            size_kb = f.stat().st_size / 1024
-            print(f"  {size_kb:5.0f}KB  {f.name}")
-        return 0
+    fmt = "json" if args.format == "json" else "text"
 
     root = P.resolve_root(args.root)
     current_uuid = P.current_session_id()
@@ -2169,12 +2121,14 @@ def main() -> int:
                     root, args.agent, e_since, None, args.cwd,
                     args.all_projects, args.project, default_all=True,
                 )
+        # include_claude stays purely --agent-driven: even for a Codex --file,
+        # Claude prompts must remain in the global stream (the reporting loop
+        # already restricts output to report_file) or the dedup math breaks the
+        # documented always-global invariant.
         data = build_engagement(
             root, report_dirs, report_file, e_since, e_until, break_minutes,
             current_uuid, exclude_current=args.exclude_current,
-            include_claude=_wants_claude(args.agent) and not (
-                report_file and CX.is_codex_rollout(report_file)
-            ),
+            include_claude=_wants_claude(args.agent),
             codex_stream=codex_stream, codex_report=codex_report,
         )
         if mode == "session-report":
@@ -2264,7 +2218,7 @@ def main() -> int:
         _emit(mode_tool_calls(path, _split_tools(args.tool), fmt=fmt))
         return 0
 
-    # Legacy single-file modes
+    # Single-file text/JSON modes
     lines = PR.parse_lines(path)
 
     if fmt == "json":
@@ -2275,7 +2229,7 @@ def main() -> int:
         elif mode == "pre-compact":
             _print_json(json_pre_compact(lines))
         elif mode == "dump":
-            _print_json(json_dump(lines, max(args.n, 80) if args.n != 5 else 80))
+            _print_json(json_dump(lines, args.n if args.n != 5 else 80))
         elif mode == "debug":
             _print_json(json_debug(lines))
         return 0
@@ -2307,7 +2261,7 @@ def main() -> int:
             else:
                 print(mode_last(lines, 10))
         else:
-            body = mode_dump(lines, max(args.n, 80) if args.n != 5 else 80)
+            body = mode_dump(lines, args.n if args.n != 5 else 80)
             if args.include_subagents:
                 body += _append_subagents(path)
             print(body)
