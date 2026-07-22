@@ -1,9 +1,15 @@
 ---
 name: estack-better-title
-version: 1.1.0
+version: 1.2.0
 description: (better-title) Suggest better chat session titles and rename the session
 disable-model-invocation: true
-allowed-tools: Bash, AskUserQuestion
+allowed-tools:
+  - Bash(bash */scripts/rename.sh*)
+  - Bash(bash */scripts/current-title.sh*)
+  - Bash(gh --version)
+  - Bash(gh issue create *)
+  - Bash(python3 -c *)
+  - AskUserQuestion
 ---
 
 # Better Title
@@ -13,24 +19,20 @@ The current session ID is: ${CLAUDE_SESSION_ID}
 ## Current title
 
 ```!
-SESSION_FILE=$(find "$HOME/.claude/projects/" -maxdepth 2 -name "${CLAUDE_SESSION_ID}.jsonl" -type f 2>/dev/null | head -1)
-LAST_CUSTOM=""
-[[ -n "$SESSION_FILE" ]] && LAST_CUSTOM=$(grep '"type":"custom-title"' "$SESSION_FILE" | tail -n 1)
-if [[ -n "$LAST_CUSTOM" ]]; then
-  node -e '
-    const line = process.argv[1];
-    try {
-      const o = JSON.parse(line);
-      if (o.customTitle) { console.log("Current title: " + o.customTitle); process.exit(0); }
-    } catch {}
-    console.log("No current title is set for this session.");
-  ' "$LAST_CUSTOM"
-else
-  echo "No current title is set for this session."
-fi
+SID="${CLAUDE_SESSION_ID}"
+[ -n "$SID" ] || SID="$CLAUDE_CODE_SESSION_ID"
+DIR="${CLAUDE_SKILL_DIR}"
+[ -n "$DIR" ] || DIR="$HOME/.claude/skills/estack-better-title"
+bash "$DIR/scripts/current-title.sh" "$SID"
 ```
 
 If the output above shows a current title, factor it into your suggestions — keep whatever part of it still fits, refine the parts that don't, and don't propose something that just re-describes what it already says. If it says no title is set, draft from scratch.
+
+If you need to re-check the title later — e.g. the user paused mid-flow and asked you to finish the rename on a later turn — run the same lookup manually (it's pre-approved in this skill's `allowed-tools`):
+
+```bash
+bash "${CLAUDE_SKILL_DIR}/scripts/current-title.sh" "${CLAUDE_SESSION_ID}"
+```
 
 ## Your task
 
@@ -89,7 +91,7 @@ Replace `<chosen title>` with the actual chosen title. The quoted heredoc (`<<'_
 
 `rename.sh` already retries a locked append with exponential backoff (Windows can hold a transient exclusive lock on the session file it's actively writing to — the retry window runs up to ~16 seconds to reliably outlast it, since the live CLI writes to that same file on nearly every turn). If it still fails after all retries, or a permission prompt interrupts this exact command, do NOT go inspect, open, or probe the session `.jsonl` directly to figure out why — that departs from this skill's single sanctioned append operation and is far more likely to need manual approval or get blocked outright than the retry itself. Just tell the user the rename didn't go through and suggest running it again in a few seconds.
 
-If prompts on this exact command are a recurring annoyance (permission mode other than `auto`), the user can add an allow rule scoped to just this invocation to `settings.json`:
+This skill's `allowed-tools` frontmatter pre-approves the rename command (and the feedback-section commands), so on the turn that invoked the skill it runs without a permission prompt. That grant clears when the user sends their next chat message — so if the title is chosen on a later turn (e.g. the user replied in chat instead of picking an `AskUserQuestion` option), the rename may prompt. If that's a recurring annoyance, the user can add a persistent allow rule scoped to just this invocation to `settings.json`:
 
 ```json
 {
