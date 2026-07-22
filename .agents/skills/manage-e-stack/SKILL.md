@@ -1,6 +1,6 @@
 ---
 name: manage-e-stack
-description: "MUST USE for any work on the e-stack repo — adding, editing, or publishing skills. Triggers: 'add a skill to e-stack', 'edit an estack skill', 'publish e-stack', 'release to npm', 'put this in e-stack', 'fix this skill', 'ship it', or any change to files under skills/ or package.json in this repo. Routes to the right step file based on intent."
+description: "MUST USE for any work on the e-stack repo — adding, editing, prepping, or publishing skills. Triggers: 'add a skill to e-stack', 'edit an estack skill', 'publish e-stack', 'release to npm', 'prep for release', 'get it ready to publish but don't publish', 'put this in e-stack', 'fix this skill', 'ship it', or any change to files under skills/ or package.json in this repo. Routes to the right step file based on intent."
 ---
 
 # Working on E-Stack
@@ -14,9 +14,10 @@ This skill is the entry point for all e-stack work. Pick the route that matches 
 | Add a new skill, migrate an existing skill into the repo | `steps/add.md` |
 | Edit a skill that already exists in `skills/` (SKILL.md, scripts, references) | `steps/edit.md` |
 | Add or edit a hook (anything in `hooks/`) | `steps/add-hook.md` |
+| Prep for a later release — make finished work release-ready WITHOUT publishing ("get it ready to publish but don't publish", "don't publish yet", other work still in flight, another session will publish) | `steps/prep.md` |
 | Publish to npm — push a release, ship it, verify a publish | `steps/publish.md` |
 
-If the user's intent spans more than one route (e.g. "add a skill and publish"), run them in order: add → edit (if needed) → publish. Each step file has its own approval gates — do not skip them.
+If the user's intent spans more than one route (e.g. "add a skill and publish"), run them in order: add → edit (if needed) → prep or publish. Each step file has its own approval gates — do not skip them.
 
 ## Universal Conventions
 
@@ -29,6 +30,7 @@ These apply to every route. Violating them breaks the install or publish.
 - **`version` field** (semver, e.g. `version: 1.0.0`) MUST exist in every skill's frontmatter. New skills start at `1.0.0`. **Bump it on every content change** (patch = fix/tweak, minor = new capability, major = rewrite/breaking). Hooks carry a `// @version x.y.z` comment instead. `node scripts/check-versions.cjs` verifies every changed skill/hook bumped its version since the last release (`--fix` auto-bumps patch); the publish workflow runs it as a hard gate. Per-item versions are the human-readable label — the installer's content hashes remain the update-detection source of truth.
 - **Publishing is tag-triggered.** `npm version patch && git push --follow-tags` bumps `package.json`, commits, creates a `v*` tag, and pushes — the tag triggers the npm publish workflow. Regular commits do NOT publish.
 - **NEVER push a `v*` tag without intent to publish.** Any `v*` tag push runs a real npm release.
+- **Prep ≠ publish.** `steps/prep.md` leaves work release-ready (gates green, versions bumped, `[Unreleased]` entries written, committed and pushed) without releasing anything; the next `steps/publish.md` run sweeps up everything prepped. When the user says "don't publish yet" or other work is in flight, route to prep.
 - **Only the repo owner can push to `main`.** Branch protection requires PRs from everyone else.
 - **Live install location:** `~/.agents/skills/estack-*/` (symlinked from `~/.claude/skills/estack-*/`; the installer copies from `skills/` here)
 - **Renaming/removing a skill** requires adding the old folder name to `DEPRECATED_SKILLS` in `bin/install.cjs` — the installer only adds/updates, never deletes, so without this users keep the old folder *and* the new one. See `steps/edit.md`.
@@ -52,7 +54,8 @@ steps/
   add.md              # New skill / migrate an existing skill into the repo
   edit.md             # Edit an existing skill (uses scripts/preflight.sh)
   add-hook.md         # Add or edit a hook in hooks/ (uses scripts/preflight.sh)
-  publish.md          # Cut a release: npm version + push tag
+  prep.md             # Make work release-ready WITHOUT publishing (gates, reviews, changelog, commit+push)
+  publish.md          # Cut a release: verify release-ready, promote CHANGELOG, npm version + push tag
 scripts/
   preflight.sh        # Read-only diagnostics — installed vs repo state, frontmatter check
 ```

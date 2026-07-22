@@ -156,5 +156,6 @@ Cutting `1.0.28` (previous was `1.0.27`):
 
 ```
 ADD/EDIT/HOOK work  →  write to [Unreleased]
+PREP (no publish)   →  verify [Unreleased] covers the work — never promote
 PUBLISH             →  promote [Unreleased] → [X.Y.Z] - date, commit, then npm version + tag
 ```

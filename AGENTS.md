@@ -8,7 +8,7 @@ One naming note: "the skill folder" means `~/.agents/skills/` — that's where C
 
 The same split applies inside this repo, one level down: this repo's own dev-tooling skill lives at `.agents/skills/manage-e-stack/` (source of truth, tracked in git). `.claude/skills/` is a local directory junction pointing at `.agents/skills/` — untracked, gitignored, regenerated per machine. Don't edit anything under `.claude/skills/` directly; edit `.agents/skills/manage-e-stack/` instead. `.claude/settings.json` is the one exception — it's Claude Code-only config, not agent-agnostic, so it stays a real file directly under `.claude/` rather than moving under `.agents/`.
 
-Two things I care enough about to name explicitly: publishing and syncing. Publishing is tag-triggered — any version tag kicks off a real npm release, so never push one without intent. Syncing skills to the live location is destructive — always show me the diff and wait for my go-ahead before running the install. Before any publish, update all relevant docs to reflect what changed — README descriptions, AGENTS.md listing, and any docs/ reference files.
+Two things I care enough about to name explicitly: publishing and syncing. Publishing is tag-triggered — any version tag kicks off a real npm release, so never push one without intent. Prep is split from publish — "get it ready but don't publish" is its own route (prep) in manage-e-stack. Syncing skills to the live location is destructive — always show me the diff and wait for my go-ahead before running the install. Before any publish, update all relevant docs to reflect what changed — README descriptions, AGENTS.md listing, and any docs/ reference files.
 
 | Task | Action |
 |---|---|

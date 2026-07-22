@@ -66,8 +66,10 @@ Tip: you can run `node bin/install.cjs` (no flags) first for a read-only preview
 
 Then re-run preflight to verify everything installed correctly. If anything fails, stop and fix.
 
-## Phase 4: Route to Publish
+## Phase 4: Route to Prep or Publish
 
-After successful install, ask: **"Want to publish to npm?"**
+After successful install, ask: **"Publish to npm now, or just prep for a later release?"**
 
-If yes, follow `steps/publish.md`.
+- **Publish now** → follow `steps/publish.md`
+- **Prep only** (other work in flight; a later session publishes) → follow `steps/prep.md`
+- **Neither** → done, but note the work still needs a prep or publish pass before it ships

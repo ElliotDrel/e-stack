@@ -106,6 +106,6 @@ git push
 
 Committing alone does NOT publish. Publishing is triggered by pushing a `v*` git tag (see `steps/publish.md`).
 
-## 9. Route to publish (optional)
+## 9. Route to prep or publish (optional)
 
-If the user wants this change released to npm, follow `steps/publish.md`.
+If the user wants this change released to npm now, follow `steps/publish.md`. If it should ship in a LATER release (other work in flight; another session publishes), follow `steps/prep.md` to make it release-ready without publishing.

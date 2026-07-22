@@ -86,8 +86,9 @@ node -e "JSON.parse(require('fs').readFileSync(require('os').homedir()+'/.claude
 
 Confirm the hook entry is present in settings.json under the expected event.
 
-## Phase 5: Route to Publish
+## Phase 5: Route to Prep or Publish
 
-Ask: **"Want to publish to npm?"**
+Ask: **"Publish to npm now, or just prep for a later release?"**
 
-If yes, follow `steps/publish.md`. Publishing is triggered by pushing a `v*` tag, not by a commit message.
+- **Publish now** → follow `steps/publish.md`. Publishing is triggered by pushing a `v*` tag, not by a commit message.
+- **Prep only** (other work in flight; a later session publishes) → follow `steps/prep.md`.
