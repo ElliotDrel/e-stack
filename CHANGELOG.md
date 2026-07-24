@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-email-writer` skill — general-purpose email writing, editing, and review for any email where the recipient already knows the sender (partner outreach, event invitations, scheduling, replies, coaching someone else's draft). Covers the whole craft: subject lines that put the reason to open in the first ~40 characters and never lead with the recipient's own name, openers built on genuine shared context instead of pleasantries, bodies that persuade with specifics and plain words, why-them lines grounded in something true about the reader, one small time-boxed no-oriented ask, scheduling that closes in one reply (concrete slots plus a scheduling-link fallback), and the sound-like-a-human voice guide with the read-aloud test. Works in tandem with `estack-cold-message-writer` — that skill owns first-touch psychology, this one owns the craft.
+
+### Changed
+- `estack-cold-message-writer` skill (1.1.0) — now pairs explicitly with the new `estack-email-writer`: the general-purpose voice guide (sender's real voice, AI tells, read-aloud test) moved there so it's shared by all email writing, and the cold skill keeps a pointer plus its cold-specific voice notes (lowercase DM register, roughing up drafts that read too clean). Load both for a cold email; use `estack-email-writer` alone when the recipient already knows the sender.
+
 ---
 
 ## [1.0.58] - 2026-07-22

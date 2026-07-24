@@ -1,12 +1,14 @@
 ---
 name: estack-cold-message-writer
-version: 1.0.0
+version: 1.1.0
 description: (cold-message-writer) Write cold outreach messages that actually get replies, on LinkedIn, in email, or in X (Twitter) DMs. Use this skill whenever the user wants to reach out cold to someone they don't know or barely know, including phrases like "write a cold DM," "cold email," "LinkedIn message to," "reach out to," "pitch [person]," "how do I get [person] to reply," "DM this investor/recruit/partner/podcast host," "email a founder/company I want to work for," "cold email for a job," "land a job at [company]," "reach out about a role," "follow up with someone who ghosted," or any request to draft a first-touch message to a stranger or near-stranger for fundraising, hiring, partnerships/BD, press/podcasts/speaking, or job-seeking. Trigger this even when the user just pastes a name, a role, and "help me reach out," and even when they don't say the word "cold."
 ---
 
 # Cold message writer
 
 The entire job of a cold message is to make one real person feel like you wrote it only for them. Get that right and the reply takes care of itself. Get it wrong, and it doesn't matter how polished the words are. Most cold outreach fails because it's about the sender (their title, their company, their CV) and reads like it was pasted into a list of 500 names. This skill writes the opposite of that.
+
+This skill owns first-touch psychology: making the reader feel chosen, hooks, weightless asks, ghost sequences. The general email craft — subject-line mechanics, body structure, the scheduling ask, and the full sound-like-a-human voice guide — lives in `estack-email-writer`. For a cold email, load both and let them work in tandem: this skill decides the strategy and the hook, that one polishes the craft. If the recipient already knows the sender or their org, use `estack-email-writer` alone.
 
 ## The one rule everything serves
 
@@ -58,26 +60,10 @@ The principles are constant. The mechanics change by channel.
 
 This is the deepest version of the one rule, and the most common failure. A cold message that is tactically perfect but tonally polished still dies, because polish is the tell of a template, and a template is exactly what the reader filters out. The target is not "well written." The target is "a real person clearly typed this for me, probably between meetings." Slightly rough beats smooth.
 
-**Ground it in the sender's real voice first.** Before drafting, use whatever you have of how this person actually writes: their past posts, prior messages, a voice skill they've built, anything in context. Match that. If you have no read on their voice and it matters, ask for a sample or a link. Do not fall back to a generic competent register, that is the thing that reads as AI.
+The full voice guide — grounding the draft in the sender's real voice, the AI tells to kill, what human writing looks like, and the read-aloud test — lives in `estack-email-writer` (the "Sound like a human" section). Run it on every draft before handing it over; it applies doubly here, because a cold reader is actively filtering for templates. Two cold-specific additions on top of that guide:
 
-**AI tells to kill (rewrite if any appear):**
-- Tidy parallelism and wordplay ("content, not a contract," "a start, not a finish"). Clever balance reads as crafted, not typed.
-- Balanced triplets and lists of three.
-- Summary or bow-tie lines that wrap the point up neatly ("there's an obvious collab sitting right there").
-- Every sentence the same length and shape. Real writing is lumpy.
-- Filler intensifiers and generic enthusiasm ("the exact crowd," "every single day," "genuinely excited," "amazing opportunity").
-- Em-dashes. Corporate throat-clearing ("I hope this finds you well"). Stacked adjectives. Templated parenthetical sign-offs.
-
-**What human looks like:**
-- Lowercase, contractions, the occasional fragment.
-- Asymmetric rhythm. A short line, then a longer one, then three words.
-- One real, specific detail instead of a tidy abstraction.
-- A small aside or hedge that no template would include ("bit of a long shot," "promise i'm not here to pitch").
-- The casual register of a text to a peer, not a pitch to a prospect.
-
-When a draft reads clean and balanced, that is the signal to mess it up on purpose: cut a connective, break the parallelism, drop a word, let one line run short.
-
-**The read-aloud test.** Before handing a draft over, read it out loud, ideally to another person, but to yourself works. Does it sound like the sender actually talking? Would they say these words to a peer? Anything you'd never say out loud (a buzzword, a stacked adjective, a tidy bow-tie line) gets cut. This single check catches most of the AI tells above.
+- Lowercase throughout reads native in DMs, and the casual register of a text to a peer beats a pitch to a prospect.
+- When a draft reads clean and balanced, that is the signal to mess it up on purpose: cut a connective, break the parallelism, drop a word, let one line run short.
 
 ## Anti-patterns (rewrite if any appear)
 
