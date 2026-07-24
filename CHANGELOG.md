@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.59] - 2026-07-24
+
 ### Added
 - `estack-email-writer` skill — general-purpose email writing, editing, and review for any email where the recipient already knows the sender (partner outreach, event invitations, scheduling, replies, coaching someone else's draft). Covers the whole craft: subject lines that put the reason to open in the first ~40 characters and never lead with the recipient's own name, openers built on genuine shared context instead of pleasantries, bodies that persuade with specifics and plain words, why-them lines grounded in something true about the reader, one small time-boxed no-oriented ask, scheduling that closes in one reply (concrete slots plus a scheduling-link fallback), and the sound-like-a-human voice guide with the read-aloud test. Works in tandem with `estack-cold-message-writer` — that skill owns first-touch psychology, this one owns the craft.
 
@@ -526,7 +530,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.58...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.59...HEAD
+[1.0.59]: https://github.com/ElliotDrel/e-stack/compare/v1.0.58...v1.0.59
 [1.0.58]: https://github.com/ElliotDrel/e-stack/compare/v1.0.57...v1.0.58
 [1.0.57]: https://github.com/ElliotDrel/e-stack/compare/v1.0.55...v1.0.57
 [1.0.55]: https://github.com/ElliotDrel/e-stack/compare/v1.0.54...v1.0.55
