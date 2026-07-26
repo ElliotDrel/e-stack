@@ -2,6 +2,8 @@
 
 e-stack publishes to npm via GitHub Actions when a git tag matching `v*` is pushed (`.github/workflows/publish.yml`).
 
+The shared startup updater is the exception to the Claude-only hook location: its core and Claude/Codex adapters install to `~/.agents/hooks/`, while `bin/install.cjs` registers the appropriate adapter in `~/.claude/settings.json` and `~/.codex/hooks.json`. Neither host auto-discovers hooks from `~/.agents/`; the explicit host registrations remain required.
+
 The package ships both `skills/` and `hooks/` (whitelisted in `package.json`'s `files` field). Skills install to `~/.agents/skills/estack-*/` (symlinked from `~/.claude/skills/estack-*/`). Any agent that reads `~/.agents/skills/` — including OpenClaw, Codex, ChatGPT, and Cursor — will pick up skills automatically with no extra config. Hooks are Claude Code-only: they install to `~/.claude/hooks/` and get registered in `~/.claude/settings.json` by `bin/install.cjs`. Do not try to route hooks through `~/.agents/`.
 
 ### How to publish

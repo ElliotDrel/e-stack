@@ -44,6 +44,17 @@ check('skill real dir in ~/.agents/skills/', isRealDir(agentsSkill(SAMPLE)));
 check('symlink in ~/.claude/skills/', isLink(claudeSkill(SAMPLE)));
 check('SKILL.md readable through link', fs.existsSync(path.join(claudeSkill(SAMPLE), 'SKILL.md')));
 check('no estack-* strays at ~/.agents root', fs.readdirSync(path.join(SANDBOX, '.agents')).filter(n => n.startsWith('estack-')).length === 0);
+check('shared startup adapters installed in ~/.agents/hooks/',
+  ['estack-startup-update-core.js', 'estack-claude-startup.js', 'estack-codex-startup.js']
+    .every((name) => fs.existsSync(path.join(SANDBOX, '.agents', 'hooks', name))));
+check('startup adapters are not duplicated in ~/.claude/hooks/',
+  !fs.existsSync(path.join(SANDBOX, '.claude', 'hooks', 'estack-claude-startup.js')));
+const claudeSettings = JSON.parse(fs.readFileSync(path.join(SANDBOX, '.claude', 'settings.json'), 'utf8'));
+const claudeStartupHooks = claudeSettings.hooks.SessionStart.find((group) => group.matcher === 'startup').hooks;
+check('Claude startup hook uses the shared adapter', claudeStartupHooks.some((hook) => hook.command.includes('.agents/hooks/estack-claude-startup.js')));
+const codexHooks = JSON.parse(fs.readFileSync(path.join(SANDBOX, '.codex', 'hooks.json'), 'utf8'));
+const codexStartupHooks = codexHooks.hooks.SessionStart.find((group) => group.matcher === 'startup').hooks;
+check('Codex startup hook uses the shared adapter', codexStartupHooks.some((hook) => hook.command.includes('.agents/hooks/estack-codex-startup.js')));
 
 // ── Scenario B: v1.0.23 layout migration (skills at ~/.agents root) ──────────
 console.log('\nScenario B: migrate v1.0.23 layout (~/.agents/<name> + junction)');
@@ -99,6 +110,9 @@ freshSandbox();
 runInstaller(['--install']);
 const out2 = runInstaller(['--install']);
 check('reports 0 skills installed', out2.includes('0 skills installed'));
+const codexHooksAfterSecondInstall = JSON.parse(fs.readFileSync(path.join(SANDBOX, '.codex', 'hooks.json'), 'utf8'));
+const codexStartupHooksAfterSecondInstall = codexHooksAfterSecondInstall.hooks.SessionStart.find((group) => group.matcher === 'startup').hooks;
+check('Codex startup-hook registration is idempotent', codexStartupHooksAfterSecondInstall.filter((hook) => hook.command.includes('estack-codex-startup.js')).length === 1);
 
 // ── Scenario H: deprecated skill at v1.0.23 location gets removed ────────────
 console.log('\nScenario H: deprecated skill at old ~/.agents root is removed');
@@ -110,6 +124,45 @@ check('deprecated skill gone from ~/.agents/skills/', !fs.existsSync(path.join(S
 check('deprecated skill gone from ~/.claude/skills/', !fs.existsSync(path.join(SANDBOX, '.claude', 'skills', 'estack-prompt-builder')) && !isLink(path.join(SANDBOX, '.claude', 'skills', 'estack-prompt-builder')));
 
 // ── Cleanup ───────────────────────────────────────────────────────────────────
+// ── Scenario I: migrate the legacy direct Claude updater to the shared adapter ──
+console.log('\nScenario I: migrate legacy direct Claude startup updater');
+freshSandbox();
+fs.mkdirSync(path.join(SANDBOX, '.claude'), { recursive: true });
+fs.writeFileSync(path.join(SANDBOX, '.claude', 'settings.json'), JSON.stringify({
+  hooks: {
+    SessionStart: [{
+      matcher: 'startup',
+      hooks: [{ type: 'command', command: 'npx --yes elliot-stack@latest --startup' }],
+    }],
+  },
+}));
+runInstaller(['--install']);
+const migratedSettings = JSON.parse(fs.readFileSync(path.join(SANDBOX, '.claude', 'settings.json'), 'utf8'));
+const migratedStartupHooks = migratedSettings.hooks.SessionStart.find((group) => group.matcher === 'startup').hooks;
+check('legacy direct updater removed', !migratedStartupHooks.some((hook) => hook.command.includes('elliot-stack@latest --startup')));
+check('shared Claude adapter added', migratedStartupHooks.filter((hook) => hook.command.includes('estack-claude-startup.js')).length === 1);
+
+// ── Scenario J: remove a leftover direct updater even if the adapter exists ──
+console.log('\nScenario J: clean a mixed Claude startup configuration');
+migratedStartupHooks.push({ type: 'command', command: 'npx --yes elliot-stack@latest --startup' });
+fs.writeFileSync(path.join(SANDBOX, '.claude', 'settings.json'), JSON.stringify(migratedSettings));
+runInstaller(['--install']);
+const cleanedSettings = JSON.parse(fs.readFileSync(path.join(SANDBOX, '.claude', 'settings.json'), 'utf8'));
+const cleanedStartupHooks = cleanedSettings.hooks.SessionStart.find((group) => group.matcher === 'startup').hooks;
+check('mixed configuration retains only the shared adapter',
+  cleanedStartupHooks.filter((hook) => hook.command.includes('estack-claude-startup.js')).length === 1 &&
+  !cleanedStartupHooks.some((hook) => hook.command.includes('elliot-stack@latest --startup')));
+
+// ── Scenario K: a local shared-adapter edit is backed up before replacement ──
+console.log('\nScenario K: preserve local shared-adapter edits');
+const sharedCore = path.join(SANDBOX, '.agents', 'hooks', 'estack-startup-update-core.js');
+fs.appendFileSync(sharedCore, '\n// local change\n');
+runInstaller(['--install']);
+const backupCore = path.join(SANDBOX, '.estack-backup', 'hooks', 'estack-startup-update-core.js');
+check('local shared-adapter edit backed up', fs.existsSync(backupCore) && fs.readFileSync(backupCore, 'utf8').includes('// local change'));
+check('shared adapter restored from the package', !fs.readFileSync(sharedCore, 'utf8').includes('// local change'));
+
+// ── Cleanup ──────────────────────────────────────────────────────────────────
 fs.rmSync(SANDBOX, { recursive: true, force: true });
 console.log('\n' + (failures === 0 ? 'ALL EDGE CASES PASSED.' : failures + ' EDGE-CASE FAILURE(S).'));
 process.exit(failures > 0 ? 1 : 0);

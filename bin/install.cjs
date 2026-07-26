@@ -10,15 +10,23 @@ const readline = require('readline');
 // ── Paths ──────────────────────────────────────────────────────────────────
 const HOME = os.homedir();
 const CLAUDE_DIR = path.join(HOME, '.claude');
+const CODEX_DIR = path.join(HOME, '.codex');
 const SKILLS_DIR = path.join(CLAUDE_DIR, 'skills');
 const AGENTS_ROOT = path.join(HOME, '.agents');
 const AGENTS_DIR = path.join(AGENTS_ROOT, 'skills');
+const AGENTS_HOOKS_DIR = path.join(AGENTS_ROOT, 'hooks');
 const BACKUP_DIR = path.join(HOME, '.estack-backup');
 const CHECKSUMS_FILE = path.join(CLAUDE_DIR, '.estack-checksums.json');
 const SETTINGS_FILE = path.join(CLAUDE_DIR, 'settings.json');
+const CODEX_HOOKS_FILE = path.join(CODEX_DIR, 'hooks.json');
 const PACKAGE_SKILLS_DIR = path.join(__dirname, '..', 'skills');
 const HOOKS_DIR = path.join(CLAUDE_DIR, 'hooks');
 const PACKAGE_HOOKS_DIR = path.join(__dirname, '..', 'hooks');
+const STARTUP_HOOK_FILENAMES = [
+  'estack-startup-update-core.js',
+  'estack-claude-startup.js',
+  'estack-codex-startup.js',
+];
 
 // ── Migrate backup dir from old location (inside .claude) to user root ──────
 (function migrateBackupDir() {
@@ -227,6 +235,32 @@ function computeFileHash(filePath) {
   return hash.digest('hex');
 }
 
+// Startup adapters are shared across agents, so their canonical installed
+// location is ~/.agents/hooks. Claude and Codex each reference the appropriate
+// adapter from their own hook configuration.
+function syncStartupHookSources(dryRun) {
+  const updated = [];
+  for (const filename of STARTUP_HOOK_FILENAMES) {
+    const source = path.join(PACKAGE_HOOKS_DIR, filename);
+    const destination = path.join(AGENTS_HOOKS_DIR, filename);
+    if (!fs.existsSync(source)) continue;
+    const sourceHash = computeFileHash(source);
+    const destinationHash = computeFileHash(destination);
+    if (sourceHash === destinationHash) continue;
+    if (!dryRun) {
+      fs.mkdirSync(AGENTS_HOOKS_DIR, { recursive: true });
+      if (destinationHash !== null) {
+        const backupDestination = path.join(BACKUP_DIR, 'hooks', filename);
+        fs.mkdirSync(path.dirname(backupDestination), { recursive: true });
+        fs.copyFileSync(destination, backupDestination);
+      }
+      fs.copyFileSync(source, destination);
+    }
+    updated.push(filename);
+  }
+  return updated;
+}
+
 function computeSkillHash(skillDir) {
   // statSync (not lstat) so symlinked dirs hash their contents; plain files → null
   try {
@@ -407,23 +441,43 @@ function setupStartupHook(dryRun) {
     }
   }
 
+  let adapterAlreadyConfigured = false;
+  let legacyDirectUpdater = false;
   if (settings.hooks && settings.hooks.SessionStart) {
-    const existing = settings.hooks.SessionStart;
-    for (const group of existing) {
-      if (group.matcher === 'startup' && group.hooks) {
-        for (const hook of group.hooks) {
-          if (hook.command && hook.command.includes('elliot-stack@latest --startup')) {
-            return false;
-          }
+    for (const group of settings.hooks.SessionStart) {
+      if (group.matcher !== 'startup' || !group.hooks) continue;
+      for (const hook of group.hooks) {
+        if (hook.command && hook.command.includes('estack-claude-startup.js')) {
+          adapterAlreadyConfigured = true;
+        }
+        if (hook.command && hook.command.includes('elliot-stack@latest --startup')) {
+          legacyDirectUpdater = true;
         }
       }
     }
   }
 
-  if (dryRun) return true;
+  if (dryRun) return !adapterAlreadyConfigured || legacyDirectUpdater;
 
   if (!settings.hooks) settings.hooks = {};
   if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
+
+  if (legacyDirectUpdater) {
+    for (const group of settings.hooks.SessionStart) {
+      if (!group.hooks) continue;
+      group.hooks = group.hooks.filter(
+        (hook) => !(hook.command && hook.command.includes('elliot-stack@latest --startup'))
+      );
+    }
+  }
+
+  if (adapterAlreadyConfigured) {
+    if (legacyDirectUpdater) {
+      fs.mkdirSync(CLAUDE_DIR, { recursive: true });
+      fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+    }
+    return legacyDirectUpdater;
+  }
 
   let startupGroup = settings.hooks.SessionStart.find(
     (g) => g.matcher === 'startup'
@@ -435,11 +489,82 @@ function setupStartupHook(dryRun) {
 
   startupGroup.hooks.push({
     type: 'command',
-    command: 'npx --yes elliot-stack@latest --startup',
+    command: `node "${path.join(AGENTS_HOOKS_DIR, 'estack-claude-startup.js').replace(/\\/g, '/')}"`,
   });
 
   fs.mkdirSync(CLAUDE_DIR, { recursive: true });
   fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+  return true;
+}
+
+// Returns true if the Codex hook was added (or would be added in dryRun),
+// false if it was already configured. In dryRun mode nothing is written.
+function setupCodexStartupHook(dryRun) {
+  let config = {};
+  if (fs.existsSync(CODEX_HOOKS_FILE)) {
+    try {
+      config = JSON.parse(fs.readFileSync(CODEX_HOOKS_FILE, 'utf8'));
+    } catch (_) {
+      config = {};
+    }
+  }
+
+  let adapterAlreadyConfigured = false;
+  let legacyDirectUpdater = false;
+  if (config.hooks && config.hooks.SessionStart) {
+    for (const group of config.hooks.SessionStart) {
+      if (group.matcher !== 'startup' || !group.hooks) continue;
+      for (const hook of group.hooks) {
+        if (hook.command && hook.command.includes('estack-codex-startup.js')) {
+          adapterAlreadyConfigured = true;
+        }
+        if (hook.command && hook.command.includes('elliot-stack@latest --startup')) {
+          legacyDirectUpdater = true;
+        }
+      }
+    }
+  }
+
+  if (dryRun) return !adapterAlreadyConfigured || legacyDirectUpdater;
+
+  if (!config.hooks) config.hooks = {};
+  if (!config.hooks.SessionStart) config.hooks.SessionStart = [];
+
+  if (legacyDirectUpdater) {
+    for (const group of config.hooks.SessionStart) {
+      if (!group.hooks) continue;
+      group.hooks = group.hooks.filter(
+        (hook) => !(hook.command && hook.command.includes('elliot-stack@latest --startup'))
+      );
+    }
+  }
+
+  if (adapterAlreadyConfigured) {
+    if (legacyDirectUpdater) {
+      fs.mkdirSync(CODEX_DIR, { recursive: true });
+      fs.writeFileSync(CODEX_HOOKS_FILE, JSON.stringify(config, null, 2));
+    }
+    return legacyDirectUpdater;
+  }
+
+  let startupGroup = config.hooks.SessionStart.find(
+    (group) => group.matcher === 'startup'
+  );
+  if (!startupGroup) {
+    startupGroup = { matcher: 'startup', hooks: [] };
+    config.hooks.SessionStart.push(startupGroup);
+  }
+
+  startupGroup.hooks.push({
+    type: 'command',
+    command: `node "${path.join(AGENTS_HOOKS_DIR, 'estack-codex-startup.js').replace(/\\/g, '/')}"`,
+    commandWindows: `node "${path.join(AGENTS_HOOKS_DIR, 'estack-codex-startup.js').replace(/\\/g, '/')}"`,
+    timeout: 120,
+    statusMessage: 'Updating E-Stack skills',
+  });
+
+  fs.mkdirSync(CODEX_DIR, { recursive: true });
+  fs.writeFileSync(CODEX_HOOKS_FILE, JSON.stringify(config, null, 2));
   return true;
 }
 
@@ -551,14 +676,16 @@ async function main() {
   }
 
   // 2b. Scan package hooks
-  const hookFilenames = fs.existsSync(PACKAGE_HOOKS_DIR)
+  const hookFilenames = (fs.existsSync(PACKAGE_HOOKS_DIR)
     ? fs.readdirSync(PACKAGE_HOOKS_DIR).filter((f) => f.endsWith('.js')).sort()
-    : [];
+    : []).filter((filename) => !STARTUP_HOOK_FILENAMES.includes(filename));
 
   const packageHookHashes = {};
   for (const filename of hookFilenames) {
     packageHookHashes[filename] = computeFileHash(path.join(PACKAGE_HOOKS_DIR, filename));
   }
+
+  const startupSourcesUpdated = syncStartupHookSources(DRY_RUN);
 
   // 3. Load existing checksums
   let storedChecksums = {};
@@ -638,7 +765,8 @@ async function main() {
   // 5. Silent mode — no output at all
   if (SILENT) {
     if (needsUpdate.length === 0 && modifiedSkills.length === 0 &&
-        hooksNeedingUpdate.length === 0 && modifiedHooks.length === 0) {
+        hooksNeedingUpdate.length === 0 && modifiedHooks.length === 0 &&
+        startupSourcesUpdated.length === 0) {
       process.exit(0);
     }
     fs.mkdirSync(AGENTS_DIR, { recursive: true });
@@ -664,7 +792,8 @@ async function main() {
   // 6. Startup mode — non-interactive, backup + merge context for Claude Code
   if (STARTUP) {
     if (needsUpdate.length === 0 && modifiedSkills.length === 0 &&
-        hooksNeedingUpdate.length === 0 && modifiedHooks.length === 0) {
+        hooksNeedingUpdate.length === 0 && modifiedHooks.length === 0 &&
+        startupSourcesUpdated.length === 0) {
       process.exit(0);
     }
 
@@ -909,9 +1038,10 @@ async function main() {
   // 9. Write checksums
   if (!DRY_RUN) fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums, null, 2));
 
-  // 10. Setup startup hook and repo-search nudge hook
+  // 10. Setup Claude and Codex startup hooks plus the Claude repo-search nudge.
   // In dry-run these inspect settings.json read-only and report would-be action.
   const hookInstalled = setupStartupHook(DRY_RUN);
+  const codexHookInstalled = setupCodexStartupHook(DRY_RUN);
   const nudgeHookInstalled = setupRepoSearchNudgeHook(DRY_RUN);
 
   // 11. Summary output
@@ -921,11 +1051,17 @@ async function main() {
     if (installedHookCount > 0) {
       console.log('  ' + installedHookCount + ' hook' + (installedHookCount !== 1 ? 's' : '') + ' would be installed/updated in ~/.claude/hooks/');
     }
+    if (startupSourcesUpdated.length > 0) {
+      console.log('  ' + startupSourcesUpdated.length + ' shared startup hook file' + (startupSourcesUpdated.length !== 1 ? 's' : '') + ' would be installed/updated in ~/.agents/hooks/');
+    }
   } else {
     console.log('\nestack installed successfully!\n');
     console.log('  ' + installedCount + ' skill' + (installedCount !== 1 ? 's' : '') + ' installed to ~/.agents/skills/ (symlinked from ~/.claude/skills/; auto-detected by any agent that reads ~/.agents/skills/)');
     if (installedHookCount > 0) {
       console.log('  ' + installedHookCount + ' hook' + (installedHookCount !== 1 ? 's' : '') + ' installed to ~/.claude/hooks/');
+    }
+    if (startupSourcesUpdated.length > 0) {
+      console.log('  ' + startupSourcesUpdated.length + ' shared startup hook file' + (startupSourcesUpdated.length !== 1 ? 's' : '') + ' installed to ~/.agents/hooks/');
     }
   }
   console.log('');
@@ -954,6 +1090,11 @@ async function main() {
     } else {
       console.log('\nAuto-update hook already configured (no change).');
     }
+    if (codexHookInstalled) {
+      console.log('[dry run] Would add auto-update hook to ~/.codex/hooks.json');
+    } else {
+      console.log('Codex auto-update hook already configured (no change).');
+    }
     if (nudgeHookInstalled) {
       console.log('[dry run] Would register repo-search nudge hook in settings.json.');
     } else {
@@ -962,10 +1103,15 @@ async function main() {
   } else {
     if (hookInstalled) {
       console.log('\nAuto-update hook added to ~/.claude/settings.json');
-      console.log('Skills will update automatically when you start Claude Code.');
     } else {
       console.log('\nAuto-update hook already configured.');
     }
+    if (codexHookInstalled) {
+      console.log('Auto-update hook added to ~/.codex/hooks.json');
+    } else {
+      console.log('Codex auto-update hook already configured.');
+    }
+    console.log('Skills will update automatically when you start Claude Code or Codex.');
     if (nudgeHookInstalled) {
       console.log('Repo-search nudge hook registered in settings.json.');
     }

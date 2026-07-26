@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Codex `SessionStart` updater — E-Stack now checks for and installs skill updates when Codex starts, alongside the existing Claude Code startup updater. The updater has one shared source in `~/.agents/hooks/` with small host-specific adapters.
+
 ---
 
 ## [1.0.59] - 2026-07-24

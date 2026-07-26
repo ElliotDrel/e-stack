@@ -11,7 +11,7 @@ A curated set of Claude Code skills by Elliot Drel. One command installs them al
 npx elliot-stack@latest
 ```
 
-This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/skills/`, then registers a `SessionStart` hook so your skills stay up to date automatically. Any agent that reads from `~/.agents/skills/` (OpenClaw, Codex, ChatGPT, Cursor, and others) will pick them up automatically with no extra config.
+This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/skills/`, then registers `SessionStart` hooks for Claude Code and Codex so your skills stay up to date automatically. Any agent that reads from `~/.agents/skills/` (OpenClaw, Codex, ChatGPT, Cursor, and others) will pick them up automatically with no extra config.
 
 ## Skills
 
@@ -42,24 +42,27 @@ This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/sk
 | Hook | Purpose |
 |------|---------|
 | **repo-search-nudge** | Suggests `estack-repo-search` when WebFetch/WebSearch hits GitHub |
+| **estack-startup-update-core** | Shared utility that updates the installed E-Stack package |
+| **estack-claude-startup** | Claude Code adapter for the shared SessionStart updater |
+| **estack-codex-startup** | Codex adapter for the shared SessionStart updater |
 
-Hooks install to `~/.claude/hooks/` and are auto-registered in your `~/.claude/settings.json`.
+The shared startup-hook source installs to `~/.agents/hooks/`. Claude Code and Codex each register their host-specific adapter in their own configuration files (`~/.claude/settings.json` and `~/.codex/hooks.json`).
 
-Important: hooks are a Claude Code feature. Skills are stored in `~/.agents/skills/`
-and linked into Claude, but hook scripts and hook registration can only be installed
-in Claude's config (`~/.claude/hooks/` and `~/.claude/settings.json`).
+Important: E-Stack keeps the reusable startup-hook source in `~/.agents/hooks/`,
+but each host still needs its own hook registration because Claude Code and Codex
+discover lifecycle hooks from different configuration files.
 
 ## How it works
 
 - Skills install to `~/.agents/skills/estack-*/` (symlinked from `~/.claude/skills/estack-*/`; auto-detected by any agent that reads `~/.agents/skills/`, including OpenClaw, Codex, ChatGPT, and Cursor)
-- Hooks are Claude Code-only: they install to `~/.claude/hooks/` and are registered in `~/.claude/settings.json`
-- A `SessionStart` hook auto-updates skills each time you open Claude Code
+- The startup-update core and its two adapters live once in `~/.agents/hooks/`; other E-Stack hook scripts remain Claude Code-only under `~/.claude/hooks/`
+- `SessionStart` adapters auto-update skills each time you open Claude Code or Codex; Codex asks you to review and trust its new command once in `/hooks`
 - If you've made local edits to a skill or hook, the installer detects the conflict and lets you choose: overwrite, skip, or merge
 - Every skill carries its own semver (`version:` in SKILL.md frontmatter; hooks use a `// @version` comment), independent of the package version — update messages show exactly what moved, e.g. `estack-chris-voss (1.0.0 → 1.1.0)`. Under the hood, updates are detected by content hash, so a change can never be missed; a release-time check (`scripts/check-versions.cjs`) guarantees every content change ships with a version bump.
 
 ## Updating
 
-Skills update automatically on session start. To force an update manually:
+Skills update automatically on session start in Claude Code and Codex. To force an update manually:
 
 ```bash
 npx elliot-stack@latest
