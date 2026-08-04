@@ -1,15 +1,78 @@
 ---
 name: estack-flight-planner
-version: 1.0.3
-description: (flight-planner) Find and rank flights between any two airports with config-driven preferences (budget, airlines, nonstop, time-of-day) and optional ground-shuttle pairing. Uses SerpAPI Google Flights (or WebSearch fallback). Saves preferences to `~/.flight-planner/config.json` and logs every search.
+version: 1.2.0
+description: >-
+  (flight-planner) Find and rank flights between any two airports. Handles the
+  parts worth automating (fetching every route, parsing SerpAPI's nested shape,
+  timezone-aware ground-shuttle buffer math on either end of the trip) and
+  leaves filtering and ranking to judgment. Config-driven preferences,
+  reusable trip presets, and per-direction shuttle legs live in
+  `~/.flight-planner/config.json`. Every search is logged.
 disable-model-invocation: true
 ---
 
 # Flight Planner
 
-A deterministic flight search and ranking pipeline. The user supplies their trip (dates + origin + destination) every run; everything else (budget, airlines, time windows, optional shuttle) comes from a saved preferences config so repeat searches are fast.
+A deterministic flight search and ranking pipeline. The user supplies their trip (dates + origin + destination) every run; everything else (budget, airlines, time windows, duration cap, optional shuttle) comes from a saved preferences config so repeat searches are fast.
 
-The math (filtering, pricing, shuttle buffer calculation) runs in Python scripts — never eyeballed by the LLM — so results are reproducible. The LLM's job is orchestration and presentation.
+The math (filtering, pricing, ranking, shuttle buffer calculation) runs in Python scripts — never eyeballed by the LLM — so results are reproducible. The LLM's job is orchestration and presentation.
+
+## What the scripts own, and what you decide
+
+The scripts exist to do the work that is **repetitive, unavoidable, and expensive to get subtly wrong**. Everything else is yours.
+
+| Scripts own it | Why |
+|---|---|
+| Fetching every route × date from SerpAPI | Happens every run regardless of the request. Missing a route means silently recommending the wrong flight. |
+| Parsing SerpAPI's nested shape | Full of traps: arrival time is on the *last* leg, the delay flag is per-leg, a "UA" itinerary can have an AA second leg. Wrong here poisons everything downstream. |
+| Shuttle buffer math | Timezones, overnight rollover, day-of-week schedules. Fiddly, and a silent hour of error puts someone at a closed airport counter. |
+
+**You own filtering, ranking, and the shape of the answer.** Those depend entirely on what this particular user asked for this particular time, and there is no reason to squeeze that into a fixed set of flags.
+
+So: **`load_flights.py` is the real entry point after fetching.** It hands you every itinerary with every field SerpAPI returned (per-leg detail, layover airports and durations, delay and overnight flags, legroom, aircraft, operating carrier, carbon, price insights) and filters nothing.
+
+`filter_flights.py` is an optional convenience covering the common case (budget, airlines, nonstop, time windows, duration). Reach for it when it genuinely fits. The moment the user wants something it doesn't express — "nothing connecting through Charlotte", "I'll pay $60 to land before 6pm", "red-eyes only", "cheapest per hour of my time", "no aircraft with under 30 inches of legroom" — **stop using it and write the pass yourself.** Contorting a real request into `--max-price` and `--soft-filters` gives a worse answer than five lines of Python.
+
+**Put one-off scripts in the scratchpad.** If your harness gives you a session scratchpad directory, write them there; otherwise a temp directory. Never write them into the skill folder, and never edit the shipped scripts to handle a single request. Those scripts are shared by every user of this skill; your custom filter is for this conversation.
+
+```python
+# <scratchpad>/pick_flights.py  -- one-off, throwaway, not part of the skill
+import json, subprocess, sys
+flights = json.loads(subprocess.run(
+    [sys.executable, "scripts/load_flights.py", "--json-dir", JSON_DIR],
+    capture_output=True, text=True).stdout)
+
+# whatever the user actually asked for
+ok = [f for f in flights
+      if not any(lo["airport"] == "CLT" for lo in f["layovers"])
+      and f["arrives"] < "18:00"
+      and f["legroom"] >= "30 in"]
+ok.sort(key=lambda f: f["price"] + (0 if f["stops"] == 0 else 60))
+json.dump(ok, open(OUT, "w"), indent=2)
+```
+
+The output shape matches `filter_flights.py`, so `pair_shuttles.py` accepts it either way.
+
+## Two things that are easy to get wrong
+
+**1. The shuttle can be on either end of the trip.** A ground shuttle pairs with a flight in two different ways, and which one applies depends on the direction the user is travelling:
+
+| Leg | When it applies | Rule |
+|---|---|---|
+| Pre-flight (`to_airport`) | The user is *leaving* from the shuttle's home town | Shuttle must **arrive** at the airport before the flight departs |
+| Post-flight (`from_airport`) | The user is *arriving* at an airport near the shuttle's home town | Shuttle must **depart** the airport after the flight lands |
+
+Both can apply to one itinerary, one can, or neither.
+
+**Always ask which ends need a ride. Never infer it.** Having a shuttle configured for an airport does not mean the user wants one on this trip — they may be getting dropped off, driving and parking, staying with someone near the airport, or stopping somewhere else on the way. Ask plainly:
+
+> Do you need a ride to the airport, from the airport, both, or neither?
+
+A saved preset can carry a default (`shuttle_legs`), and that default is usually right, which is exactly why it still gets confirmed out loud every run rather than applied silently. A wrong assumption here doesn't produce a visible error; it produces a table quietly ranked around a $55 cost the user was never going to pay.
+
+Once you know which legs are needed, fetch **only those directions** — and fetch them properly. A user flying *to* their home town needs the airport-to-town schedule, and scraping only the outbound one produces a table that silently drops every flight.
+
+**2. Soft means soft.** A soft preference is worth a fixed number of dollars in the ranking, not a veto. `filter_flights.py` scores every flight as `price + penalties` so a $400 flight matching every preference will not outrank a $189 flight that misses one. Don't re-sort the script's output by hand.
 
 ## Show progress on every question
 
@@ -54,11 +117,12 @@ This applies to every phase, not just Phase 1. If the user later says "actually,
 
 - `scripts/check_setup.sh` — Deterministic startup check (runs in Phase 0)
 - `scripts/fetch_flights.py` — SerpAPI Google Flights wrapper
-- `scripts/filter_flights.py` — Filter, rank, and cluster-analyze results
-- `scripts/pair_shuttles.py` — Optional: pair flights with a ground shuttle
-- `references/config_schema.md` — Full config.json field reference
+- `scripts/load_flights.py` — Normalize every itinerary, filtering nothing. Start here after fetching.
+- `scripts/filter_flights.py` — Optional convenience filter/rank/cluster-analyze for the common case
+- `scripts/pair_shuttles.py` — Optional: pair flights with a ground shuttle on either end
+- `references/config_schema.md` — Full config.json field reference, including trip presets
 - `references/flight_history_schema.md` — Flight log format reference
-- `references/shuttle_schedules.md` — Template + how-to for users with a local shuttle
+- `references/shuttle_schedules.md` — Shuttle schema, both directions, and how to scrape a schedule page
 
 ## Persistent state (not in the skill directory)
 
@@ -76,12 +140,14 @@ Run these in order every time. Do not skip Phase 2 even if the config looks righ
 The fenced command below runs automatically when the skill is invoked. Read its output before doing anything else — it tells you the user's setup state without you having to ask.
 
 ```!
-bash ~/.claude/skills/estack-flight-planner/scripts/check_setup.sh
+bash ~/.agents/skills/estack-flight-planner/scripts/check_setup.sh
 ```
 
 The output reports:
 - Today's date and local timezone (use this when converting relative dates in Phase 1)
 - Whether `~/.flight-planner/config.json` exists, and if so, all current preferences (with the SerpAPI key masked to "set" or "null")
+- Any saved **trip presets**, with their aliases — these are the fast path in Phase 1
+- The shuttle service: providers, costs, buffer settings, and how many schedule URLs to fetch
 - Whether `SERPAPI_KEY` is set in the environment
 - Whether `~/.flight-planner/flight_history.json` exists and how many entries it has
 
@@ -89,6 +155,7 @@ The output reports:
 - **Config exists** → Phase 1 (ask trip details), then Phase 2 in confirmation mode (show saved prefs, ask "still right?")
 - **Config missing** → Phase 1 (ask trip details), then Phase 2 in wizard mode (walk through each preference, offer to save at end)
 - **Config exists but `serpapi_key: null` AND no env var** → tell the user up front that you'll use the WebSearch fallback in Phase 3 Step 2, with the caveat about coverage
+- **Shuttle configured but zero schedule URLs** → say so now. Pairing cannot run without them, and finding that out in Phase 3 wastes a full search.
 
 Don't repeat back the setup output to the user verbatim — just internalize it and adapt your behavior.
 
@@ -110,7 +177,23 @@ Per the "boil the ocean" mentality above, **do not ask three separate questions*
 
 The user may answer with anything from "May 16-17 IND→EWR" (already precise) to "this weekend Indiana to NJ" (vague). Either way, the next thing you do is **resolve every inferable detail with your tools**, then present a proposed plan.
 
-**Tool steps before you respond:**
+**First: check the trip presets.** If the answer matches a preset's slug, label, or any of its `aliases` — "flying home", "back to campus", "NJ to Purdue" — the route is already decided. **Skip step 2 below entirely.** No airport WebSearch, no alternates hunt; the user already did that research when they saved the preset. Resolve dates, then jump straight to the proposed plan:
+
+```
+Matched your saved preset "home-to-purdue" (NJ -> Purdue).
+
+  Dates:       2026-08-20 (Thu), 2026-08-21 (Fri)
+  Origins:     EWR, LGA, JFK
+  Destinations: IND, ORD
+  Shuttle:     post-flight (land, then ride to West Lafayette)
+  Note:        IND is a 2h/$25 ride; ORD is ~3.5h/$55 but often cheaper to fly into.
+
+Run it?
+```
+
+A preset removes the research, not the confirmation. Still show the resolved plan and wait for a yes. If the user's phrasing is close to but not clearly one of the presets, name the one you think they mean and ask — don't silently pick.
+
+**Tool steps before you respond (no preset matched):**
 
 1. **Resolve dates deterministically with the `date` command via Bash.** Never guess or do calendar math in your head.
    - Today: `date +%Y-%m-%d`
@@ -151,6 +234,8 @@ If the user says "looks good" → proceed to Phase 2 with that route. If they tw
 
 Origin and destination are **never saved to config by default**. The user can opt in to saving them as `home_airport` / `frequent_destinations` in Phase 2 if they want.
 
+**Offer to save a preset when a route is worth repeating.** After a search finishes on a route with no matching preset, and only if the user seems likely to fly it again (they mention school, work, family, "every semester", or it's their second search on the same pair), ask once: *"Want me to save this as a preset so next time you can just say 'flying home' and skip the airport research?"* If yes, write it into `trip_presets` with a slug, a label, the origins/destinations you resolved, and 2-3 aliases in the user's own words. Never save one unprompted.
+
 ### Phase 2 — Preferences confirmation
 
 **If `~/.flight-planner/config.json` exists:**
@@ -163,11 +248,18 @@ Your saved preferences:
   Airlines:         UA, DL (soft)
   Nonstop:          preferred (soft)
   Time priority:    11:00–14:00, 14:00–22:00 (soft)
+  Max duration:     8h (soft)
   SerpAPI key:      set
-  Shuttle service:  none
+  Shuttle service:  Acme Express — IND $25, ORD $55
 
-Are these still your preferences? (yes / change <field> / skip)
+For this trip:
+  Ride FROM the airport at IND/ORD  → yes (preset default)
+  Ride TO the airport at EWR        → no  (no shuttle configured there)
+
+Still right? (yes / change <field>)
 ```
+
+**The shuttle line is never folded into a general "yes".** Call it out as its own item every run, even when the preset default has been correct twenty times running. The user might be getting a ride, driving, or stopping somewhere on the way, and none of those show up as an error later — they just quietly skew the ranking around a cost that was never real.
 
 If the user says "yes" → proceed to Phase 3. If they want to tweak a field for this run only, capture the override without writing it to disk. If they want a permanent change, ask "save this change to your config?" before writing.
 
@@ -183,6 +275,7 @@ Run the first-run setup wizard. **Strength questions are always separate from va
 | 2 | Airlines | "Any airline preferences? (IATA codes like UA, DL, AA — or 'none' for any airline)" | "Are <airlines> hard (only show these) or soft (prefer them but show others)?" |
 | 3 | Nonstop | "Required / preferred / no preference for nonstop?" | (Only if not "no preference") "Is that hard (exclude stops) or soft (rank stops lower)?" |
 | 4 | Time-of-day priority | "Priority time windows for departure? (e.g., 11:00-14:00,14:00-22:00 in 24h format — or 'none')" | (Only if not "none") "Is the <windows> priority hard (exclude flights outside) or soft (rank lower but include)?" |
+| 5 | Max trip length | "Longest total trip you'd accept, gate to gate including layovers? (e.g. 8h — or 'no limit')" | (Only if not "no limit") "Is <N>h hard (exclude longer) or soft (rank longer ones lower)?" |
 
 **One-at-a-time mode:**
 
@@ -206,9 +299,18 @@ Send TWO batches:
 
 **After the strength-paired preferences, ask the remaining non-strength questions** (these don't need a strength companion). One at a time, or one final batch — match the user's chosen pacing:
 
-5. **SerpAPI key** — "Do you have a SerpAPI key? (yes — paste it / no — explain how to get one / skip — use WebSearch fallback)". See the SerpAPI walkthrough section below.
-6. **Optional fields** — "Want to save a home airport so we suggest it next time? (IATA code or 'no')". Same for `frequent_destinations`.
-7. **Optional shuttle service** — "Do you use a ground shuttle to your airport that you'd like the skill to pair flights with? (yes / no)". If yes, ask for company name + schedule URL(s). See shuttle setup below.
+6. **SerpAPI key** — "Do you have a SerpAPI key? (yes — paste it / no — explain how to get one / skip — use WebSearch fallback)". See the SerpAPI walkthrough section below.
+7. **Optional fields** — "Want to save a home airport so we suggest it next time? (IATA code or 'no')". Same for `frequent_destinations`.
+8. **Optional shuttle service** — "Do you use a ground shuttle between your town and an airport? (yes / no)". If yes, ask for:
+   - company name(s) — more than one company serving the same airport is fine and supported
+   - schedule URL(s)
+   - which airports each company serves
+   - one-way cost per airport
+   - **which ends they actually need a ride on** — to the airport, from it, both, or "depends on the trip". This becomes `shuttle_legs` on their presets and it is asked again every run regardless.
+   - if they ride in both directions, you need the return schedule too, not just the outbound one
+   - how much advance notice the company requires (many require 24h)
+
+   See `references/shuttle_schedules.md` for the full sub-schema.
 
 After collecting answers, show the full config and ask "Save this to ~/.flight-planner/config.json?" before writing.
 
@@ -238,7 +340,22 @@ The script reads `SERPAPI_KEY` from the environment or accepts `--api-key`. Save
 
 **If the user has no SerpAPI key:** Use WebSearch to query flight prices for each route × date combination. Tell the user up front: "Without a SerpAPI key, results will be less comprehensive — I'll search the web for each route but won't have structured price/time data." Build a JSON file in the same shape `fetch_flights.py` would produce so the downstream scripts work unchanged. If you're not confident the WebSearch results are reliable, say so and recommend they get a key.
 
-**Step 3 — Filter and rank flights**
+**Step 3 — Load the data, then decide what's good**
+
+Always start by loading everything:
+
+```bash
+python scripts/load_flights.py --json-dir <temp-dir-from-step-2> --with-meta
+```
+
+`--format table` gives a quick scan; `--with-meta` adds SerpAPI's own price insights per route/date (`lowest_price`, `price_level`, `typical_price_range`), which is what lets you say "this is a high fare for this route" rather than just quoting a number.
+
+Now pick your path:
+
+- **The request fits the common shape** (budget, airlines, nonstop, time windows, duration) → use `filter_flights.py` below.
+- **It doesn't** → write a short pass in your scratchpad over the loaded JSON. This is the expected route, not a fallback. Say what rule you applied so the user can correct it.
+
+Either way the result is a JSON array that `pair_shuttles.py` accepts.
 
 ```bash
 python scripts/filter_flights.py \
@@ -247,16 +364,29 @@ python scripts/filter_flights.py \
   --time-priority "11:00-14:00,14:00-22:00" \
   --from IND,ORD \
   --to EWR,LGA \
-  --soft-filters max-price,time-priority
+  --airlines UA \
+  --nonstop \
+  --max-duration-min 480 \
+  --soft-filters max-price,time-priority,airlines,nonstop,duration
 ```
 
 Pass `--soft-filters` listing every preference whose strength is `soft` — those become rank weights instead of hard filters. Pass all hard preferences as strict filters with no `--soft-filters` entry.
+
+A `preferred` + `soft` nonstop setting means you still pass `--nonstop` **and** list `nonstop` in `--soft-filters` — the flag defines the preference, the soft list decides whether it excludes or just ranks.
+
+**Ranking.** Every flight comes back with `rank_score` (dollars: price + a penalty for each soft preference it misses) and `rank_explanation` (the arithmetic). The output is already sorted by it. Default penalties are `nonstop $60, route $50, airlines $40, duration $40, time-priority $30, max-price $0` plus `$15` per rung down the time-band list. `max-price` is $0 on purpose — the overage is already in the price, so charging it again would double-count.
+
+Override with `--soft-penalties "airlines:80,nonstop:120"` when the user says a preference matters more than the default weighting implies ("I really don't want a connection"). Say what you changed and why.
 
 The script outputs filtered flights as JSON to stdout. Capture it for step 5.
 
 **Step 4 — Handle empty results (constraint relaxation)**
 
-If `filter_flights.py` returns `[]`, rerun with `--cluster-analysis`:
+If step 3 came back empty, **never just report "no flights found"** — the flights exist, your constraints ate them. Say which constraint did it and what relaxing it would cost.
+
+Wrote your own pass? Count how many itineraries each condition eliminated on its own; that's a three-line loop over the loaded data and it's the whole answer.
+
+Used `filter_flights.py`? Rerun with `--cluster-analysis`, which does the same thing for its built-in constraints:
 
 ```bash
 python scripts/filter_flights.py --json-dir <dir> --cluster-analysis
@@ -274,23 +404,54 @@ Wait for the user to pick a specific relaxation, then rerun step 3 with adjusted
 
 Skip this entire step if the user's config has `shuttle_service: null`. Otherwise:
 
-Fetch the user's shuttle schedule URLs (from config) with WebFetch in parallel. Build a `shuttles.json` file matching the schema in `references/shuttle_schedules.md`. Then:
+**5a. Use the answer the user gave you in Phase 2** about which ends need a ride. Never re-derive it from which airports happen to have a shuttle configured.
+
+- Ride to the airport → fetch the **pre-flight** (`to_airport`) schedule, pass `--legs pre`.
+- Ride from the airport → fetch the **post-flight** (`from_airport`) schedule, pass `--legs post`.
+- Both → fetch both, pass `--legs both`.
+- Neither → skip this step entirely and show a flights-only table. Don't add a shuttle cost the user isn't paying.
+
+`--legs auto` pairs whichever legs the shuttle data can serve. It's the right default only when the user confirmed they want a ride wherever one exists.
+
+**5b. Fetch the schedules.** WebFetch every URL in every provider's `schedule_urls`, in parallel. Prompt for **both directions explicitly** — most schedule pages carry the outbound and return tables on the same page, and a prompt that only names one direction will come back with only one. Ask for departure time, arrival time, stops, and operating days per run.
+
+If a direction you need isn't on the page, say so and go find it (a sibling URL, the company's schedule page) rather than assuming the return mirrors the outbound. Times that come back ambiguous across a timezone line are worth flagging to the user rather than guessing.
+
+**5c. Build `shuttles.json`** matching the schema in `references/shuttle_schedules.md`: one object per run, each with `airport`, `direction`, `departs_local`, `arrives_local`, and `days` where the schedule varies by weekday. Then:
 
 ```bash
 python scripts/pair_shuttles.py \
   --flights-json <filtered-output-from-step-3> \
   --shuttles-json <shuttles-file> \
-  --shuttle-costs "IND:30,ORD:60"
+  --shuttle-costs "IND:25,ORD:55" \
+  --legs auto \
+  --min-buffer-min 90 \
+  --min-connect-min 60 \
+  --max-wait-min 240 \
+  --now "<today's date and time, ISO>" \
+  --reservation-lead-hours 24
 ```
 
-`--shuttle-costs` is a comma-separated `AIRPORT:USD` list from the user's `shuttle_service.costs` config field. Outputs a markdown ranked plans table. Show it to the user.
+| Flag | Source | Notes |
+|---|---|---|
+| `--shuttle-costs` | `shuttle_service.costs` | Charged once per leg used |
+| `--legs` | derived in 5a | `auto` pairs whichever legs the data can serve; `pre`/`post` force one; `both` requires both and drops flights missing either |
+| `--min-buffer-min` | `shuttle_service.min_buffer_min` | Pre-flight floor (shuttle arrival → flight departure) |
+| `--min-connect-min` | `shuttle_service.min_connect_min` | Post-flight floor (landing → shuttle departure). Raise it if the user checks bags. |
+| `--now` / `--reservation-lead-hours` | today + config | Flags pairings inside the company's booking cutoff |
+| `--include-unpaired` | — | Add it when a lot of flights got dropped and the user should see them anyway |
+| `--format json` | — | Use when you need the numbers rather than the table |
+
+Read the stderr summary line — it says how many flights paired and how many were dropped for missing which leg. If a large share dropped, that usually means a direction is missing from `shuttles.json`, not that the flights are bad.
 
 **Step 6 — Present results**
 
-- If pairing was done: show the markdown table from `pair_shuttles.py` directly.
-- If no shuttle: print a flights-only table with Date | Flight | Route | Departs | Arrives | Price | Airline | Stops | Soft-filter notes.
+- If pairing was done: show the markdown table from `pair_shuttles.py` directly. It's already ranked; don't re-sort it.
+- If no shuttle: print a flights-only table with Date | Flight | Route | Departs | Arrives | Price | Airline | Stops | Notes.
 
-Recommend the top row in one or two sentences. Ask which flight they want to book.
+Long result sets are normal. Show the top 10-15 rows, say how many there are in total, and offer the rest.
+
+Recommend the top row in one or two sentences, and say what the runner-up trades against it (cheaper but a tighter connection, later but nonstop). Ask which flight they want to book.
 
 **Step 7 — Log the selection**
 
@@ -322,9 +483,19 @@ If the user doesn't have a SerpAPI key and asks for help getting one:
 
 **Strength matters.** Hard filters exclude; soft filters rank. Pass soft filters via `--soft-filters` to keep non-matching results visible.
 
+**Don't re-rank by hand.** The scripts emit `rank_score` and `plan_score` on one dollar scale. If the order looks wrong, the fix is a `--soft-penalties` override you can explain, not a manual reshuffle.
+
+**Round trips are priced as two one-ways.** `fetch_flights.py` queries one-way fares (SerpAPI `type=2`). For a round trip, run the whole pipeline once per direction and show two tables. Say plainly that some carriers price a true round trip below two one-ways, so the total is an upper bound worth checking on the airline's own site before booking.
+
 **No shuttle data ships with this skill.** Each user provides their own shuttle service info in their config. The skill scrapes their schedule URLs at search time.
 
-**Origin and destination are not saved by default.** Only save them if the user explicitly opts in.
+**A shuttle serves two directions.** Fetching only the outbound schedule is the most common way to end up with an empty pairing table. Check which leg(s) the trip needs before you fetch.
+
+**A configured shuttle is not a needed shuttle.** Ask which ends want a ride every single run, even when the preset default has been right every time before. Getting this wrong produces no error, just a ranking bent around a cost nobody was going to pay.
+
+**Don't reshape the user's request to fit the flags.** `filter_flights.py` covers the common case only. Anything else gets a scratchpad script over `load_flights.py` output.
+
+**Origin and destination are not saved by default.** Only save them if the user explicitly opts in. Trip presets are the exception — they exist to be saved, but only when the user says yes.
 
 **Two log entries per search.** Entry 1 on fetch (step 1), entry 2 on selection (step 7). Both are written even if the user abandons mid-search — the search_started entry preserves what they were looking for.
 

@@ -1,11 +1,26 @@
 """
 Filter and rank flights from saved SerpAPI JSON files.
 
+OPTIONAL CONVENIENCE, not a required stage. This covers the common shape of a
+request -- a budget, some airlines, nonstop, a couple of time windows -- so you
+don't rewrite it every run. If the user wants something this doesn't express
+(fare class, layover airport, red-eyes only, arrive-before-X, a bespoke
+tradeoff between price and departure time), do NOT contort the request into
+these flags. Run load_flights.py instead and write the pass you actually need;
+its output is the same shape this produces. Parsing is the part worth sharing,
+not the judgment.
+
 Reads JSON files written by fetch_flights.py, applies filters (price, time
 window, route, airlines, nonstop), ranks results, and outputs a JSON list to
 stdout. Filters can be marked "soft" via --soft-filters — soft filters include
 non-matching flights but flag them with `soft_filter_violations` and rank them
 lower.
+
+Ranking is a single dollar-equivalent `rank_score`: the real price plus a
+per-violation penalty for each soft preference the flight misses (see
+DEFAULT_PENALTIES, override with --soft-penalties). This keeps a soft preference
+a thumb on the scale — a $400 flight that matches every preference should not
+outrank a $189 flight that misses one. `rank_explanation` shows the arithmetic.
 
 With --cluster-analysis, prints a constraint-impact report instead of
 filtering: shows which constraint(s) eliminated which flight counts, plus a
@@ -23,14 +38,31 @@ are required for normal filter mode (no defaults — caller passes config values
 Cluster-analysis mode echoes back impact of each provided filter.
 """
 import argparse
-import glob
 import json
 import sys
 import tempfile
 from pathlib import Path
 
+from load_flights import load as _load   # one parser, shared with load_flights.py
 
-SOFT_FILTER_NAMES = {"max-price", "time-priority", "airlines", "nonstop", "route"}
+
+SOFT_FILTER_NAMES = {"max-price", "time-priority", "airlines", "nonstop", "route", "duration"}
+
+# What each soft-filter violation is "worth" in dollars when ranking. A soft
+# preference is a thumb on the scale, not a veto: without this, one violated
+# soft filter would push a $189 flight below a $400 one that happens to match
+# every preference. max-price defaults to 0 because the price is already the
+# thing being scored -- counting it again would double-charge going over budget.
+DEFAULT_PENALTIES = {
+    "max-price": 0,
+    "route": 50,
+    "airlines": 40,
+    "nonstop": 60,
+    "time-priority": 30,
+    "duration": 40,
+}
+# Cost of dropping one rung down the time-priority band list (band 0 is best).
+DEFAULT_BAND_STEP = 15
 
 
 def parse_band(b: str):
@@ -55,46 +87,13 @@ def parse_bands(csv: str):
 
 
 def load_flights(json_dir: Path):
-    flights = []
-    for fname in sorted(glob.glob(str(json_dir / "*.json"))):
-        parts = Path(fname).stem.split("_")
-        if len(parts) < 3:
-            continue
-        dep, arr = parts[0], parts[1]
-        date = "_".join(parts[2:])
-        try:
-            with open(fname, encoding="utf-8") as f:
-                data = json.load(f)
-        except Exception:
-            continue
-        for fg in data.get("best_flights", []) + data.get("other_flights", []):
-            legs = fg.get("flights", [])
-            if not legs:
-                continue
-            leg = legs[0]
-            last_leg = legs[-1]
-            dep_dt = leg.get("departure_airport", {}).get("time", "")
-            arr_dt = last_leg.get("arrival_airport", {}).get("time", "")
-            airline_code = leg.get("airline", "") or ""
-            airline_iata = (leg.get("airline_logo", "") or "")[-6:-4] if "airline_logo" in leg else ""
-            flights.append({
-                "date": date, "from": dep, "to": arr,
-                "flight": leg.get("flight_number", ""),
-                "airline": airline_code,
-                "airline_iata": (leg.get("flight_number", "") or "").split()[0] if leg.get("flight_number") else "",
-                "departs": dep_dt[-5:] if dep_dt else "",
-                "arrives": arr_dt[-5:] if arr_dt else "",
-                "departs_full": dep_dt, "arrives_full": arr_dt,
-                "price": fg.get("price"),
-                "duration_min": fg.get("total_duration", 0),
-                "aircraft": leg.get("airplane", ""),
-                "delayed": fg.get("often_delayed_by_over_30_min", False),
-                "stops": max(0, len(legs) - 1),
-            })
+    """Delegate to load_flights.py so there is exactly one SerpAPI parser."""
+    flights, _meta = _load(json_dir)
     return flights
 
 
-def violations_for(f, max_price, bands, origins, dests, airlines, nonstop_required):
+def violations_for(f, max_price, bands, origins, dests, airlines, nonstop_required,
+                   max_duration=None):
     """Return a list of filter names this flight violates, or [] if it passes all."""
     v = []
     if origins and f["from"] not in origins:
@@ -111,11 +110,65 @@ def violations_for(f, max_price, bands, origins, dests, airlines, nonstop_requir
             in_any = any(in_band(f["departs"], lo, hi) for lo, hi in bands)
             if not in_any:
                 v.append("time-priority")
-    if airlines and f.get("airline_iata") and f["airline_iata"] not in airlines:
-        v.append("airlines")
+    if airlines:
+        # An itinerary only counts as "on a preferred airline" if every leg is.
+        codes = f.get("airline_iatas") or (
+            [f["airline_iata"]] if f.get("airline_iata") else [])
+        if codes and not all(c in airlines for c in codes):
+            v.append("airlines")
     if nonstop_required and f.get("stops", 0) > 0:
         v.append("nonstop")
+    if max_duration is not None and (f.get("duration_min") or 0) > max_duration:
+        v.append("duration")
     return v
+
+
+def parse_penalties(csv: str):
+    """Merge "NAME:USD,NAME:USD" overrides onto DEFAULT_PENALTIES."""
+    out = dict(DEFAULT_PENALTIES)
+    for item in (csv or "").split(","):
+        item = item.strip()
+        if not item:
+            continue
+        if ":" not in item:
+            print(f"ERROR: bad --soft-penalties entry {item!r} - expected NAME:USD",
+                  file=sys.stderr)
+            sys.exit(2)
+        k, v = item.split(":", 1)
+        k = k.strip()
+        if k not in SOFT_FILTER_NAMES:
+            print(f"ERROR: unknown --soft-penalties name {k!r}. "
+                  f"Valid: {sorted(SOFT_FILTER_NAMES)}", file=sys.stderr)
+            sys.exit(2)
+        try:
+            out[k] = float(v.strip())
+        except ValueError:
+            print(f"ERROR: --soft-penalties {k!r} value {v!r} is not a number",
+                  file=sys.stderr)
+            sys.exit(2)
+    return out
+
+
+def rank_score(f, violations, penalties, band_step):
+    """Dollar-equivalent ranking score: real price plus soft-preference penalties.
+
+    Returns (score, explanation_list). A flight with no price sorts last.
+    """
+    price = f.get("price")
+    if price is None:
+        return float("inf"), ["no price available"]
+    score = float(price)
+    why = []
+    for name in violations:
+        p = penalties.get(name, 0)
+        if p:
+            score += p
+            why.append(f"{name} +${p:g}")
+    band = f.get("priority_band", 0)
+    if band and band_step:
+        score += band * band_step
+        why.append(f"time band {band} +${band * band_step:g}")
+    return score, why
 
 
 def priority_band(f, bands):
@@ -128,28 +181,26 @@ def priority_band(f, bands):
     return len(bands)
 
 
-def cluster_analysis(flights, max_price, bands, origins, dests, airlines, nonstop_required):
+def cluster_analysis(flights, max_price, bands, origins, dests, airlines, nonstop_required,
+                     max_duration=None):
     """Report which constraint eliminated which flight counts + price distribution."""
     prices = sorted({f["price"] for f in flights if f["price"] is not None})
 
     # Per-constraint impact: how many would be eliminated by this filter alone
     constraint_impact = {}
-    for name in ("route", "max-price", "time-priority", "airlines", "nonstop"):
-        eliminated = 0
-        for f in flights:
-            v = violations_for(f, max_price, bands, origins, dests, airlines, nonstop_required)
-            if name in v:
-                eliminated += 1
+    all_violations = [
+        violations_for(f, max_price, bands, origins, dests, airlines, nonstop_required,
+                       max_duration)
+        for f in flights
+    ]
+    for name in ("route", "max-price", "time-priority", "airlines", "nonstop", "duration"):
         constraint_impact[name] = {
-            "eliminated": eliminated,
+            "eliminated": sum(1 for v in all_violations if name in v),
             "of_total": len(flights),
         }
 
     # All-filters combined: how many pass everything
-    passing_all = sum(
-        1 for f in flights
-        if not violations_for(f, max_price, bands, origins, dests, airlines, nonstop_required)
-    )
+    passing_all = sum(1 for v in all_violations if not v)
 
     # Price distribution + natural gaps
     gaps = []
@@ -186,6 +237,7 @@ def cluster_analysis(flights, max_price, bands, origins, dests, airlines, nonsto
             "destinations": sorted(dests) if dests else None,
             "airlines": sorted(airlines) if airlines else None,
             "nonstop_required": nonstop_required,
+            "max_duration_min": max_duration,
         },
     }
 
@@ -206,9 +258,18 @@ def main() -> int:
                    help="Comma-separated airline IATA codes (e.g. UA,DL). Empty = any airline.")
     p.add_argument("--nonstop", action="store_true",
                    help="Require nonstop only (stops==0).")
+    p.add_argument("--max-duration-min", type=int, default=None,
+                   help="Max total door-to-door itinerary minutes. Omit for no limit.")
     p.add_argument("--soft-filters", default="",
                    help="Comma-separated filter names treated as soft (rank, don't exclude). "
-                        "Valid: max-price, time-priority, airlines, nonstop, route.")
+                        "Valid: max-price, time-priority, airlines, nonstop, route, duration.")
+    p.add_argument("--soft-penalties", default="",
+                   help='Comma-separated "NAME:USD" overrides for what a soft violation '
+                        'costs in the ranking (e.g. "airlines:80,nonstop:120"). '
+                        f"Defaults: {DEFAULT_PENALTIES}")
+    p.add_argument("--band-step", type=float, default=DEFAULT_BAND_STEP,
+                   help="Dollar cost of each rung down the time-priority band list. "
+                        f"Default {DEFAULT_BAND_STEP}.")
     p.add_argument("--cluster-analysis", action="store_true",
                    help="Print constraint-impact + price distribution report instead of filtering.")
     args = p.parse_args()
@@ -228,6 +289,7 @@ def main() -> int:
     airlines = parse_set(args.airlines)
     bands = parse_bands(args.time_priority)
     soft = parse_set(args.soft_filters)
+    penalties = parse_penalties(args.soft_penalties)
     bad_soft = soft - SOFT_FILTER_NAMES
     if bad_soft:
         print(f"ERROR: unknown --soft-filters values: {sorted(bad_soft)}. "
@@ -236,25 +298,28 @@ def main() -> int:
 
     if args.cluster_analysis:
         report = cluster_analysis(flights, args.max_price, bands, origins, dests,
-                                  airlines, args.nonstop)
+                                  airlines, args.nonstop, args.max_duration_min)
         print(json.dumps(report, indent=2))
         return 0
 
     out = []
     for f in flights:
-        v = violations_for(f, args.max_price, bands, origins, dests, airlines, args.nonstop)
+        v = violations_for(f, args.max_price, bands, origins, dests, airlines, args.nonstop,
+                           args.max_duration_min)
         hard_v = [name for name in v if name not in soft]
         if hard_v:
             continue  # excluded by a hard filter
         f["priority_band"] = priority_band(f, bands)
         f["soft_filter_violations"] = v  # may be empty
+        score, why = rank_score(f, v, penalties, args.band_step)
+        f["rank_score"] = None if score == float("inf") else round(score, 2)
+        f["rank_explanation"] = why
         out.append(f)
 
-    # Sort: # of soft violations asc, then priority band, then price, then departs
+    # Rank on one dollar-equivalent scale so a soft preference is a thumb on the
+    # scale rather than a veto.
     out.sort(key=lambda f: (
-        len(f.get("soft_filter_violations", [])),
-        f.get("priority_band", 0),
-        f.get("price") if f.get("price") is not None else 10**9,
+        f["rank_score"] if f["rank_score"] is not None else 10**9,
         f.get("departs", ""),
     ))
     print(json.dumps(out, indent=2))

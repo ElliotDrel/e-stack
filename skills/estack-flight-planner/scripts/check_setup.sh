@@ -22,12 +22,14 @@ if [ -f "$CONFIG_FILE" ]; then
   echo "Config:      $CONFIG_FILE (exists)"
   echo ""
   echo "--- Saved preferences ---"
-  # Mask serpapi_key value: show as "set" or "null" but never the actual key
+  # Mask serpapi_key value: show as "set" or "null" but never the actual key.
+  # The file is piped in on stdin rather than passed as a path: under Git Bash
+  # on Windows, $HOME is a POSIX path (/c/Users/...) that a native Windows
+  # Python cannot open, so a path argument silently fails here.
   python -c "
 import json, sys
 try:
-    with open(r'''$CONFIG_FILE''', encoding='utf-8') as f:
-        c = json.load(f)
+    c = json.load(sys.stdin)
 except Exception as e:
     print(f'  ERROR reading config: {e}')
     sys.exit(0)
@@ -42,18 +44,62 @@ ns = c.get('nonstop_strength', '?')
 print('  Nonstop:               ' + str(np) + ' (' + str(ns) + ')')
 bands = c.get('time_priority_bands') or []
 print('  Time priority:         ' + (', '.join(bands) if bands else 'none') + ' (' + str(c.get('time_priority_strength', '?')) + ')')
+dur = c.get('max_duration_min')
+print('  Max duration:          ' + (str(dur) + ' min (' + str(c.get('max_duration_strength', '?')) + ')' if dur else 'no limit'))
 print('  Home airport:          ' + str(c.get('home_airport') or 'not set'))
 freq = c.get('frequent_destinations') or []
 print('  Frequent destinations: ' + (', '.join(freq) if freq else 'not set'))
+
+presets = c.get('trip_presets') or {}
+if presets:
+    print('')
+    print('--- Trip presets (name one and skip airport research) ---')
+    for slug, p in presets.items():
+        origins = ','.join(p.get('origins') or []) or '?'
+        dests = ','.join(p.get('destinations') or []) or '?'
+        label = p.get('label') or slug
+        legs = p.get('shuttle_legs') or 'not set'
+        ride = {'departure': 'ride TO the departure airport',
+                'arrival': 'ride FROM the arrival airport',
+                'both': 'ride on BOTH ends',
+                'none': 'no ride needed'}.get(legs, 'shuttle legs not set - ask')
+        print('  ' + slug + ': ' + label + '  [' + origins + ' -> ' + dests + ']')
+        print('      usually: ' + ride + '  (CONFIRM THIS OUT LOUD every run)')
+        aliases = p.get('aliases') or []
+        if aliases:
+            print('      also matches: ' + ', '.join(aliases))
+        if p.get('notes'):
+            print('      note: ' + str(p['notes']))
+else:
+    print('  Trip presets:          none saved')
+
+print('')
 shuttle = c.get('shuttle_service')
 if shuttle:
-    name = shuttle.get('name', '?')
+    providers = shuttle.get('providers')
+    if providers:
+        names = ', '.join(str(pr.get('name', '?')) for pr in providers)
+    else:
+        names = str(shuttle.get('name', '?'))
     costs = shuttle.get('costs', {}) or {}
-    cost_str = ', '.join(f'{k}: \${v}' for k, v in costs.items()) if costs else 'no costs configured'
-    print('  Shuttle service:       ' + str(name) + ' (' + cost_str + ')')
+    cost_str = ', '.join(f'{k} \${v}' for k, v in costs.items()) if costs else 'no costs configured'
+    print('--- Shuttle service ---')
+    print('  Providers:             ' + names)
+    print('  Home:                  ' + str(shuttle.get('home_label') or shuttle.get('home_timezone') or 'not labeled'))
+    print('  Costs (one way):       ' + cost_str)
+    print('  Buffers:               pre-flight ' + str(shuttle.get('min_buffer_min', 90)) +
+          ' min, post-flight ' + str(shuttle.get('min_connect_min', 60)) +
+          ' min, max wait ' + str(shuttle.get('max_wait_min', 240)) + ' min')
+    lead = shuttle.get('reservation_lead_hours')
+    if lead:
+        print('  Reservation lead:      ' + str(lead) + ' h')
+    urls = []
+    for pr in (providers or [shuttle]):
+        urls += list(pr.get('schedule_urls') or [])
+    print('  Schedule URLs:         ' + (str(len(urls)) + ' to fetch at search time' if urls else 'NONE - pairing cannot run'))
 else:
     print('  Shuttle service:       none (pairing step will be skipped)')
-" 2>&1 || echo "  (python not available; cannot parse config — read the file directly)"
+" < "$CONFIG_FILE" 2>&1 || echo "  (python not available; cannot parse config — read the file directly)"
 else
   echo "Config:      $CONFIG_FILE (NOT FOUND)"
   echo ""
@@ -75,14 +121,13 @@ echo ""
 # --- Flight history ---
 if [ -f "$HISTORY_FILE" ]; then
   count=$(python -c "
-import json
+import json, sys
 try:
-    with open(r'''$HISTORY_FILE''', encoding='utf-8') as f:
-        data = json.load(f)
+    data = json.load(sys.stdin)
     print(len(data) if isinstance(data, list) else 0)
 except Exception:
     print(0)
-" 2>/dev/null || echo "?")
+" < "$HISTORY_FILE" 2>/dev/null || echo "?")
   echo "History:     $HISTORY_FILE ($count entries)"
 else
   echo "History:     $HISTORY_FILE (not created yet — first search will create it)"

@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-flight-planner` — `scripts/load_flights.py`, a loader that normalizes every SerpAPI itinerary and filters nothing. Returns per-leg detail, layover airports and durations, delay and overnight flags, legroom, aircraft, operating carrier (a "UA 3443" is often flown by a regional partner), carbon figures, booking tokens, and per-route price insights, as JSON, a table, or CSV. This is the new entry point after fetching.
+- `estack-flight-planner` — post-flight shuttle pairing. `pair_shuttles.py` previously understood only "home → departure airport", so flying *into* the town a shuttle serves had no representation at all and those searches silently dropped every flight. Both legs are now supported and can apply to the same itinerary, selected with `--legs auto|pre|post|both`.
+- `estack-flight-planner` — trip presets (`config.trip_presets`). A saved slug carrying origins, destinations, aliases, and `shuttle_legs` lets a returning user say "flying home" and skip airport research entirely. A preset removes the research step, never the confirmation.
+- `estack-flight-planner` — `shuttle_legs` per preset (`departure` / `arrival` / `both` / `none`), which is direction-specific and usually asymmetric. It is a default the skill proposes, never one it applies silently: the Phase 2 confirmation block breaks it out as its own line every run. A configured shuttle is not a needed shuttle, and a wrong guess here produces no error, just a ranking bent around a cost nobody was going to pay.
+- `estack-flight-planner` — day-of-week shuttle schedules (`days`), a `--max-gap-min` ceiling so a run half a day away stops counting as a connection, reservation-cutoff warnings via `--now` and `--reservation-lead-hours`, plus `--include-unpaired` and `--format json`.
+- 75 pytest cases under `tests/estack-flight-planner/`, covering buffer math in both directions, overnight rollover, the legacy shuttle schema, day filters, the ranking model, loader field preservation, and CLI behavior.
+
+### Changed
+- `estack-flight-planner` skill (1.2.0) — the scripts now own data collection rather than judgment. They keep what is repetitive, unavoidable, and expensive to get subtly wrong (fetching every route, parsing SerpAPI's nested shape, timezone and overnight shuttle math) and hand back everything else untouched. `filter_flights.py` is demoted to an optional convenience for the common shape, with an explicit instruction to abandon it the moment a request does not fit rather than contorting "nothing connecting through Charlotte" or "I'll pay $60 to land before 6pm" into `--max-price` and `--soft-filters`. SKILL.md tells the agent to write that pass in its scratchpad, never into the skill folder and never by editing the shipped scripts.
+- `estack-flight-planner` — ranking is now one dollar-equivalent scale instead of a violation count. Soft preferences previously acted as trumps, so a $400 flight matching every preference outranked a $189 flight that missed one. `rank_score` is `price + a penalty per missed soft preference` (defaults: nonstop $60, route $50, airlines $40, duration $40, time-priority $30, and max-price $0 because the overage is already in the price), overridable with `--soft-penalties`, and `rank_explanation` shows the arithmetic. `pair_shuttles.py` sorts on the same scale, adding real shuttle cost plus what an awkward connection is worth avoiding.
+- `estack-flight-planner` — shuttle times are now understood as local to wherever each event happens, which means the buffer math needs no timezone conversion at all: flight times and airport-side shuttle times are already in the same zone. `--tz-offsets` is accepted and ignored, since it applied the same offset to both sides of the subtraction and always cancelled to zero. Overnight runs are handled by testing the adjacent calendar day, so a 23:40 landing pairs with a 01:00 departure.
+- `estack-flight-planner` — added a `--max-duration-min` filter and `max_duration_min` config field. Useful when nonstop is a soft preference: it lets one-stops through without letting a 14-hour triple-connection through with them.
+
+### Fixed
+- `estack-flight-planner` — `check_setup.sh` printed `ERROR reading config` for every Windows user. Under Git Bash `$HOME` is a POSIX path (`/c/Users/...`) that a native Windows Python cannot open, so passing it as an argument silently failed. The config is now piped in on stdin.
+- `estack-flight-planner` — `often_delayed_by_over_30_min` is a per-leg flag but was read off the itinerary, so the delay warning never fired.
+- `estack-flight-planner` — the airline filter only checked the first leg, so a UA → AA connection passed a United-only filter. An itinerary now counts as matching only if every leg does.
+- `estack-flight-planner` — multi-leg flight numbers and carriers were dropped, leaving a two-carrier connection labeled with only the first leg's flight number.
+- `estack-flight-planner` — an itinerary SerpAPI returned without a price sorted first rather than last. A missing price is not a free flight.
+
 ---
 
 ## [1.0.60] - 2026-07-26
