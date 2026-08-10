@@ -459,11 +459,31 @@ When the user confirms a choice, append a `selection_made` entry to `~/.flight-p
 
 **Step 8 — Offer booking link**
 
-Offer to open the airline's booking page. For most airlines a generic Google Flights link works:
+Give **two** links: the airline's own search page, and a Google Flights fallback. Airline sites are client-rendered apps behind bot protection, so you cannot load one to check your own URL — the fallback is what saves the user a round trip when the deep link is stale.
 
 ```
-https://www.google.com/travel/flights?q=Flights%20from%20<DEP>%20to%20<ARR>%20on%20<DATE>
+https://www.google.com/travel/flights?q=Flights%20from%20<DEP>%20to%20<ARR>%20on%20<DATE>%20nonstop%20<AIRLINE>
 ```
+
+**Say plainly that these open a pre-filled search, not a purchase.** No airline supports deep-linking into checkout for one specific flight, so the user lands on a results list and picks the departure time out of it. Name the time so they know which row to click.
+
+**Three ways an airline deep link goes wrong**, all silent — the page loads and shows *something*, just not what was asked for:
+
+1. **The trip-type flag is often inverted or non-obvious.** Getting it wrong returns round-trip prices for a one-way search, which look wrong by roughly double.
+2. **Booking paths get moved between site versions.** An old path may still resolve to a redirect or an empty form rather than a 404.
+3. **Prices may default to base fare, excluding taxes and fees.** The quoted number then undercuts what the user actually pays.
+
+Check the parameters against a current source before handing the link over rather than reconstructing one from memory. If you cannot verify, lead with the Google Flights link and say the airline one is unverified.
+
+United, verified 2026-08-10 against [this breakdown of united.com's search deep link](https://browse.sh/skills/united.com/search-flights-xs5157.md):
+
+```
+https://www.united.com/en/us/fsr/choose-flights?f=<DEP>&t=<ARR>&d=<YYYY-MM-DD>&tt=0&sc=7&px=1&taxng=1&clm=7&st=bestmatches
+```
+
+`tt=0` is one-way and `tt=1` is round-trip (backwards from what you'd guess). `taxng=1` shows all-in pricing; without it the fare reads low. `clm=7` is economy. Airport must be an IATA code. The old `/en/us/flight-search/book-a-flight` path no longer serves this.
+
+**Flag a restricted fare before the user buys.** If the itinerary is a basic/no-frills fare brand, say so and name what it costs them in practice: baggage limits, no seat selection, no changes or refunds. That last one matters most when the trip is pinned to a fixed date (a lease start, a first day of work) where a slip makes the ticket worthless rather than movable. Do not assert a specific airline's current baggage rule from memory — point the user at the checkout screen, where the real number appears.
 
 ## SerpAPI walkthrough
 
