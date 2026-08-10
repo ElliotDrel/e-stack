@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.61] - 2026-08-10
+
 ### Added
 - `estack-flight-planner` — `scripts/load_flights.py`, a loader that normalizes every SerpAPI itinerary and filters nothing. Returns per-leg detail, layover airports and durations, delay and overnight flags, legroom, aircraft, operating carrier (a "UA 3443" is often flown by a regional partner), carbon figures, booking tokens, and per-route price insights, as JSON, a table, or CSV. This is the new entry point after fetching.
 - `estack-flight-planner` — post-flight shuttle pairing. `pair_shuttles.py` previously understood only "home → departure airport", so flying *into* the town a shuttle serves had no representation at all and those searches silently dropped every flight. Both legs are now supported and can apply to the same itinerary, selected with `--legs auto|pre|post|both`.
@@ -559,7 +563,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.60...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.61...HEAD
+[1.0.61]: https://github.com/ElliotDrel/e-stack/compare/v1.0.60...v1.0.61
 [1.0.60]: https://github.com/ElliotDrel/e-stack/compare/v1.0.59...v1.0.60
 [1.0.59]: https://github.com/ElliotDrel/e-stack/compare/v1.0.58...v1.0.59
 [1.0.58]: https://github.com/ElliotDrel/e-stack/compare/v1.0.57...v1.0.58
