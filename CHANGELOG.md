@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.62] - 2026-08-13
+
 ### Added
 - `estack-sponsorship-offer-builder` skill — coaches you through defining a clear sponsorship offer (delivered as a Markdown file), then optionally builds the assets that sell it: a page-by-page sponsorship packet, a 4-email cold outreach chain, and a discovery-first script for the meeting a sponsor books after replying. Ships with distilled research from 21 read web sources plus the primary text of $100M Offers itself (Blair Enns' pricing rules, The Sponsorship Collective's sales process, Cialdini, Blount, Sandler/30MPC discovery frameworks, StoryBrand) and the full transcript of Simon Sinek's "Start With Why" talk.
 
@@ -566,7 +570,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.61...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.62...HEAD
+[1.0.62]: https://github.com/ElliotDrel/e-stack/compare/v1.0.61...v1.0.62
 [1.0.61]: https://github.com/ElliotDrel/e-stack/compare/v1.0.60...v1.0.61
 [1.0.60]: https://github.com/ElliotDrel/e-stack/compare/v1.0.59...v1.0.60
 [1.0.59]: https://github.com/ElliotDrel/e-stack/compare/v1.0.58...v1.0.59
