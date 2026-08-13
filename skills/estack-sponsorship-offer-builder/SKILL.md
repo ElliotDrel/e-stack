@@ -17,13 +17,9 @@ description: >-
 
 # Sponsorship Offer Builder
 
-Most sponsorship asks fail before the first email is opened, because there is no actual offer inside them. A logo on a banner is not an offer. This skill coaches the user through defining a real one — something a specific sponsor would recognize as a good trade — and then, only after that offer exists, helps build the assets that carry it: the packet, the outreach emails, and the meeting script.
+Most sponsorship asks fail because there is no actual offer inside them — a logo on a banner is not an offer. This skill coaches the user through defining a real one, then helps build the assets that carry it.
 
-The lens for everything here is Alex Hormozi's Value Equation:
-
-**Value = (Dream Outcome × Perceived Likelihood of Achievement) ÷ (Time Delay × Effort & Sacrifice)**
-
-Every deliverable this skill produces gets judged against those four levers: does it raise the outcome the sponsor wants, raise their belief they'll get it, or cut the time and effort to see it? Anything that does none of those gets cut.
+The lens for everything: Hormozi's Value Equation. **Value = (Dream Outcome × Perceived Likelihood of Achievement) ÷ (Time Delay × Effort & Sacrifice).** Every deliverable is judged against those four levers; anything that moves none of them gets cut.
 
 <primary_outcome>
 Every session must produce, at minimum, a written sponsorship offer as a Markdown file: named sponsor profile, asset list mapped to sponsor outcomes, the packaged offer with price, risk reversal, and the reason to act now. A conversation about the offer, a critique without a rewrite, or a list of assets with no packaging does not count. The optional paths (packet, emails, meeting script) come after that file exists, never instead of it.
@@ -31,57 +27,44 @@ Every session must produce, at minimum, a written sponsorship offer as a Markdow
 
 ## Voice and posture
 
-- **Coach, don't generate.** Work through the phases with the user one step at a time and build the offer from their real answers. An offer invented from assumptions is fiction, and sponsors can tell. When a field is unknown, ask; if the user genuinely doesn't know, mark it as an assumption to verify, visibly, in the output.
-- **Confident and specific, never hype.** The researched frameworks shape the substance; the voice stays grounded. No fake urgency, no false scarcity, no "amazing opportunity". If a scarcity or urgency claim appears in any draft, it must be literally true (real capacity limit, real date), because one caught lie costs the whole relationship.
-- **Sponsor's point of view, always.** The sponsor is the hero of every document; the user's organization is the guide. Any sentence that exists to make the organization look impressive, rather than to help the sponsor get an outcome, gets rewritten or cut.
-- **Match depth to stakes.** A $500 local ask gets the compressed path. A $25k flagship sponsor gets the full flow.
+- **Coach, don't generate.** Build the offer from the user's real answers, one step at a time. When a field is unknown, ask; if the user truly doesn't know, mark it `[assumption — verify]` in the output. Never invent audience numbers, reach stats, or sponsor names.
+- **Confident and specific, never hype.** No fake urgency or false scarcity — every scarcity or urgency claim must be literally true (real cap, real date), because one caught lie costs the relationship.
+- **The sponsor is the hero; the org is the guide.** A sentence that exists to make the org look impressive, rather than to get the sponsor an outcome, gets cut.
+- **Match depth to stakes.** A $500 local ask gets a compressed pass; a $25k flagship sponsor gets the full flow.
 
 ## The flow
 
-Phase 0 and Phase 1 are the core. The three paths after them are optional and get offered, by name, once the offer file exists.
+Phases 0 and 1 are the core. The three paths are optional and get offered, by name, once the offer file exists. Read the step file AND its reference files before responding in a phase — the frameworks live there, and output written without them comes out generic.
 
-| Phase | What it produces | Step file (read first) | Reference files (read second) |
+| Phase | Produces | Step file | Reference files |
 |---|---|---|---|
-| 0. Discovery | Asset inventory, sponsor profile, critique of any existing packet | `steps/step-0-discovery.md` | `references/03-sponsorship-market.md`, `references/07-start-with-why.md` |
-| 1. The offer (core deliverable) | The sponsorship offer as a Markdown file | `steps/step-1-offer.md` | `references/01-hormozi-value-equation.md`, `references/02-positioning-and-pricing.md`, `references/06-storybrand-messaging.md` |
-| Path A. Sponsorship packet | Page-by-page packet copy, ready to lay out as a PDF | `steps/path-a-packet.md` | `references/03-sponsorship-market.md`, `references/06-storybrand-messaging.md` |
-| Path B. Cold email chain | 1 initial email + 3 follow-ups | `steps/path-b-email-chain.md` | `references/04-outreach-psychology.md` |
-| Path C. Meeting script | Discovery-first script for the call a sponsor books | `steps/path-c-meeting-script.md` | `references/05-discovery-call.md`, `references/03-sponsorship-market.md` |
+| 0. Discovery | Asset inventory, sponsor profile, critique of any existing packet | `steps/step-0-discovery.md` | `references/03-sponsorship-market.md`, `references/06-messaging.md` |
+| 1. The offer (core) | The sponsorship offer as a Markdown file (default `sponsorship-offer.md`) | `steps/step-1-offer.md` | `references/01-hormozi-value-equation.md`, `references/02-positioning-and-pricing.md`, `references/06-messaging.md` |
+| Path A. Packet | `sponsorship-packet.md` — page-by-page copy ready for PDF layout | `steps/path-a-packet.md` | `references/03-sponsorship-market.md`, `references/06-messaging.md` |
+| Path B. Email chain | `sponsor-email-chain.md` — 1 opener + 3 follow-ups | `steps/path-b-email-chain.md` | `references/04-outreach-psychology.md` |
+| Path C. Meeting script | `sponsor-meeting-script.md` — discovery-first run-of-show | `steps/path-c-meeting-script.md` | `references/05-discovery-call.md`, `references/03-sponsorship-market.md` |
 
-Read the step file AND its reference files before responding to the user in that phase — the frameworks live there, and output written without them comes out generic. The step files tell you how to run the phase; the reference files are the distilled source research (each cites its original sources with URLs).
+Each reference cites its source URLs. `references/start-with-why-sinek-transcript.txt` is the full Sinek talk, shipped as a primary source — read it when exact wording is needed.
 
-The full reference set, for when depth or attribution is needed outside the table's routing:
+## Routing
 
-- `references/01-hormozi-value-equation.md` — Hormozi's Value Equation, Grand Slam Offers, the 5-step stack, enhancers, MAGIC naming
-- `references/02-positioning-and-pricing.md` — Blair Enns: expert positioning, the value conversation, three-option pricing, anchor high
-- `references/03-sponsorship-market.md` — how sponsorship is actually sold: the 6-page proposal, no tiers, discovery questions, fulfillment reports
-- `references/04-outreach-psychology.md` — Cialdini's 7 principles tuned for follow-up sequences; Blount's prospecting laws and cadence
-- `references/05-discovery-call.md` — the sponsor-meeting structure: agenda contract, situation→problem→impact, bridge questions, Five Minute Drill
-- `references/06-storybrand-messaging.md` — StoryBrand SB7: the sponsor as hero, the one-liner, clarity over cleverness
-- `references/07-start-with-why.md` — Sinek's golden circle: why-first framing and belief-fit as a sponsor filter
-- `references/start-with-why-sinek-transcript.txt` — the full transcript of Sinek's "Start With Why" talk, shipped as a primary source; read it directly when exact wording or a full example arc is needed
+- Starting fresh, or anything shaped like "help us get sponsors" → Phase 0, then Phase 1.
+- Has a packet/deck/proposal to fix or judge → Phase 0 (the critique lives there), Phase 1, then offer Path A.
+- Asks for emails or a script with no defined offer → say plainly that those can only be as good as the offer they carry, run Phase 1 first (compressed if stakes are low), then the path.
+- Has a defined offer (can state sponsor profile, assets, price, why it beats alternatives) → go straight to the path they want; check their offer against Phase 1's acceptance bar, flag gaps, respect their call.
 
-## How to route
-
-- User is starting fresh, or asks anything shaped like "help us get sponsors" → Phase 0, then Phase 1.
-- User already has a packet, deck, or proposal and wants it fixed or judged → Phase 0 (the critique lives there), then Phase 1, then offer Path A.
-- User asks directly for outreach emails or a meeting script but has no defined offer → tell them plainly that the emails and script can only be as good as the offer they carry, run Phase 1 first (compressed if stakes are low), then the path they asked for.
-- User has a defined offer already (they can state sponsor profile, assets, price, and why it beats alternatives) → go straight to the path they want; skim their offer against Phase 1's acceptance bar first, flag gaps, but respect their call on whether to fix them.
-
-After the offer file is delivered, offer the three paths by name in one short block ("Path A: the packet. Path B: the cold email chain. Path C: the meeting script."), let the user pick any, all, or none, and run each chosen path as its own checkpoint. Do not start a path unasked.
+After delivering the offer file, offer the paths in one short block ("Path A: the packet. Path B: the cold email chain. Path C: the meeting script.") and let the user pick any, all, or none. Do not start a path unasked.
 
 ## Companion skills
 
-When these are installed alongside this skill (they ship in the same pack), use them; if one is missing, the reference files carry enough to proceed without it.
+These ship in the same pack; use them when installed, proceed on the references when not.
 
-- **Path B (cold email chain):** load `estack-cold-message-writer` (first-touch psychology, hooks, ghost sequences) and `estack-email-writer` (subject lines, body craft, sounding human). This skill's Path B owns what's sponsorship-specific: which offer elements go in which email, and the sequence's psychology; those two own the message craft.
-- **Path C (meeting script):** load `estack-chris-voss` for the negotiation layer (labels, calibrated questions, accusation audit) inside the discovery and close.
+- **Path B:** `estack-cold-message-writer` (first-touch psychology, hooks, ghost sequences) + `estack-email-writer` (subject lines, body craft, sounding human). Path B owns only what's sponsorship-specific.
+- **Path C:** `estack-chris-voss` for the negotiation layer (labels, calibrated questions, accusation audit).
 
 ## Output conventions
 
-- The core offer is always delivered as a Markdown file (default `sponsorship-offer.md` in the working directory, or where the user asks). The paths write their own files next to it (`sponsorship-packet.md`, `sponsor-email-chain.md`, `sponsor-meeting-script.md`). Chat carries the delta and the decisions, not the full document.
-- Every document keeps the user's brand rules if they state any (casing, banned punctuation, voice). Ask once at the start of Phase 1 whether any exist.
-- Every claim in every deliverable must be either true from the user's answers or explicitly marked `[assumption — verify]`. Never invent audience numbers, reach stats, or past-sponsor names.
+Deliverables are files (paths in the table above), written where the user asks; chat carries the decisions and the delta. Ask once at the start of Phase 1 whether brand rules exist (casing, banned punctuation, voice) and apply them to every deliverable.
 
 ---
 
