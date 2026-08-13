@@ -35,6 +35,7 @@ This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/sk
 | **Prompt Builder Coach** | `/estack-prompt-builder-coach` | Four-part kit for shaping, building, auditing, and scoping prompts for AI agents |
 | **Read Agent Session History** | `/estack-read-agent-history` | Searches, reads, recovers, and analyzes local AI coding-agent session history — Claude Code **and** Codex (OpenAI codex-cli) — across sessions, projects, and backups. A CLI for common lookups and reports (timeline, engagement, and other cross-session modes merge both agents by default via `--agent`), plus a Python library the agent builds custom queries on when no mode fits |
 | **Repo Search** | `/estack-repo-search` | Clones and searches external GitHub repos to answer questions about their code |
+| **Sponsorship Offer Builder** | `/estack-sponsorship-offer-builder` | Coaches you through defining a real sponsorship offer (Hormozi value equation, Enns three-option pricing, sponsorship-industry research preloaded), then optionally builds the packet, the cold email chain, and the sponsor-meeting script |
 | **VS Code File Recovery** | `/estack-vscode-file-recovery` | Recovers permanently deleted files from VS Code or Cursor Local History, Claude session transcripts, or Windows Shadow Copies |
 
 ## Hooks

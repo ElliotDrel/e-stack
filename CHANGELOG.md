@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-sponsorship-offer-builder` skill — coaches you through defining a clear sponsorship offer (delivered as a Markdown file), then optionally builds the assets that sell it: a page-by-page sponsorship packet, a 4-email cold outreach chain, and a discovery-first script for the meeting a sponsor books after replying. Ships with distilled research from 21 read sources (Hormozi's $100M Offers, Blair Enns' pricing rules, The Sponsorship Collective's sales process, Cialdini, Blount, Sandler/30MPC discovery frameworks, StoryBrand) plus the full transcript of Simon Sinek's "Start With Why" talk.
+
 ---
 
 ## [1.0.61] - 2026-08-10
