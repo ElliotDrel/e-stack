@@ -8,7 +8,7 @@ Ask once, at the start: any brand rules for written output (name casing, banned 
 
 ## 1. Dream outcome
 
-For the primary sponsor profile from Phase 0: what outcome would make their buyer look great to their own boss? Push past "exposure" to the metric the buyer is judged on (hires made, qualified leads, product adoption, brand position with this audience). Write it as one sentence in the sponsor's voice: "We got X by Y."
+For the primary sponsor profile from Phase 0: what outcome would make their buyer look great to their own boss? Push past "exposure" to the metric the buyer is judged on (hires made, qualified leads, product adoption, brand position with this audience). Status is the deepest layer — Hormozi's rule is to frame the benefit in terms of how *others* will perceive the buyer's win ("your VP asks how you filled the intern class a quarter early"). Write it as one sentence in the sponsor's voice: "We got X by Y."
 
 ## 2. Problem list
 
@@ -18,9 +18,11 @@ List everything that stops that sponsor getting the outcome today, sorted by the
 
 Map Phase 0 assets onto the problem list: for each real problem, which asset kills it? Problems with no asset are either dropped from the promise or become new assets to build. Assets that solve no problem stay out of the offer (they can pad Path A's activation menu instead).
 
+Aim to solve *every* problem the sponsor will perceive, not just the flattering ones — Hormozi's rule is that any single unhandled obstacle ("but our legal team has to review every logo use") can be the quiet reason a buyer says no, and a one-time fix (a pre-approved brand-use sheet) removes it for every future sponsor. Don't get romantic about how a problem should be solved; solve it the way the sponsor needs it solved.
+
 ## 4. Delivery design
 
-For the 2–3 highest-value solutions, run the Delivery Cube questions: who does the work (aim done-for-you — the sponsor writes a check and shows up), how fast is first value (deliver something before the event: an intro, a data report, early access), what's the format, what does 10x-price service look like and what survives at 1/10th. This step is where "logo placement" turns into "we run your entire recruiting touchpoint for the semester".
+For the 2–3 highest-value solutions, run the Delivery Cube questions: who does the work (aim done-for-you — the sponsor writes a check and shows up), how fast is first value (engineer a fast win as close to signing as possible: an intro, a data report, early access — the emotional win that proves the decision right before the event ever happens), what's the format, what does 10x-price service look like and what survives at 1/10th. Favor one-to-many assets the org builds once and delivers to every sponsor (the audience report, the resume book) — highest value, lowest marginal cost. This step is where "logo placement" turns into "we run your entire recruiting touchpoint for the semester".
 
 ## 5. Trim and stack
 

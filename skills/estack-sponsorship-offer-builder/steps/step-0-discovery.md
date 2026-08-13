@@ -39,6 +39,8 @@ Ask who the sponsor is, concretely. If the answer is "any company with money", c
 - Belief-fit: which of these companies would plausibly share the org's why? Those go to the top of the list.
 - Who is the buyer inside the company — Brand, Marketing, BD, University Relations, CSR? What does *that person* get judged on? (Their metric is the dream outcome the offer must serve.)
 
+Then filter the candidates through Hormozi's four market indicators (reference 01): real **pain** reaching this audience, **purchasing power** (a sponsorship budget or a budget line this could come from), **easy to target** (findable buyer, warm path), and **growing** (their category has tailwind). A candidate weak on two or more indicators gets deprioritized no matter how exciting the logo would look.
+
 Name 3–5 real example companies before leaving this step. Abstract profiles produce abstract offers.
 
 ## 0d. Critique of the existing packet (only if one exists)
