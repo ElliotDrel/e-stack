@@ -1,0 +1,472 @@
+SOURCE URL: https://guides.lib.purdue.edu/c.php?g=1398872&p=10391398
+FETCHED: 2026-08-15 (raw HTML via curl; images archived in guide-images/)
+PAGE TITLE: Prep Your File - A Guide to Sticker Printing in the Knowledge Lab - Research Guides at Purdue University Libraries
+======================================================================
+
+Skip to Main Content
+
+[IMAGE: alt="Purdue University" src=https://lib.purdue.edu/wp-content/uploads/2024/09/LSIS_H-Full-RGB_1.jpg]
+
+- Hours <//www.lib.purdue.edu/hoursList>
+
+- Databases <//guides.lib.purdue.edu/az.php>
+
+- Ask a Librarian <//www.lib.purdue.edu/help/askalib>
+
+- My Account <http://go.lib.purdue.edu/myaccount>
+
+- Purdue Libraries <https://www.lib.purdue.edu>
+
+- Research Guides <https://guides.lib.purdue.edu/>
+
+- User Guides & Tutorials <https://guides.lib.purdue.edu/instruction-tutorials>
+
+- A Guide to Sticker Printing in the Knowledge Lab <https://guides.lib.purdue.edu/klab-stickerprinting>
+
+- Prep Your File
+
+Search this Guide
+
+Search
+
+# A Guide to Sticker Printing in the Knowledge Lab: Prep Your File
+
+Provides guidelines on the print process, steps to prep your sticker file, and how to request a print time.
+
+-
+
+Start Here
+
+<https://guides.lib.purdue.edu/c.php?g=1398872&p=10391620>
+
+-
+
+Sticker Examples & Material Types
+
+<https://guides.lib.purdue.edu/c.php?g=1398872&p=10402418>
+
+-
+
+Making Your Own Design
+
+<https://guides.lib.purdue.edu/c.php?g=1398872&p=10546977>
+
+-
+
+Prep Your File
+
+<https://guides.lib.purdue.edu/c.php?g=1398872&p=10391398>
+
+-
+
+Copyright Considerations
+
+<https://guides.lib.purdue.edu/c.php?g=1398872&p=10391397>
+
+-
+
+Request Print Time
+
+<https://calendar.lib.purdue.edu/space/182313>
+
+-
+
+Clubs & Organizations
+
+<https://guides.lib.purdue.edu/c.php?g=1398872&p=10465408>
+
+-
+
+FAQs
+
+<https://guides.lib.purdue.edu/c.php?g=1398872&p=10391851>
+
+### Consider an Offset Path
+
+An offset path is a border that outlines the shape of your sticker. While not required, it is recommended for shapes that have detailed edges or for stickers where there is concern about the edge of the design being trimmed too close.
+
+Below are some examples of what an offset path of 0, 0.05, 0.07, 0.1, 0.15, and 0.17 look like. The larger the number, the wider the border.
+
+[IMAGE: alt="sticker example with no offset path (no border)" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/1_Offset.jpg]
+
+[IMAGE: alt="sticker example with offset path of 0.05" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/2_Offset.jpg]
+
+[IMAGE: alt="sticker example with offset path of 0.07" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/3_Offset.jpg]
+
+[IMAGE: alt="sticker example with offset path of 0.1" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/4_Offset.jpg]
+
+[IMAGE: alt="sticker example with offset path of 0.15" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/5_Offset.jpg]
+
+[IMAGE: alt="sticker example with offset path of 0.17" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/6_Offset.jpg]
+
+### File Prep Instructions
+
+Instructions for prepping your sticker design file for submission can be found in the tabbed boxes below.
+
+Note: Sticker file prep is required to be completed using Adobe Illustrator. You do not need to have a personal subscription to Adobe, it is available on campus computers. 
+
+##
+Step-by-step Instructions For Geometric Shapes
+
+If you want your sticker to be a simple circle or rectangle shape, watch this tutorial. 
+
+ 
+
+[IFRAME: src=https://www.youtube.com/embed/IRw77Ib2bTc?si=DQOtiXFLklQK8Te0]
+
+Before making a cut path, make sure to download the RolandVersaworks file below:
+
+-
+
+Roland VersaWorks.ai <https://drive.google.com/file/d/1_BBz8jbD3d8bdIdvzorU0P5Ob2wI5YSI/view?usp=sharing>
+
+This is a color library containing specific colors that the machine uses to recognize where it needs to cut.
+
+-
+
+How to Create Simple Geometric Shaped Stickers, Video Transcript
+<https://guides.lib.purdue.edu/ld.php?content_id=84269180>
+
+This is the text transcript for the video tutorial on how to create simple geometric shaped stickers in the Knowledge Lab.
+
+##
+Step-by-step Instructions For Irregular Shapes
+
+-
+
+Start New File
+
+-
+
+Create Outline & Clean Up Image
+
+-
+
+Create Cut Path
+
+-
+
+Resize
+
+-
+
+Save File
+
+To get started prepping your sticker image for printing, complete the following steps.
+
+- Open Adobe Illustrator.
+
+- Click on "New File".
+
+[IMAGE: alt="Illustrator window with outline around the New File button" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/1_NewFile.png]
+New file button in the upper left corner of the window.
+
+- Under "Preset Details", set the
+
+- Width to 18 inches (printer default)
+
+- Height to the height of your sticker design
+
+- Color Mode to CMYK
+
+- Raster Effects to "High (300 ppi)".
+
+- Then click "Create".
+
+[IMAGE: alt="New Document with outlines indicating settings for width, height, color mode, raster effects, and the Create button" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/2_PresetDetails.png]
+Preset details menu on the right.
+
+- Place the sticker image into the Illustrator file.
+
+- Go to the File menu located at the top of the page.
+
+- Click “Place…”.
+
+- Choose your image.
+
+- Click to place it onto the artboard.
+
+- Note: If your image is larger than the artboard (the white canvas space), while holding Shift, click on one of the corners and drag inward to scale it down.
+
+[IMAGE: alt="File menu, Place image process" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/3_PlaceImageV2.gif]
+Placing sticker image file into Illustrator.
+
+These steps will take you through the process of creating an outline of your image and cleaning up any extra details.
+
+- Create a duplicate of your sticker. One copy will be used to create the outline.
+
+- With the sticker selected, (Ctrl + C) > (Ctrl + V).
+
+[IMAGE: alt="sticker design being copied and pasted (duplicated)" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/4_Duplicate.gif]
+Sticker image duplicated.
+
+- Create an outline of the sticker by selecting one of the copies and using Image Trace to create a silhouette.
+
+- Go to the Window menu at the top of the page, choose “Image Trace” > Presets: Silhouettes.
+
+[IMAGE: alt="Image Trace option selected from the Window drop-down, silhouettes option selected" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/5_Silhouette.gif]
+Outline of sticker image using Image Trace function.
+
+- Expand the Image Trace into vector lines using the column on the right.
+
+- In the Properties panel, under Quick Actions, choose “Expand”. Note: If this option doesn’t pop-up, you may need to open the Properties panel by going to the Window menu at the top and choosing “Properties”.
+
+[IMAGE: alt="outlines showing the Properties tab and the Expand button located on the right" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/6_Expand.png]
+Expand button in the Properties panel.
+
+- Ungroup the expanded objects so that the so that the pieces can be selected individually.
+
+- With the Image Trace result still selected, click on the “Ungroup” option in the Properties panel.
+
+[IMAGE: alt="outline showing the Ungroup button in the Properties panel on the right" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/7_Ungroup.png]
+Ungroup button in the Properties panel.
+
+- Release the ungrouped trace into their component shapes.
+
+- With the ungrouped image still selected, click on the “Release” option in the Properties panel.
+
+[IMAGE: alt="outline showing the Release button in the Properties panel on the right" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/8_Release.png]
+Release button in the Properties panel.
+
+- Click on the outermost edge of the shape to select it and drag it into an empty space on the artboard. This is the final outline. You can delete the other shapes from the image trace; they won’t be needed.
+
+- Select other shapes by clicking and dragging over them. Press Delete to delete the shapes.
+
+[IMAGE: alt="top shape/outline moved to the right, remaining shapes selected and deleted" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/9_Outline-ShapeDelete.gif]
+Outline of shape moved; extra pieces deleted.
+
+- Switch the fill and stroke of the outline shape.
+
+- With the outline shape selected, click on the “Swap fill and stroke” arrow OR (Shift + X).
+
+[IMAGE: alt="outline shape selected, fill/stroke swapped" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/10_Fill2Stroke.gif]
+Shape fill becomes outline fill.
+
+- Make a duplicate of the outline shape. This will be needed later.
+
+- With the outline shape selected, (Ctrl + C) > (Ctrl + V).
+
+- Make sure all your images are separated. You should have two outlines shapes and the original.
+
+[IMAGE: alt="artboard with original image and two duplicate outlines" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/11_DuplicateOutline.png]
+Duplicate outlines.
+
+- Align the outline shape and the original image.
+
+- While selecting both the outline and the image, use the align tool (located in the Properties panel), to align the two images vertically and horizontally so that they overlap.
+
+[IMAGE: alt="selecting an outline and original image then choosing align options from Properties panel on the right" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/12_AlignedOutline.gif]
+Outline and image overlayed and aligned.
+
+- Create a clipping mask to eliminate anything outside the sticker outline.
+
+- With both the outline and the original image still selected, right-click > select Make Clipping Mask.
+
+[IMAGE: alt="right clicking over image and choosing Make Clipping Mask from menu" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/13_ClippingMask.gif]
+Clipping mask created to ensure clean edges.
+
+- Create an offset path. This step is optional but is recommended for stickers with complex or detailed edges such as irregular or text shapes.
+
+- Select the remaining outline shape.
+
+- Click on the Offset Path button in the Properties panel.
+
+[IMAGE: alt="outline around offset path button in the properties panel" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/11-5_OffsetPath.png]
+Offset Path button in the Properties panel.
+
+- Enter the desired offset amount and click ok.
+
+- Note: The larger the number, the wider the border.
+
+[IMAGE: alt="offset path pop-up window with outline showing the offset at 0.17 inches" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/11-5_OffsetPath2.png]
+Offset about set to 0.17 inches.
+
+- Take the outline from earlier and line it up vertically and horizontally with the clipped-masked image.
+
+- While selecting both the outline and the image, use the align tool (located in the Properties panel), to align the two images vertically and horizontally so that they overlap.
+
+[IMAGE: alt="selecting image and second outline then aligning them using the alignment options in the Properties panel on the right" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/14_Aligned2ndOutline.gif]
+Remaining outline and image aligned.
+
+Before you can create a cut path, download the Roland Versaworks.ai file below. 
+
+-
+
+Roland VersaWorks.ai <https://drive.google.com/file/d/1_BBz8jbD3d8bdIdvzorU0P5Ob2wI5YSI/view?usp=sharing>
+
+This is a color library containing specific colors that the machine uses to recognize where it needs to cut.
+
+Before you can create a cut path, you need to have downloaded the Roland VersaWorks.ai file below. You do not need to open this file; you just need to have it downloaded on your computer so you can access it in a later step.
+
+- Open the swatches panel.
+
+- Go to the Window menu and choose Swatches”.
+
+[IMAGE: alt="choosing Swatches option from the Window menu" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/15_Swatches.gif]
+Window drop-down.
+
+- Click on the “Swatch Libraries menu” (bottom left corner of the Swatches panel) and choose “Other Library…”
+
+- Open the downloaded Roland VersaWorks.ai file.
+
+[IMAGE: alt="selecting Swatch Libraries menu, Other Library option and locating the Roland VersaWorks file" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/16_RolandSwatches.gif]
+Opening the Roland VersaWorks swatches.
+
+- Select the outline you created. This may be challenging as the outline is behind the image.
+
+- To make it easier,
+
+- Go to the Window menu,
+
+- Select “Layers” to open the Layers panel,
+
+- Click on the caret (>) icon next to Layer 1,
+
+- Click on the empty circle next to “<Path>”.
+
+- This should select the outline shape that will become the cut path.
+
+[IMAGE: alt="selecting the Layers panel, expanding the layers to select the path" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/17_SelectPath.gif]
+Opening the Layers panel to select the outline.
+
+- Select the Stroke Tool and set the color to the Roland Cut Contour (magenta in the swatch).
+
+- With the outline selected, click on the stroke OR (X), then click on the magenta color swatch in the Roland VersaWorks panel. Note: It is very important that you use this specific swatch as the printer will not recognize anything else as a cut line.
+
+[IMAGE: alt="selecting the magenta color swatch for the outline color" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/17-5_PathColor.gif]
+Clicking on the stroke.
+
+- Move the outline to a new layer.
+
+- Create a new layer by either right-clicking in the Layers panel or clicking on the dash in the upper right corner.
+
+- Select “New Layer”.
+
+- Drag and drop the “<Path>” onto the new layer.
+
+[IMAGE: alt="adding a new layer to the layers panel, clicking and dragging the path to the new layer" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/18_NewLayer.gif]
+Creating a new layer and dragging the path onto that new layer.
+
+Make sure the dimensions of your sticker are the size you want it to print out as.
+
+- Using the Transform tool (located in the Properties panel), input the dimensions of your sticker.
+
+- Be sure to select both the sticker and the outline (cut path).
+
+- Make sure to select the chain/link icon for uniform scaling, otherwise your image will appear stretched or condensed.
+
+[IMAGE: alt="resizing sticker image using the transform tool in the properties panel on the right" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/19_ResizeSticker.gif]
+Resizing the sticker image and the outline using the Transform tool.
+
+- Using the Artboard tool (Shift + O), resize the artboard.
+
+- Click and drag each of the corners until the whitespace is close to the edge of your sticker.
+
+[IMAGE: alt="clicking on the artboard tool to resize artboard to better fit the image size" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/20_ResizeArtboard.gif]
+Adjusting the artboard size using the Artboard tool.
+
+Now you’re ready to save your file for submission!
+
+- Go to the File menu, choose “Save As…”.
+
+- Give your file a name and change the file type to “Adobe PDF”.
+
+- Click “Save”.
+
+- From the next menu, under Options, make sure “Preserve Illustrator Editing Capabilities” is selected.
+
+- Please name your file with the following: FirstName_LastName_Sticker. For example Jane_Doe_Sticker.
+
+- Click "Save PDF".
+
+[IMAGE: alt="File, Save As, PDF, choose preserve illustrator editing capabilities, save" src=https://d2jv02qf7xgjwx.cloudfront.net/customers/934/images/21_SavePDF.gif]
+
+Saving the sticker file.
+
+-
+<< Previous: Making Your Own Design <https://guides.lib.purdue.edu/c.php?g=1398872&p=10546977>
+
+-
+Next: Copyright Considerations >> <https://guides.lib.purdue.edu/c.php?g=1398872&p=10391397>
+
+-
+Last Edited: Apr 3, 2026 9:26 AM
+
+-
+URL: https://guides.lib.purdue.edu/klab-stickerprinting
+
+-
+Print Page
+
+Login to LibApps <https://purdue.libapps.com/libapps/login.php?site_id=946&target64=L2xpYmd1aWRlcy9hZG1pbl9jLnBocD9nPTEzOTg4NzImcD0xMDM5MTM5OA==>
+
+Report a problem <http://go.lib.purdue.edu/support>
+
+Tags:
+
+- knowledge lab <https://guides.lib.purdue.edu/srch.php?tag=knowledge+lab&default_lg=1>
+
+- makerspace <https://guides.lib.purdue.edu/srch.php?tag=makerspace&default_lg=1>
+
+- vinyl cutter <https://guides.lib.purdue.edu/srch.php?tag=vinyl+cutter&default_lg=1>
+
+Login to LibApps <https://purdue.libapps.com/libapps/admin>
+Report a problem. <http://go.lib.purdue.edu/support>
+
+## Follow Us
+
+<https://www.facebook.com/PurdueLibraries>
+
+<https://twitter.com/PurdueLibraries>
+
+<https://www.instagram.com/purduelibraries/>
+
+<https://www.youtube.com/user/PurdueLibraries>
+
+## Visit Us
+
+-
+Purdue Libraries
+
+504 Mitch Daniels Blvd.,
+
+West Lafayette, IN 47907-2058
+
+765-494-2900
+
+[IMAGE: alt="Purdue Logo" src=https://lib.purdue.edu/wp-content/themes/purdue-home-theme-child/imgs/LSIS_V-Full-Reverse-RGB.svg]
+
+## Partners
+
+- School of Information Studies <https://www.lib.purdue.edu/directory>
+
+- Purdue University Press <https://www.lib.purdue.edu/about/employment>
+
+- University Copyright Office <https://intranet.lib.purdue.edu/>
+
+## Resources
+
+- Directory <https://www.lib.purdue.edu/directory>
+
+- Careers <https://www.lib.purdue.edu/about/employment>
+
+- Intranet <https://intranet.lib.purdue.edu/>
+
+- Contact Us <https://www.lib.purdue.edu/contact>
+
+Purdue University Libraries is a congressionally designated depository for U.S. Government information.
+
+Access to the government information collection is open to the public.
+
+[IMAGE: alt="Federal Depository Library" src=//web07p.lib.purdue.edu/assets/images/footer/FDL_shield.png]
+
+<https://guides.lib.purdue.edu/govdocs>
+
+In accordance with Purdue policies, all persons have equal access to Purdue University’s educational programs, services and activities, without regard to race, religion, color, sex, age, national origin or ancestry, genetic information, marital status, parental status, sexual orientation, gender identity and expression, disability or status as a veteran. See Purdue’s Nondiscrimination Policy Statement <https://www.purdue.edu/home/ea_eou_statement/>. If you have any questions or concerns regarding these policies, please contact the Office of the Vice President for Ethics and Compliance at vpec@purdue.edu <mailto:vpec@purdue.edu> or 765-494-5830.
+
+We are committed to making Purdue Libraries websites accessible to all. If you encounter any accessibility issues, please reach out to accessibility@lib.purdue.edu <mailto:accessibility@lib.purdue.edu> so we can address them promptly.
+
+Copyright <https://www.purdue.edu/securepurdue/security-programs/copyright-policies/reporting-alleged-copyright-infringement.php>
+© Purdue University. All Rights Reserved.
+
+OCR Accessibility <https://www.purdue.edu/accessibilityresources/> | EA/EO University <https://www.purdue.edu/purdue/ea_eou_statement.php> | Integrity Statement <https://www.purdue.edu/purdue/about/integrity_statement.php> | Privacy Policy <https://www.purdue.edu/purdue/about/privacy-notice.php> | Contact Us <https://www.purdue.edu/home/contact-us/>

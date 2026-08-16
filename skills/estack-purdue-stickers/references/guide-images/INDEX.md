@@ -1,0 +1,41 @@
+# Official guide images — index
+
+Archived 2026-08-15 from the LibGuide pages named below. File name -> what it shows.
+
+- `Circle.png` — round/geometric sticker shape *(from Sticker Examples & Material Types (p=10402418))*
+- `Irregular.png` — irregular sticker outline shape (cat) *(from Sticker Examples & Material Types (p=10402418))*
+- `Irregular-text.png` — text outline shape with irregular edges *(from Sticker Examples & Material Types (p=10402418))*
+- `StickerSizes-outlined.png` — sticker size examples from 3 inches to 1 inch *(from Sticker Examples & Material Types (p=10402418))*
+- `Glossy.png` — glossy finish sticker vinyl *(from Sticker Examples & Material Types (p=10402418))*
+- `Matte.png` — matte finish sticker vinyl *(from Sticker Examples & Material Types (p=10402418))*
+- `Transparent.png` — transparent sticker vinyl *(from Sticker Examples & Material Types (p=10402418))*
+- `1_Offset.jpg` — sticker example with no offset path (no border) *(from Prep Your File (p=10391398))*
+- `2_Offset.jpg` — sticker example with offset path of 0.05 *(from Prep Your File (p=10391398))*
+- `3_Offset.jpg` — sticker example with offset path of 0.07 *(from Prep Your File (p=10391398))*
+- `4_Offset.jpg` — sticker example with offset path of 0.1 *(from Prep Your File (p=10391398))*
+- `5_Offset.jpg` — sticker example with offset path of 0.15 *(from Prep Your File (p=10391398))*
+- `6_Offset.jpg` — sticker example with offset path of 0.17 *(from Prep Your File (p=10391398))*
+- `1_NewFile.png` — Illustrator window with outline around the New File button *(from Prep Your File (p=10391398))*
+- `2_PresetDetails.png` — New Document with outlines indicating settings for width, height, color mode, raster effects, and the Create button *(from Prep Your File (p=10391398))*
+- `3_PlaceImageV2.gif` — File menu, Place image process *(from Prep Your File (p=10391398))*
+- `4_Duplicate.gif` — sticker design being copied and pasted (duplicated) *(from Prep Your File (p=10391398))*
+- `5_Silhouette.gif` — Image Trace option selected from the Window drop-down, silhouettes option selected *(from Prep Your File (p=10391398))*
+- `6_Expand.png` — outlines showing the Properties tab and the Expand button located on the right *(from Prep Your File (p=10391398))*
+- `7_Ungroup.png` — outline showing the Ungroup button in the Properties panel on the right *(from Prep Your File (p=10391398))*
+- `8_Release.png` — outline showing the Release button in the Properties panel on the right *(from Prep Your File (p=10391398))*
+- `9_Outline-ShapeDelete.gif` — top shape/outline moved to the right, remaining shapes selected and deleted *(from Prep Your File (p=10391398))*
+- `10_Fill2Stroke.gif` — outline shape selected, fill/stroke swapped *(from Prep Your File (p=10391398))*
+- `11_DuplicateOutline.png` — artboard with original image and two duplicate outlines *(from Prep Your File (p=10391398))*
+- `12_AlignedOutline.gif` — selecting an outline and original image then choosing align options from Properties panel on the right *(from Prep Your File (p=10391398))*
+- `13_ClippingMask.gif` — right clicking over image and choosing Make Clipping Mask from menu *(from Prep Your File (p=10391398))*
+- `11-5_OffsetPath.png` — outline around offset path button in the properties panel *(from Prep Your File (p=10391398))*
+- `11-5_OffsetPath2.png` — offset path pop-up window with outline showing the offset at 0.17 inches *(from Prep Your File (p=10391398))*
+- `14_Aligned2ndOutline.gif` — selecting image and second outline then aligning them using the alignment options in the Properties panel on the right *(from Prep Your File (p=10391398))*
+- `15_Swatches.gif` — choosing Swatches option from the Window menu *(from Prep Your File (p=10391398))*
+- `16_RolandSwatches.gif` — selecting Swatch Libraries menu, Other Library option and locating the Roland VersaWorks file *(from Prep Your File (p=10391398))*
+- `17_SelectPath.gif` — selecting the Layers panel, expanding the layers to select the path *(from Prep Your File (p=10391398))*
+- `17-5_PathColor.gif` — selecting the magenta color swatch for the outline color *(from Prep Your File (p=10391398))*
+- `18_NewLayer.gif` — adding a new layer to the layers panel, clicking and dragging the path to the new layer *(from Prep Your File (p=10391398))*
+- `19_ResizeSticker.gif` — resizing sticker image using the transform tool in the properties panel on the right *(from Prep Your File (p=10391398))*
+- `20_ResizeArtboard.gif` — clicking on the artboard tool to resize artboard to better fit the image size *(from Prep Your File (p=10391398))*
+- `21_SavePDF.gif` — File, Save As, PDF, choose preserve illustrator editing capabilities, save *(from Prep Your File (p=10391398))*

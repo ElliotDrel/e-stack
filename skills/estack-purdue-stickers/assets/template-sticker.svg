@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Neutral BuildPurdue-style sticker skeleton. Rules (full detail: references/design-system.md):
+     - 300 units per inch: 2in sticker = 600x600 viewBox. Keep width/height in real inches.
+     - <text> y is the BASELINE. cap height = 0.72 x font-size, descender = 0.20 x font-size.
+       Center the text block: (block_top + block_bottom)/2 = 300. Constant gap (13-26) between line boxes.
+     - Keep everything >= 35 units (~3mm) from the edge; shrink hero words that overflow.
+     - Hero word: gold #fabb18, weight 900, 94-130px. Support lines: white, 700 (or 400), 42-66px.
+     - The @import wght list MUST include every weight used, and & MUST be written as &amp;.
+     - Logo: base64-encode assets/buildpurdue-logo.svg into the <image> href below (never a file path),
+       standard box 240x57 at x=180, floated ~28 units below the text block (excluded from centering). -->
+<svg width="2in" height="2in" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&amp;display=swap');</style>
+    <radialGradient id="bg" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#181818"/>
+      <stop offset="100%" stop-color="#0A0A0A"/>
+    </radialGradient>
+    <clipPath id="clip"><rect x="5" y="5" width="590" height="590" rx="24"/></clipPath>
+  </defs>
+
+  <rect x="0" y="0" width="600" height="600" rx="28" fill="white"/>
+  <rect x="5" y="5" width="590" height="590" rx="24" fill="#0A0A0A"/>
+  <rect x="5" y="5" width="590" height="590" rx="24" fill="url(#bg)" clip-path="url(#clip)"/>
+  <rect x="5" y="5" width="590" height="590" rx="24" fill="none" stroke="#fabb18" stroke-width="5"/>
+
+  <!-- Support line (white). Replace text and recompute baselines per the centering rule above. -->
+  <text x="300" y="262"
+    font-family="'Barlow Condensed','Arial Narrow',Impact,sans-serif"
+    font-weight="700" font-size="60" fill="#ffffff"
+    text-anchor="middle" letter-spacing="2">support line</text>
+
+  <!-- Hero line (gold, 900). -->
+  <text x="300" y="362"
+    font-family="'Barlow Condensed','Arial Narrow',Impact,sans-serif"
+    font-weight="900" font-size="94" fill="#fabb18"
+    text-anchor="middle" letter-spacing="-1">hero words</text>
+
+  <!-- Logo: replace href with data:image/svg+xml;base64,<base64 of assets/buildpurdue-logo.svg> -->
+  <image href="REPLACE_WITH_LOGO_DATA_URI" x="180" y="409" width="240" height="57"
+    preserveAspectRatio="xMidYMid meet"/>
+</svg>

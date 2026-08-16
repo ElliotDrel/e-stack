@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-purdue-stickers` skill — takes a sticker idea to submission-ready files for Purdue's Knowledge Lab (free student sticker printing): designs the SVG, renders a print-ready transparent 300 DPI PNG, and walks through the Lab's booking-site submission. Ships with the BuildPurdue design system, logo, six ready-made designs, two printed reference photos, the Illustrator cut-path prep playbook, and the official guide (37 images + full text) preloaded.
+
 ---
 
 ## [1.0.62] - 2026-08-13

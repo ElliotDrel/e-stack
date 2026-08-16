@@ -1,0 +1,5 @@
+FETCHED: 2026-08-15
+SOURCE URL: https://guides.lib.purdue.edu/c.php?g=1398872&p=10391399
+NOTE: This guide page is a JS redirect to the LibCal booking page for the Sticker Printer space:
+https://calendar.lib.purdue.edu/space/182313
+No static content to extract.
