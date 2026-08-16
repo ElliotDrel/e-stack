@@ -121,6 +121,13 @@ function isAllowedBareNameMention({ rel, line, short, index }) {
     return true;
   }
 
+  // A bare name that is one segment of a Windows filesystem path (backslash on
+  // both sides) names a real directory outside this pack, not the skill itself.
+  const charBefore = line[index - 1] || '';
+  if (charBefore === '\\' && charAfter === '\\') {
+    return true;
+  }
+
   return false;
 }
 
