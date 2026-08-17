@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.64] - 2026-08-17
+
 ### Added
 - `estack-book-extractor` skill — turns a book or doc set (PDF, EPUB, DOCX, HTML, RTF, TXT/MD) into a standalone, on-demand Agent Skill: a deterministic extraction script pulls clean text, then the agent writes per-chapter reference files, a glossary, a decision-rule cheatsheet, and a master index, sized to load only the relevant chapter instead of re-reading the whole book each session. Installs outside the e-stack pack at the root of the user's skills directory. Methodology adapted from [virgiliojr94/book-to-skill](https://github.com/virgiliojr94/book-to-skill).
 
@@ -580,7 +584,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.63...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.64...HEAD
+[1.0.64]: https://github.com/ElliotDrel/e-stack/compare/v1.0.63...v1.0.64
 [1.0.63]: https://github.com/ElliotDrel/e-stack/compare/v1.0.62...v1.0.63
 [1.0.62]: https://github.com/ElliotDrel/e-stack/compare/v1.0.61...v1.0.62
 [1.0.61]: https://github.com/ElliotDrel/e-stack/compare/v1.0.60...v1.0.61
