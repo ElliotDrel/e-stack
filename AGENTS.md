@@ -13,6 +13,7 @@ Two things I care enough about to name explicitly: publishing and syncing. Publi
 | Task | Action |
 |---|---|
 | Any change to a skill or hook | Invoke `manage-e-stack` (project-local skill at `.agents/skills/manage-e-stack/`, symlinked into `.claude/skills/manage-e-stack/`) |
+| Process a book, PDF, or other reference doc into a reusable on-demand skill | Invoke `estack-book-extractor` |
 | Skill authoring reference | Read `docs/skill-authoring.md` |
 | Hook authoring reference | Read `docs/hook-authoring.md` |
 | Publishing, OIDC, or repo security | Read `docs/publishing.md` |
