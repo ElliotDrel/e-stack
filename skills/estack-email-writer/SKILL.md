@@ -1,6 +1,6 @@
 ---
 name: estack-email-writer
-version: 1.0.0
+version: 1.1.0
 description: >-
   (email-writer) Write, edit, or review any email — outreach to an org or
   person who already knows the sender, event and partner invitations,
@@ -61,6 +61,7 @@ The first line must answer the question the reader is silently asking: "how does
 - **Small and time-boxed.** "A quick 15-minute call" is answerable; "a call to discuss" is not.
 - **Prefer no-oriented phrasing.** "Would you be against a quick 15-minute call next week?" is easier to answer than "Are you open to a call?" — saying no feels safe, and here "no" means yes. This is straight from `estack-chris-voss`; load it when the email carries a stake worth negotiating.
 - **Kill the scheduling round-trip.** Never end with a bare "let me know what time works for you" — that hands the reader homework. Give 2–3 concrete slots (or a plainly stated window: "anytime after 5pm Monday to Friday"), and offer their scheduling link as the fallback so either path closes in one reply.
+- **Once they name a time or a window, book it instead of confirming it.** Pick the best slot in or near what they gave you, send the calendar invite, and state the booked time in the reply as the final check. Works even when their time doesn't fit yours: "sorry, can't do 3, but I put us down for 3:30." See `meeting-mentalities` for why this closes faster.
 - **Lock your own side first.** If anyone else from your team needs to be on the call, confirm their availability before proposing times to the recipient. Proposing times you then have to walk back costs more credibility than a one-day delay.
 
 ## Sound like a human

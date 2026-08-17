@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `estack-book-extractor` skill — turns a book or doc set (PDF, EPUB, DOCX, HTML, RTF, TXT/MD) into a standalone, on-demand Agent Skill: a deterministic extraction script pulls clean text, then the agent writes per-chapter reference files, a glossary, a decision-rule cheatsheet, and a master index, sized to load only the relevant chapter instead of re-reading the whole book each session. Installs outside the e-stack pack at the root of the user's skills directory. Methodology adapted from [virgiliojr94/book-to-skill](https://github.com/virgiliojr94/book-to-skill).
+- `estack-email-writer` skill — new scheduling rule: once the recipient names a time or window, book it and state the booked time in the reply instead of asking them to confirm.
 
 ---
 
