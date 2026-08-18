@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.66] - 2026-08-17
+
+### Fixed
+- `estack-read-agent-history` skill — hiding a Codex review gate from `session-report` no longer subtracts its attention time from the day's total. On a sampled day the total silently read 288 minutes instead of 318. Hidden gates now leave the session list but stay in the total, and the footer plus `totals.review_gates_hidden` report how many rows were held back.
+- `estack-read-agent-history` skill — a Claude session is never mistaken for a Codex review gate. The filter matched on title text alone, so a real session that happened to open with those words was hidden and its time dropped; it now requires a Codex source.
+- `estack-read-agent-history` skill — `-n 5` means five messages. The value 5 doubled as the "unspecified" sentinel, so asking for five silently returned eighty. A negative `-n` is now rejected instead of chopping messages off the front.
+- `estack-read-agent-history` skill — `timeline --format json` reports `totals.review_gates_hidden`, so a JSON caller can tell that sessions were filtered out.
+
+---
+
 ## [1.0.65] - 2026-08-17
 
 ### Fixed
