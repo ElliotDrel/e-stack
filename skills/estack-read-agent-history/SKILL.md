@@ -1,6 +1,6 @@
 ---
 name: estack-read-agent-history
-version: 4.1.0
+version: 4.1.1
 description: >-
   (read-agent-history) Invoke for ANY task involving local AI coding-agent
   session history — Claude Code AND Codex (OpenAI codex-cli) transcripts or
@@ -100,7 +100,7 @@ PY="$HOME/.claude/skills/estack-read-agent-history/scripts/read_transcript.py"
 
 **`dump` is the workhorse for "what happened in this window."** `--role user` reads back the person's own prompts, which is what actually reconstructs a stretch of work — an assistant summary of the same window tells you what the model said, not what was asked for. `--role`, `--since`, and `--until` all apply; `-n` caps the count and defaults to the last 80 (use `-n 0` for everything in the window). Truncation prints a note to stderr, so if you don't see one, you got the whole window.
 
-**Codex review gates are hidden by default** in `timeline` and `session-report`. Codex logs its internal review/approval step as a session of its own titled "The following is the Codex agent history…" — machine turns that can outnumber the real sessions. `--keep-review-gates` brings them back. On a busy day, `timeline --max-per-block 4` also collapses each block's quiet tail.
+**Codex review gates are hidden by default** in `timeline` and `session-report`. Codex logs its internal review/approval step as a session of its own titled "The following is the Codex agent history…" — machine turns that can outnumber the real sessions. `--keep-review-gates` brings them back. In `session-report` the hidden gates leave the **list** but stay in the **total**, so the deduped attention number is still the real one. On a busy day, `timeline --max-per-block 4` also collapses each block's quiet tail in the text render.
 
 **Both agents by default.** The cross-session modes merge Claude Code **and** Codex over one deduped prompt stream (parallel chats split the clock, never double-count); narrow with `--agent claude|codex`. Single-file modes (`--file`) auto-detect a Codex rollout — no flag needed.
 

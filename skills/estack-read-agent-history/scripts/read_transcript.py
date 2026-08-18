@@ -170,6 +170,14 @@ def mode_pre_compact(lines, window=40):
     return "\n\n".join(output) if output else "No content found before compact."
 
 
+def _nonneg_int(value: str) -> int:
+    """argparse type for -n: a negative tail would silently chop from the front."""
+    n = int(value)
+    if n < 0:
+        raise argparse.ArgumentTypeError(f"-n must be 0 or greater (0 = no limit), got {n}")
+    return n
+
+
 def _dump_messages(lines, limit, role, since, until):
     """Messages for a dump: role- and time-filtered, then tail-limited.
 
@@ -1271,8 +1279,15 @@ _REVIEW_GATE_PREFIXES = ("The following is the Codex agent history",)
 
 
 def is_review_gate(summary_or_title) -> bool:
-    """True for a Codex internal review-gate pseudo-session (dict or title str)."""
+    """True for a Codex internal review-gate pseudo-session (dict or title str).
+
+    Given a session summary, the source must be Codex: a Claude session whose
+    title happens to open with the same words (someone discussing this very
+    feature, say) is real work and stays visible.
+    """
     if isinstance(summary_or_title, dict):
+        if summary_or_title.get("source") != "codex":
+            return False
         title = summary_or_title.get("title") or summary_or_title.get("first_prompt") or ""
     else:
         title = summary_or_title or ""
@@ -1395,6 +1410,12 @@ def render_timeline(data: dict, tz_label: str, max_per_block: int = 0) -> str:
 
 
 def timeline_json(data: dict) -> dict:
+    """Full block data for a consumer.
+
+    `--max-per-block` is deliberately NOT applied here: it trims a human-facing
+    render, and a JSON caller asked for the data. `review_gates_hidden` IS
+    reported, because that one removes sessions from the result.
+    """
     sessions = data["sessions"]
     blocks_out = []
     for b in data["blocks"]:
@@ -1429,6 +1450,7 @@ def timeline_json(data: dict) -> dict:
             "blocks": len(blocks_out),
             "span_minutes": span_min,
             "sessions": len(sessions),
+            "review_gates_hidden": data.get("review_gates_hidden", 0),
         },
     }
 
@@ -1795,14 +1817,23 @@ def render_session_report(data: dict, tz_label: str) -> str:
         out.append(f"   intent: {summary.get('first_prompt') or '(no user prompt)'}")
         out.append(f"   last:   {summary.get('last_assistant') or '(no assistant message)'}")
         out.append("")
-    total_active = sum((s["active"] for s in sessions.values()), timedelta())
-    first = min(s["first"] for s in sessions.values())
-    last = max(s["last"] for s in sessions.values())
+    # Totals span listed AND hidden sessions: hiding a review gate from the list
+    # must not quietly subtract its deduped attention time from the day.
+    counted = {**data.get("hidden_sessions", {}), **sessions}
+    total_active = sum((s["active"] for s in counted.values()), timedelta())
+    first = min(s["first"] for s in counted.values())
+    last = max(s["last"] for s in counted.values())
     out.append(
         f"Total: {len(sessions)} session(s) · {_fmt_dur(total_active)} active "
         f"(overlap removed) across a {_fmt_dur(last - first)} span "
         f"({_fmt_clock(first, multi_day)}–{_fmt_tod(last)})."
     )
+    if data.get("review_gates_hidden"):
+        out.append(
+            f"({data['review_gates_hidden']} Codex review-gate session(s) hidden "
+            f"from the list above; their time IS in the total. "
+            f"--keep-review-gates lists them.)"
+        )
     out.append(
         "(active = your attention, parallel chats never double-counted; "
         "ran = each session's own first→last span, which can overlap others.)"
@@ -1813,7 +1844,10 @@ def render_session_report(data: dict, tz_label: str) -> str:
 def session_report_json(data: dict) -> dict:
     rows = sorted(data["sessions"].items(), key=lambda kv: kv[1]["first"])
     sessions_out = []
-    total_active = timedelta()
+    # Same rule as the text render: hidden review gates stay out of the list but
+    # stay in the total, so the deduped attention number is still the real one.
+    hidden = data.get("hidden_sessions", {})
+    total_active = sum((s["active"] for s in hidden.values()), timedelta())
     for f, s in rows:
         summary = s["summary"]
         elapsed = s["last"] - s["first"]
@@ -1835,9 +1869,10 @@ def session_report_json(data: dict) -> dict:
             "last_message": summary.get("last_assistant") or "",
         })
     span_min = 0
-    if data["sessions"]:
-        first = min(s["first"] for s in data["sessions"].values())
-        last = max(s["last"] for s in data["sessions"].values())
+    counted = {**hidden, **data["sessions"]}
+    if counted:
+        first = min(s["first"] for s in counted.values())
+        last = max(s["last"] for s in counted.values())
         span_min = int((last - first).total_seconds() // 60)
     return {
         "since": data["since"].isoformat(),
@@ -1848,6 +1883,7 @@ def session_report_json(data: dict) -> dict:
             "sessions": len(sessions_out),
             "active_minutes": int(total_active.total_seconds() // 60),
             "span_minutes": span_min,
+            "review_gates_hidden": data.get("review_gates_hidden", 0),
         },
     }
 
@@ -2018,7 +2054,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Bypass the 5MB dump-size guard")
     p.add_argument("--format", default="text", choices=["text", "json"],
                    help="Output format (json works on every mode)")
-    p.add_argument("-n", type=int, default=5, help="Count modifier (last/dump/resume-prev); -n 0 = no limit")
+    # default=None, not 5: `dump` wants 80 when unspecified, and overloading the
+    # value 5 as "unspecified" made an explicit `-n 5` silently mean 80.
+    p.add_argument("-n", type=_nonneg_int, default=None,
+                   help="Count modifier (last/dump/resume-prev). Default 5, or 80 for "
+                        "dump. -n 0 = no limit")
     p.add_argument("--max-per-block", type=int, default=0, metavar="N",
                    help="timeline: list only the N busiest sessions per block (0 = all)")
     p.add_argument("--keep-review-gates", action="store_true",
@@ -2080,7 +2120,7 @@ def main() -> int:
         if not args.cwd:
             print("--cwd required for resume-prev", file=sys.stderr)
             return 1
-        _emit(mode_resume_prev(args.cwd, root, args.n, fmt=fmt))
+        _emit(mode_resume_prev(args.cwd, root, args.n if args.n is not None else 5, fmt=fmt))
         return 0
     if mode == "count":
         if not args.query:
@@ -2214,13 +2254,21 @@ def main() -> int:
         )
         if mode == "session-report":
             if not args.keep_review_gates:
-                kept = {f: s for f, s in data["sessions"].items()
-                        if not is_review_gate(s.get("summary") or {})}
-                hidden = len(data["sessions"]) - len(kept)
-                if hidden:
-                    data = {**data, "sessions": kept, "review_gates_hidden": hidden}
-                    print(f"[note: {hidden} Codex review-gate session(s) hidden "
-                          f"— pass --keep-review-gates to include them]",
+                hidden_map = {f: s for f, s in data["sessions"].items()
+                              if is_review_gate(s.get("summary") or {})}
+                if hidden_map:
+                    # Hide the ROWS, keep the MINUTES. build_engagement already
+                    # deduped this attention time against the global stream, so
+                    # dropping it from the total would understate the day — the
+                    # exact "overlap removed" number the header promises.
+                    kept = {f: s for f, s in data["sessions"].items()
+                            if f not in hidden_map}
+                    data = {**data, "sessions": kept,
+                            "hidden_sessions": hidden_map,
+                            "review_gates_hidden": len(hidden_map)}
+                    print(f"[note: {len(hidden_map)} Codex review-gate session(s) "
+                          f"hidden from the list; their active time is still "
+                          f"counted — pass --keep-review-gates to list them]",
                           file=sys.stderr)
             if fmt == "json":
                 _print_json(session_report_json(data))
@@ -2313,13 +2361,13 @@ def main() -> int:
 
     if fmt == "json":
         if mode == "last":
-            _print_json(json_last(lines, args.n, args.role or "assistant"))
+            _print_json(json_last(lines, args.n if args.n is not None else 5, args.role or "assistant"))
         elif mode == "advisor":
             _print_json(json_advisor(lines))
         elif mode == "pre-compact":
             _print_json(json_pre_compact(lines))
         elif mode == "dump":
-            _print_json(json_dump(lines, args.n if args.n != 5 else 80,
+            _print_json(json_dump(lines, args.n if args.n is not None else 80,
                                   args.role or "both", since, until))
         elif mode == "debug":
             _print_json(json_debug(lines))
@@ -2328,7 +2376,7 @@ def main() -> int:
     print(f"[{path.name} — {len(lines)} entries]\n")
 
     if mode == "last":
-        body = mode_last(lines, args.n, args.role or "assistant")
+        body = mode_last(lines, args.n if args.n is not None else 5, args.role or "assistant")
         if args.include_subagents:
             body += _append_subagents(path)
         print(body)
@@ -2355,7 +2403,7 @@ def main() -> int:
             else:
                 print(mode_last(lines, 10))
         else:
-            body = mode_dump(lines, args.n if args.n != 5 else 80,
+            body = mode_dump(lines, args.n if args.n is not None else 80,
                              args.role or "both", since, until)
             if args.include_subagents:
                 body += _append_subagents(path)

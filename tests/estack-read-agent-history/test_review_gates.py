@@ -18,14 +18,20 @@ def test_is_review_gate_matches_title_string():
     assert RT.is_review_gate(GATE_TITLE)
 
 
-def test_is_review_gate_matches_summary_dict():
-    assert RT.is_review_gate({"title": GATE_TITLE})
-    assert RT.is_review_gate({"title": None, "first_prompt": GATE_TITLE})
+def test_is_review_gate_matches_codex_summary_dict():
+    assert RT.is_review_gate({"source": "codex", "title": GATE_TITLE})
+    assert RT.is_review_gate({"source": "codex", "title": None, "first_prompt": GATE_TITLE})
+
+
+def test_is_review_gate_requires_codex_source():
+    """A Claude session that merely talks about review gates is real work."""
+    assert not RT.is_review_gate({"source": "claude", "title": GATE_TITLE})
+    assert not RT.is_review_gate({"title": GATE_TITLE})          # source absent
 
 
 def test_is_review_gate_leaves_real_sessions_alone():
-    assert not RT.is_review_gate({"title": "Plan optimal fall 2026 semester schedule"})
-    assert not RT.is_review_gate({"title": ""})
+    assert not RT.is_review_gate({"source": "codex", "title": "Fix the spell checker"})
+    assert not RT.is_review_gate({"source": "codex", "title": ""})
     assert not RT.is_review_gate({})
     assert not RT.is_review_gate(None)
 

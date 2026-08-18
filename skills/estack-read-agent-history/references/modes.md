@@ -70,7 +70,7 @@ python read_transcript.py --file <path> --mode dump [--role user|assistant|both]
 
 - **`--role`** filters to one speaker. `/compact` markers survive the filter — they're structure, not a turn. Default `both`.
 - **`--since` / `--until`** bound the window, half-open `[since, until)`. Both apply to the message timestamps, not the file's mtime.
-- **`-n`** caps the result to the last N messages *after* filtering; default 80, **`-n 0` = no limit**. When a cap bites, a note goes to stderr naming how many were withheld — no note means you got the whole window.
+- **`-n`** caps the result to the last N messages *after* filtering; default 80, **`-n 0` = no limit**, and a negative value is rejected rather than silently chopping from the front. When a cap bites, a note goes to stderr naming how many were withheld — no note means you got the whole window. (`-n 5` means 5. Until 2026-08-17 the value 5 doubled as the "unspecified" sentinel, so an explicit `-n 5` silently returned 80.)
 - The header line reports `(<shown> of <total> messages[ in window][, <role> only])` so the scope of what you're reading is always on the page.
 
 **Size-aware fallback:** transcripts larger than 5 MB auto-degrade to `pre-compact` (or `last` if no compact marker), with a stderr note. Override with `--force-dump`. **A `--since`/`--until` window suppresses the fallback** — the window already bounds the output, so a big file on disk is not a reason to degrade.
@@ -329,7 +329,7 @@ python read_transcript.py --mode timeline --date yesterday --max-per-block 4
 
 **Codex review gates are filtered out by default** (here and in `session-report`). Codex records its internal review/approval step as a session of its own, titled `The following is the Codex agent history…`; on a heavy day these outnumber the real sessions and bury the shape of the day. The footer names how many were hidden. `--keep-review-gates` includes them.
 
-**`--max-per-block N`** lists only the N busiest sessions in each block and collapses the rest to one `… N quieter session(s) — M msgs` line. `0` (default) shows everything. Useful when a single block holds a dozen parallel chats.
+**`--max-per-block N`** lists only the N busiest sessions in each block and collapses the rest to one `… N quieter session(s) — M msgs` line. `0` (default) shows everything. Useful when a single block holds a dozen parallel chats. It trims the **text render only**: `--format json` returns every session, because a JSON caller asked for the data. Gate filtering does apply to JSON, and `totals.review_gates_hidden` reports it there.
 
 How it works: every signal-message timestamp in the window is an activity event;
 events across all sessions are merged chronologically and grouped into blocks
@@ -427,7 +427,11 @@ python read_transcript.py --mode session-report --since "2026-06-19 19:00" --unt
 
 # Include Codex's internal review-gate pseudo-sessions (hidden by default)
 python read_transcript.py --mode session-report --date yesterday --keep-review-gates
+```
 
+**Hidden review gates leave the list, not the total.** A gate's attention time was already deduped against the global stream, so subtracting it would understate the day. The rendered total and `totals.active_minutes` both count hidden sessions; the footer and `totals.review_gates_hidden` say how many rows were held back. Only the session *rows* disappear.
+
+```bash
 # One project
 python read_transcript.py --mode session-report --project keel --date today
 ```
