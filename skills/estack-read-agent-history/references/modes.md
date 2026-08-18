@@ -61,13 +61,21 @@ If no `/compact` marker is present, falls back to `mode_last(10)` with a note.
 
 ### `dump`
 
-Human-readable conversation dump (last 80 messages by default; `-n` overrides).
+Human-readable conversation dump, filtered by role and time window.
 
 ```bash
-python read_transcript.py --file <path> --mode dump [-n N] [--include-subagents] [--force-dump]
+python read_transcript.py --file <path> --mode dump [--role user|assistant|both] \
+    [--since T1] [--until T2] [-n N] [--include-subagents] [--force-dump]
 ```
 
-**Size-aware fallback:** transcripts larger than 5 MB auto-degrade to `pre-compact` (or `last` if no compact marker), with a stderr note. Override with `--force-dump`.
+- **`--role`** filters to one speaker. `/compact` markers survive the filter — they're structure, not a turn. Default `both`.
+- **`--since` / `--until`** bound the window, half-open `[since, until)`. Both apply to the message timestamps, not the file's mtime.
+- **`-n`** caps the result to the last N messages *after* filtering; default 80, **`-n 0` = no limit**. When a cap bites, a note goes to stderr naming how many were withheld — no note means you got the whole window.
+- The header line reports `(<shown> of <total> messages[ in window][, <role> only])` so the scope of what you're reading is always on the page.
+
+**Size-aware fallback:** transcripts larger than 5 MB auto-degrade to `pre-compact` (or `last` if no compact marker), with a stderr note. Override with `--force-dump`. **A `--since`/`--until` window suppresses the fallback** — the window already bounds the output, so a big file on disk is not a reason to degrade.
+
+*History: before 2026-08-17, `--role`, `--since`, and `--until` were accepted and silently ignored here — a 5-minute window returned the whole session's last 50 messages of both roles. If you find behavior like that in another mode, treat it as a bug and fix it rather than working around it; silent no-op flags are what push callers into hand-rolling parsers.*
 
 ### `debug`
 
@@ -314,7 +322,14 @@ python read_transcript.py --mode timeline --project keel --date today --gap 5m
 
 # Arbitrary window
 python read_transcript.py --mode timeline --since 2026-06-01 --until 2026-06-03
+
+# A busy day, kept readable: 4 busiest sessions per block
+python read_transcript.py --mode timeline --date yesterday --max-per-block 4
 ```
+
+**Codex review gates are filtered out by default** (here and in `session-report`). Codex records its internal review/approval step as a session of its own, titled `The following is the Codex agent history…`; on a heavy day these outnumber the real sessions and bury the shape of the day. The footer names how many were hidden. `--keep-review-gates` includes them.
+
+**`--max-per-block N`** lists only the N busiest sessions in each block and collapses the rest to one `… N quieter session(s) — M msgs` line. `0` (default) shows everything. Useful when a single block holds a dozen parallel chats.
 
 How it works: every signal-message timestamp in the window is an activity event;
 events across all sessions are merged chronologically and grouped into blocks
@@ -409,6 +424,9 @@ python read_transcript.py --mode session-report --date yesterday
 
 # Just the evening — omit --date so --since/--until take effect
 python read_transcript.py --mode session-report --since "2026-06-19 19:00" --until "2026-06-20 00:00"
+
+# Include Codex's internal review-gate pseudo-sessions (hidden by default)
+python read_transcript.py --mode session-report --date yesterday --keep-review-gates
 
 # One project
 python read_transcript.py --mode session-report --project keel --date today

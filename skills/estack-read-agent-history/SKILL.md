@@ -1,6 +1,6 @@
 ---
 name: estack-read-agent-history
-version: 4.0.0
+version: 4.1.0
 description: >-
   (read-agent-history) Invoke for ANY task involving local AI coding-agent
   session history — Claude Code AND Codex (OpenAI codex-cli) transcripts or
@@ -36,14 +36,23 @@ Search, read, recover, and analyze local AI coding-agent session history across 
 
 Never use the Read tool on a raw `.jsonl` (Claude **or** Codex), and never hand-roll parsing without `lib.parser` — both schemas have traps (noise entries, tool-result envelopes, UTC timestamps, and Codex's two-layer event/response streams). `lib.parser.parse_lines` auto-detects a Codex rollout and normalizes it into the same shape Claude emits, so every primitive works on both.
 
-Scratch-script boilerplate:
+Writing your own script is a **normal, supported path**, not a defeat — it's the right move whenever the question is specific to the task at hand. Do it well by starting from the primitives instead of the raw file. Full guide with worked examples: `references/writing-your-own.md`.
 
 ```python
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path.home() / ".claude/skills/estack-read-agent-history/scripts"))
 from lib import parser, paths, search, subagents, tools, codex
+
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # required — see Pitfalls
+
+lines = parser.parse_lines(Path(r"C:\Users\...\<uuid>.jsonl"))  # Path, not str, not a handle
+msgs  = parser.get_messages(lines)          # [{role, texts, timestamp, is_compact, line_index}]
+msgs  = parser.filter_by_time(msgs, since, until)   # datetimes, local, half-open [since, until)
+msgs  = parser.filter_by_role(msgs, "user")         # "user" | "assistant" | "both"
 ```
+
+**`parse_lines` takes a `pathlib.Path`.** Handing it a `str` or an open file object raises deep inside `codex.py`/`parser.py` and reads like a skill bug when it's a caller error. Everything else takes the list that `get_messages` returns.
 
 ## Where sessions live
 
@@ -80,6 +89,7 @@ PY="$HOME/.claude/skills/estack-read-agent-history/scripts/read_transcript.py"
 | Keyword search everywhere | `python "$PY" --mode search --all-projects --query "supabase migration"` |
 | 6-line session summary (either agent) | `python "$PY" --file <session-or-rollout.jsonl> --mode brief` |
 | Last assistant / **user** message | `python "$PY" --file <s.jsonl> --mode last [--role user\|both]` |
+| **Read a time window of one session** | `python "$PY" --file <s.jsonl> --mode dump --role user --since <T1> --until <T2>` |
 | Pre-/compact recovery | `python "$PY" --file <session.jsonl> --mode pre-compact` |
 | All subagent finals | `python "$PY" --file <parent.jsonl> --mode subagent-finals` |
 | Day overview / "what did I do" | `python "$PY" --mode session-report --date yesterday` |
@@ -87,6 +97,10 @@ PY="$HOME/.claude/skills/estack-read-agent-history/scripts/read_transcript.py"
 | My real attention time | `python "$PY" --mode engagement --date today` |
 | Just one agent | add `--agent codex` (or `--agent claude`) to any cross-agent mode |
 | `claude --resume` snippet | `python "$PY" --mode resume-cmd --uuid <prefix>` |
+
+**`dump` is the workhorse for "what happened in this window."** `--role user` reads back the person's own prompts, which is what actually reconstructs a stretch of work — an assistant summary of the same window tells you what the model said, not what was asked for. `--role`, `--since`, and `--until` all apply; `-n` caps the count and defaults to the last 80 (use `-n 0` for everything in the window). Truncation prints a note to stderr, so if you don't see one, you got the whole window.
+
+**Codex review gates are hidden by default** in `timeline` and `session-report`. Codex logs its internal review/approval step as a session of its own titled "The following is the Codex agent history…" — machine turns that can outnumber the real sessions. `--keep-review-gates` brings them back. On a busy day, `timeline --max-per-block 4` also collapses each block's quiet tail.
 
 **Both agents by default.** The cross-session modes merge Claude Code **and** Codex over one deduped prompt stream (parallel chats split the clock, never double-count); narrow with `--agent claude|codex`. Single-file modes (`--file`) auto-detect a Codex rollout — no flag needed.
 
@@ -100,6 +114,9 @@ Every mode takes `--format json` (a `source: "claude"|"codex"` field tags each s
 - **A live transcript's last line may be truncated** — `lib.parser.iter_lines` handles it (Claude and Codex); bare `json.loads` per line crashes.
 - **Bound your output.** Cross-project/cross-agent sweeps can emit tens of thousands of tokens; summarize per session, expand selectively.
 - **Windows:** use `python` (not `python3`); pass Windows-style paths into Python (POSIX paths from Bash cause `FileNotFoundError`); run JSON pipe chains in Bash — PowerShell 5.1 pipes inject a BOM.
+- **Never stage a file in `/tmp` on Windows.** Bash writes `/tmp/x.json` to `C:\Users\…\AppData\Local\Temp`, Python resolves `/tmp` to `C:\tmp` — and because `os.path.isdir('/tmp')` returns **True**, the directory check passes and only the read fails, so it looks like the CLI produced nothing. Write intermediates to the session scratchpad with a full Windows path. (This single trap accounted for five separate crashes in one day's work.)
+- **Set your stdout encoding before printing transcript text.** Console stdout is cp1252 and dies on the first non-Latin-1 character: `sys.stdout.reconfigure(encoding="utf-8", errors="replace")` at the top of every script (or `PYTHONIOENCODING=utf-8`).
+- **`errors="replace"` is not optional.** Transcript text can carry unpaired surrogates (`'\udc8f'`) that survive JSON round-tripping and then kill even a UTF-8 `print` with `UnicodeEncodeError: surrogates not allowed`. Plain `encoding="utf-8"` does not save you.
 - **Empty/weird results** → `--mode debug` prints the entry-type distribution and probes for schema drift. Codex reasoning is usually encrypted (`summary: []`), so `--in thinking` on a Codex session is often empty — that's expected, not drift.
 
 ## Backups

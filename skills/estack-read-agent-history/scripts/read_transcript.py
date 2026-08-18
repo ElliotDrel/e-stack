@@ -170,11 +170,50 @@ def mode_pre_compact(lines, window=40):
     return "\n\n".join(output) if output else "No content found before compact."
 
 
-def mode_dump(lines, limit=80):
-    messages = PR.get_messages(lines)
-    with_text = [m for m in messages if m["texts"]]
-    recent = with_text[-limit:]
-    output = [f"--- Conversation dump (last {len(recent)} messages with text) ---\n"]
+def _dump_messages(lines, limit, role, since, until):
+    """Messages for a dump: role- and time-filtered, then tail-limited.
+
+    ``limit=0`` means no limit. Returns ``(messages, total_before_limit)`` so
+    callers can tell the user when they were handed a tail.
+    """
+    messages = [m for m in PR.get_messages(lines) if m["texts"] or m["is_compact"]]
+    # "User" entries include hook/skill isMeta injections and compact
+    # continuations. Neither is something the human typed, and a dump exists to
+    # show what was actually asked for — so drop them, matching `--mode last`.
+    messages = [
+        m for m in messages
+        if m["role"] != "user"
+        or m["is_compact"]
+        or not lines[m["line_index"]].get("isMeta")
+    ]
+    messages = PR.filter_by_time(messages, since, until)
+    if role and role != "both":
+        # A role filter filters strictly: the /COMPACT boundary marker is a
+        # user-side entry, so it goes too rather than breaking the promise.
+        messages = [m for m in messages if m["role"] == role and not m["is_compact"]]
+    total = len(messages)
+    if limit and total > limit:
+        return messages[-limit:], total
+    return messages, total
+
+
+def _note_truncated(shown, total, scope):
+    """Truncation must be loud — a silent tail reads as a complete answer."""
+    if total > shown:
+        print(
+            f"[note: showing the last {shown} of {total} messages in {scope} "
+            f"— pass --n 0 for all of them]",
+            file=sys.stderr,
+        )
+
+
+def mode_dump(lines, limit=80, role="both", since=None, until=None):
+    recent, total = _dump_messages(lines, limit, role, since, until)
+    _note_truncated(len(recent), total, "this window" if (since or until) else "the session")
+    who = "" if role in (None, "both") else f", {role} only"
+    where = " in window" if (since or until) else ""
+    output = [f"--- Conversation dump ({len(recent)} of {total} messages"
+              f"{where}{who}) ---\n"]
     for m in recent:
         if m["is_compact"]:
             output.append("\n--- /COMPACT ---\n")
@@ -1224,6 +1263,22 @@ def _parse_gap(spec: str | None, default: int = 15) -> int:
     return n * 60 if (m.group(2) or "m").lower() == "h" else n
 
 
+# Codex records its internal review/approval gate as a session of its own, with
+# a title that always starts this way. They are machine turns, never the user
+# working, and on a busy day they can outnumber the real sessions in a timeline.
+# Filtered by default from timeline/session-report; --keep-review-gates keeps them.
+_REVIEW_GATE_PREFIXES = ("The following is the Codex agent history",)
+
+
+def is_review_gate(summary_or_title) -> bool:
+    """True for a Codex internal review-gate pseudo-session (dict or title str)."""
+    if isinstance(summary_or_title, dict):
+        title = summary_or_title.get("title") or summary_or_title.get("first_prompt") or ""
+    else:
+        title = summary_or_title or ""
+    return any(title.strip().startswith(p) for p in _REVIEW_GATE_PREFIXES)
+
+
 def build_timeline(
     project_dirs: list[Path],
     since: datetime,
@@ -1232,6 +1287,7 @@ def build_timeline(
     current_uuid: str | None,
     exclude_current: bool = False,
     codex_sessions: list[Path] | None = None,
+    keep_review_gates: bool = False,
 ) -> dict:
     """Cross-session activity blocks for a time window.
 
@@ -1241,8 +1297,10 @@ def build_timeline(
     """
     sessions: dict[Path, dict] = {}
     events: list[tuple[datetime, Path]] = []
+    gates_hidden = 0
 
     def _add_file(f: Path) -> None:
+        nonlocal gates_hidden
         if exclude_current and current_uuid and f.stem == current_uuid:
             return
         stamps = []
@@ -1253,7 +1311,11 @@ def build_timeline(
             stamps.append(ts)
         if not stamps:
             return
-        sessions[f] = PR.session_summary(f, current_session_id=current_uuid)
+        summary = PR.session_summary(f, current_session_id=current_uuid)
+        if not keep_review_gates and is_review_gate(summary):
+            gates_hidden += 1
+            return
+        sessions[f] = summary
         events.extend((ts, f) for ts in stamps)
 
     for pd in project_dirs:
@@ -1281,6 +1343,7 @@ def build_timeline(
         "gap_minutes": gap_minutes,
         "blocks": blocks,
         "sessions": sessions,
+        "review_gates_hidden": gates_hidden,
     }
 
 
@@ -1290,7 +1353,7 @@ def _session_label(s: dict) -> str:
     return f"{src}{s['decoded_project']} · {title[:60]} [{s['uuid'][:8]}]"
 
 
-def render_timeline(data: dict, tz_label: str) -> str:
+def render_timeline(data: dict, tz_label: str, max_per_block: int = 0) -> str:
     since, until = data["since"], data["until"]
     blocks, sessions = data["blocks"], data["sessions"]
     multi_day = (until - since) > timedelta(days=1)
@@ -1307,8 +1370,14 @@ def render_timeline(data: dict, tz_label: str) -> str:
             out.append(f"     ── idle {_fmt_dur(b['start'] - prev_end)} ──")
         dur = b["end"] - b["start"]
         out.append(f"{_fmt_clock(b['start'], multi_day)}–{_fmt_tod(b['end'])}  ({_fmt_dur(dur)})")
-        for f, n in sorted(b["counts"].items(), key=lambda x: -x[1]):
+        ranked = sorted(b["counts"].items(), key=lambda x: -x[1])
+        shown = ranked[:max_per_block] if max_per_block else ranked
+        for f, n in shown:
             out.append(f"   · {_session_label(sessions[f])} — {n} msgs")
+        if len(ranked) > len(shown):
+            rest = sum(n for _, n in ranked[len(shown):])
+            out.append(f"   · … {len(ranked) - len(shown)} quieter session(s) "
+                       f"in this block — {rest} msgs")
         prev_end = b["end"]
     span = blocks[-1]["end"] - blocks[0]["start"]
     out.append("")
@@ -1319,6 +1388,9 @@ def render_timeline(data: dict, tz_label: str) -> str:
         f"({_fmt_clock(blocks[0]['start'], multi_day)}–{_fmt_tod(blocks[-1]['end'])}), "
         f"{len(sessions)} session(s)"
     )
+    if data.get("review_gates_hidden"):
+        out.append(f"({data['review_gates_hidden']} Codex review gate(s) hidden "
+                   f"— pass --keep-review-gates to show them)")
     return "\n".join(out)
 
 
@@ -1828,9 +1900,11 @@ def json_pre_compact(lines: list[dict], window: int = 40) -> dict:
     }
 
 
-def json_dump(lines: list[dict], limit: int = 80) -> list[dict]:
-    messages = [m for m in PR.get_messages(lines) if m["texts"] or m["is_compact"]]
-    return _messages_json(messages[-limit:])
+def json_dump(lines: list[dict], limit: int = 80, role: str = "both",
+              since=None, until=None) -> list[dict]:
+    messages, total = _dump_messages(lines, limit, role, since, until)
+    _note_truncated(len(messages), total, "this window" if (since or until) else "the session")
+    return _messages_json(messages)
 
 
 def json_debug(lines: list[dict]) -> dict:
@@ -1944,7 +2018,12 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Bypass the 5MB dump-size guard")
     p.add_argument("--format", default="text", choices=["text", "json"],
                    help="Output format (json works on every mode)")
-    p.add_argument("-n", type=int, default=5, help="Count modifier (last/dump/resume-prev)")
+    p.add_argument("-n", type=int, default=5, help="Count modifier (last/dump/resume-prev); -n 0 = no limit")
+    p.add_argument("--max-per-block", type=int, default=0, metavar="N",
+                   help="timeline: list only the N busiest sessions per block (0 = all)")
+    p.add_argument("--keep-review-gates", action="store_true",
+                   help="timeline/session-report: keep Codex internal review-gate "
+                        "pseudo-sessions (hidden by default)")
     return p
 
 
@@ -2066,11 +2145,13 @@ def main() -> int:
         )
         data = build_timeline(project_dirs, t_since, t_until, gap_minutes, current_uuid,
                               exclude_current=args.exclude_current,
-                              codex_sessions=codex_sessions)
+                              codex_sessions=codex_sessions,
+                              keep_review_gates=args.keep_review_gates)
         if fmt == "json":
             _print_json(timeline_json(data))
         else:
-            print(render_timeline(data, tz_label=args.tz or "local"))
+            print(render_timeline(data, tz_label=args.tz or "local",
+                                  max_per_block=args.max_per_block))
         return 0
     if mode in ("engagement", "session-report"):
         try:
@@ -2132,6 +2213,15 @@ def main() -> int:
             codex_stream=codex_stream, codex_report=codex_report,
         )
         if mode == "session-report":
+            if not args.keep_review_gates:
+                kept = {f: s for f, s in data["sessions"].items()
+                        if not is_review_gate(s.get("summary") or {})}
+                hidden = len(data["sessions"]) - len(kept)
+                if hidden:
+                    data = {**data, "sessions": kept, "review_gates_hidden": hidden}
+                    print(f"[note: {hidden} Codex review-gate session(s) hidden "
+                          f"— pass --keep-review-gates to include them]",
+                          file=sys.stderr)
             if fmt == "json":
                 _print_json(session_report_json(data))
             else:
@@ -2229,7 +2319,8 @@ def main() -> int:
         elif mode == "pre-compact":
             _print_json(json_pre_compact(lines))
         elif mode == "dump":
-            _print_json(json_dump(lines, args.n if args.n != 5 else 80))
+            _print_json(json_dump(lines, args.n if args.n != 5 else 80,
+                                  args.role or "both", since, until))
         elif mode == "debug":
             _print_json(json_debug(lines))
         return 0
@@ -2247,7 +2338,10 @@ def main() -> int:
         print(mode_pre_compact(lines))
     elif mode == "dump":
         size = path.stat().st_size
-        if size > PR.LARGE_FILE_THRESHOLD and not args.force_dump:
+        # A --since/--until window already bounds the output, so a big file on
+        # disk is not a reason to degrade — the window is the whole point.
+        bounded = since is not None or until is not None
+        if size > PR.LARGE_FILE_THRESHOLD and not args.force_dump and not bounded:
             has_compact = any(m["is_compact"] for m in PR.get_messages(lines))
             fallback = "pre-compact" if has_compact else "last"
             mb = size / (1024 * 1024)
@@ -2261,7 +2355,8 @@ def main() -> int:
             else:
                 print(mode_last(lines, 10))
         else:
-            body = mode_dump(lines, args.n if args.n != 5 else 80)
+            body = mode_dump(lines, args.n if args.n != 5 else 80,
+                             args.role or "both", since, until)
             if args.include_subagents:
                 body += _append_subagents(path)
             print(body)
