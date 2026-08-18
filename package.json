@@ -1,6 +1,6 @@
 {
   "name": "elliot-stack",
-  "version": "1.0.64",
+  "version": "1.0.65",
   "description": "Elliot's skill stack for Claude Code — install via npx elliot-stack@latest",
   "bin": {
     "elliot-stack": "bin/install.cjs"
