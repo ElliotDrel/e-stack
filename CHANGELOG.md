@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.65] - 2026-08-17
+
+### Fixed
+- `estack-read-agent-history` skill — `--mode dump` now honors `--role`, `--since`, and `--until`. They were accepted and silently ignored, so asking for "the user's messages between 4:50 and 5:05" returned the whole session's last 80 messages in both roles. Reading back one window of one session is the most common thing this skill gets asked to do, and it was the broken path.
+- `estack-read-agent-history` skill — a dump of user messages no longer includes hook/skill `isMeta` injections or compact continuations, so what you read back is what the human actually typed.
+- `estack-read-agent-history` skill — truncation is announced instead of silent. The header reports how many of how many messages you got, a stderr note names what was withheld, and `-n 0` returns everything. A `--since`/`--until` window also suppresses the 5 MB size-degrade, since the window already bounds the output.
+
+### Added
+- `estack-read-agent-history` skill — `timeline` and `session-report` hide Codex's internal review-gate pseudo-sessions by default and report how many were hidden. `--keep-review-gates` brings them back. On a sampled busy day this cut a timeline from 17 sessions to 13.
+- `estack-read-agent-history` skill — `timeline --max-per-block N` lists only the N busiest sessions per activity block and collapses the rest into one summary line.
+- `estack-read-agent-history` skill — new `references/writing-your-own.md` covering the `parse_lines(Path)` contract, the message shape it returns, and a complete copy-pasteable script. Writing a one-off script is now a documented path rather than an undocumented last resort.
+
+### Changed
+- `estack-read-agent-history` skill — `dump` appears on the front page of `SKILL.md` for the first time, and Pitfalls gains the three Windows traps that break scripts silently: `/tmp` resolving differently in Bash and Python, cp1252 stdout, and lone surrogates surviving JSON round-trips.
+
+---
+
 ## [1.0.64] - 2026-08-17
 
 ### Added
