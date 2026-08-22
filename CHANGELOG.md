@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `estack-flight-planner` skill — preferences and search history move from `~/.flight-planner/` to `~/.e-stack/estack-flight-planner/`, so every e-stack skill keeps its files in one folder. Your existing config is not moved for you: the setup check now detects the old location and prints the command to move it, because that file holds your SerpAPI key. Run the skill once and it will tell you what to do.
+
 ---
 
 ## [1.0.67] - 2026-08-22

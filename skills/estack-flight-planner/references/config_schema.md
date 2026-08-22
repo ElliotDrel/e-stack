@@ -1,4 +1,4 @@
-# Config Schema — `~/.flight-planner/config.json`
+# Config Schema — `~/.e-stack/estack-flight-planner/config.json`
 
 The skill stores user preferences in this file. It lives outside `~/.agents/skills/` so the e-stack installer never overwrites it.
 

@@ -1,13 +1,13 @@
 ---
 name: estack-flight-planner
-version: 1.2.0
+version: 1.3.0
 description: >-
   (flight-planner) Find and rank flights between any two airports. Handles the
   parts worth automating (fetching every route, parsing SerpAPI's nested shape,
   timezone-aware ground-shuttle buffer math on either end of the trip) and
   leaves filtering and ranking to judgment. Config-driven preferences,
   reusable trip presets, and per-direction shuttle legs live in
-  `~/.flight-planner/config.json`. Every search is logged.
+  `~/.e-stack/estack-flight-planner/config.json`. Every search is logged.
 disable-model-invocation: true
 ---
 
@@ -126,8 +126,8 @@ This applies to every phase, not just Phase 1. If the user later says "actually,
 
 ## Persistent state (not in the skill directory)
 
-- `~/.flight-planner/config.json` — User preferences. Created via first-run wizard. Never overwritten by skill installer.
-- `~/.flight-planner/flight_history.json` — Append-only log of searches and selections.
+- `~/.e-stack/estack-flight-planner/config.json` — User preferences. Created via first-run wizard. Never overwritten by skill installer.
+- `~/.e-stack/estack-flight-planner/flight_history.json` — Append-only log of searches and selections.
 
 `~` expands to `%USERPROFILE%` on Windows and `$HOME` on Mac/Linux.
 
@@ -145,11 +145,11 @@ bash ~/.agents/skills/estack-flight-planner/scripts/check_setup.sh
 
 The output reports:
 - Today's date and local timezone (use this when converting relative dates in Phase 1)
-- Whether `~/.flight-planner/config.json` exists, and if so, all current preferences (with the SerpAPI key masked to "set" or "null")
+- Whether `~/.e-stack/estack-flight-planner/config.json` exists, and if so, all current preferences (with the SerpAPI key masked to "set" or "null")
 - Any saved **trip presets**, with their aliases — these are the fast path in Phase 1
 - The shuttle service: providers, costs, buffer settings, and how many schedule URLs to fetch
 - Whether `SERPAPI_KEY` is set in the environment
-- Whether `~/.flight-planner/flight_history.json` exists and how many entries it has
+- Whether `~/.e-stack/estack-flight-planner/flight_history.json` exists and how many entries it has
 
 **Decision tree based on output:**
 - **Config exists** → Phase 1 (ask trip details), then Phase 2 in confirmation mode (show saved prefs, ask "still right?")
@@ -164,7 +164,7 @@ Don't repeat back the setup output to the user verbatim — just internalize it 
 Tell the user, in your own words:
 - What this skill does: finds and ranks flights between any two airports using their preferences.
 - How it works: 4 phases — (1) Trip details (where/when), (2) Preferences (confirm saved config or run a first-run wizard), (3) Run the search pipeline (fetch → filter → rank → optional shuttle pairing), (4) Recommend and log.
-- Where state lives: `~/.flight-planner/config.json` (preferences) and `~/.flight-planner/flight_history.json` (search log).
+- Where state lives: `~/.e-stack/estack-flight-planner/config.json` (preferences) and `~/.e-stack/estack-flight-planner/flight_history.json` (search log).
 - Whether they're in first-run wizard mode or returning-user mode (based on Phase 0 output).
 
 **Pacing for Phase 2 wizard (first-run only):** If Phase 0 showed no config, the user will face a multi-question wizard in Phase 2. Right after the overview, ask once: "When we get to your preferences setup, do you want me to ask all questions one at a time, or batch them so you can answer in one message?" Skip this question entirely if a config already exists (returning user — Phase 2 is just confirmation).
@@ -238,7 +238,7 @@ Origin and destination are **never saved to config by default**. The user can op
 
 ### Phase 2 — Preferences confirmation
 
-**If `~/.flight-planner/config.json` exists:**
+**If `~/.e-stack/estack-flight-planner/config.json` exists:**
 
 Read it and show a single block:
 
@@ -312,7 +312,7 @@ Send TWO batches:
 
    See `references/shuttle_schedules.md` for the full sub-schema.
 
-After collecting answers, show the full config and ask "Save this to ~/.flight-planner/config.json?" before writing.
+After collecting answers, show the full config and ask "Save this to ~/.e-stack/estack-flight-planner/config.json?" before writing.
 
 ### Phase 3 — Execute
 
@@ -320,7 +320,7 @@ Run the scripts. Do all math via the scripts, never in your head.
 
 **Step 1 — Log search start**
 
-Append a `search_started` entry to `~/.flight-planner/flight_history.json` with timestamp, dates, route, and a snapshot of the preferences used (after Phase 2 overrides). See `references/flight_history_schema.md` for the exact format.
+Append a `search_started` entry to `~/.e-stack/estack-flight-planner/flight_history.json` with timestamp, dates, route, and a snapshot of the preferences used (after Phase 2 overrides). See `references/flight_history_schema.md` for the exact format.
 
 **Step 2 — Fetch live flight data**
 
@@ -455,7 +455,7 @@ Recommend the top row in one or two sentences, and say what the runner-up trades
 
 **Step 7 — Log the selection**
 
-When the user confirms a choice, append a `selection_made` entry to `~/.flight-planner/flight_history.json`, linking back to the `search_started` entry from step 1. See `references/flight_history_schema.md`.
+When the user confirms a choice, append a `selection_made` entry to `~/.e-stack/estack-flight-planner/flight_history.json`, linking back to the `search_started` entry from step 1. See `references/flight_history_schema.md`.
 
 **Step 8 — Offer booking link**
 
@@ -493,7 +493,7 @@ If the user doesn't have a SerpAPI key and asks for help getting one:
 2. Walk them to https://serpapi.com/users/sign_up — sign up with email.
 3. After signup, the API key is at https://serpapi.com/manage-api-key.
 4. To set it permanently, walk them through either:
-   - Saving it in their `~/.flight-planner/config.json` (`serpapi_key` field), or
+   - Saving it in their `~/.e-stack/estack-flight-planner/config.json` (`serpapi_key` field), or
    - Setting `SERPAPI_KEY` as an environment variable in their shell profile.
 5. If they don't want a key: confirm they want the WebSearch fallback. Set `serpapi_key: null` in config. Tell them: "I'll use WebSearch each run. Results won't be as complete and prices may be approximations."
 

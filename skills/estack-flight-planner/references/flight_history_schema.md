@@ -1,4 +1,4 @@
-# Flight History Schema — `~/.flight-planner/flight_history.json`
+# Flight History Schema — `~/.e-stack/estack-flight-planner/flight_history.json`
 
 Append-only log of every flight search. Used as passive context so the skill can recognize patterns over time ("you've been booking the ~$180 range lately").
 

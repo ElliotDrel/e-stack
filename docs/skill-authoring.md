@@ -60,8 +60,11 @@ Rules:
 - **A skill that stores nothing needs none of this** — most skills are prose and
   should stay that way.
 
-Known exception: `estack-flight-planner` still uses `~/.flight-planner/`, which
-predates this convention and has not been migrated.
+Every skill that stores anything is on this convention. When you move an existing
+skill's state, leave a legacy check behind: detect the old location, tell the user
+where it moved and how to move their files, and let them decide. Never relocate a
+user's file silently — `estack-flight-planner`'s `scripts/check_setup.sh` is the
+worked example.
 
 ---
 

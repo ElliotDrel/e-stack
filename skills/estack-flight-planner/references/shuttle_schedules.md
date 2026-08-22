@@ -12,7 +12,7 @@ Two legs exist, and both can apply to the same itinerary:
 A user who lives near one airport and flies in and out of it needs entries in both directions. Fetching only the outbound schedule is the single most common way to end up with a table that silently drops every flight.
 
 This file describes:
-1. How to configure the shuttle service in `~/.flight-planner/config.json`
+1. How to configure the shuttle service in `~/.e-stack/estack-flight-planner/config.json`
 2. The JSON format `scripts/pair_shuttles.py` expects
 3. How the skill builds that JSON from the shuttle company's website each run
 

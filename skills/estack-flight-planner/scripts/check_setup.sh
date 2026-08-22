@@ -1,17 +1,25 @@
 #!/usr/bin/env bash
 # Deterministic setup check. Run at skill load time via the ```! fence in SKILL.md.
 # Outputs a human-readable report of:
-#   - whether ~/.flight-planner/config.json exists and its contents (key masked)
-#   - whether ~/.flight-planner/flight_history.json exists and its entry count
+#   - whether ~/.e-stack/estack-flight-planner/config.json exists and its contents (key masked)
+#   - whether ~/.e-stack/estack-flight-planner/flight_history.json exists and its entry count
 #   - today's date (for resolving relative dates in Phase 1)
 #   - whether SERPAPI_KEY env var is set
 # No side effects. Safe to run on every skill invocation.
 
 set -u
 
-CONFIG_DIR="$HOME/.flight-planner"
+CONFIG_DIR="$HOME/.e-stack/estack-flight-planner"
 CONFIG_FILE="$CONFIG_DIR/config.json"
 HISTORY_FILE="$CONFIG_DIR/flight_history.json"
+
+# State moved from ~/.flight-planner to ~/.e-stack/estack-flight-planner, so
+# every e-stack skill keeps its files in one place. An install that predates
+# the move still has the old folder. Report it rather than moving it: the
+# config holds an API key, and silently relocating a user's file is not this
+# script's call. Without this the skill would find nothing and open the
+# first-run wizard, and the user would retype preferences they already set.
+LEGACY_DIR="$HOME/.flight-planner"
 
 echo "=== Flight Planner Setup ==="
 echo "Today: $(date +%Y-%m-%d)  (timezone: $(date +%Z))"
@@ -100,6 +108,18 @@ if shuttle:
 else:
     print('  Shuttle service:       none (pairing step will be skipped)')
 " < "$CONFIG_FILE" 2>&1 || echo "  (python not available; cannot parse config — read the file directly)"
+elif [ -f "$LEGACY_DIR/config.json" ]; then
+  echo "Config:      $CONFIG_FILE (NOT FOUND)"
+  echo ""
+  echo "!! Config found at the OLD location: $LEGACY_DIR"
+  echo "   State moved to ~/.e-stack/estack-flight-planner so every e-stack skill"
+  echo "   keeps its files in one folder. Do NOT run first-run setup — move the"
+  echo "   existing files instead, then re-run this check:"
+  echo ""
+  echo "     mkdir -p \"$CONFIG_DIR\" && mv \"$LEGACY_DIR\"/* \"$CONFIG_DIR\"/ && rmdir \"$LEGACY_DIR\""
+  echo ""
+  echo "   Ask the user to confirm before moving anything: config.json holds their"
+  echo "   SerpAPI key and flight_history.json is an append-only log."
 else
   echo "Config:      $CONFIG_FILE (NOT FOUND)"
   echo ""
