@@ -1,6 +1,6 @@
 ---
 name: estack-flight-planner
-version: 1.4.0
+version: 1.4.1
 description: >-
   (flight-planner) Find and rank flights between any two airports. Handles the
   parts worth automating (fetching every route, parsing SerpAPI's nested shape,

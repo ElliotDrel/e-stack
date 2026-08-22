@@ -1,6 +1,6 @@
 ---
 name: estack-pdf-to-md
-version: 1.2.0
+version: 1.2.1
 description: (pdf-to-md) Convert a PDF file to Markdown or plain text using the RunPulse API. Use this skill whenever the user wants to extract text from a PDF, convert a PDF to .md or .txt, OCR a PDF, "turn this PDF into text/markdown", drops a .pdf path into chat asking for its contents, or asks to run the RunPulse / Pulse converter. Trigger even when the user only says "convert this PDF" without naming the tool.
 ---
 
@@ -41,11 +41,18 @@ if [ -n "$ENV_KEY" ]; then
     echo "        one shared file. Move the PULSE_API_KEY line into $ENV_FILE and"
     echo "        delete the old file. Ask the user before touching a key file."
   fi
-  [ -n "$USER_VAR" ] && echo "     (also present in Windows user env var; .env wins)"
+  if [ -n "$USER_VAR" ]; then
+    echo "     !! The key is ALSO a Windows user env var. The .env wins, so that copy"
+    echo "        is a second place the key can drift out of date. Offer to delete it:"
+    echo "        [System.Environment]::SetEnvironmentVariable('PULSE_API_KEY',\$null,'User')"
+  fi
 elif [ -n "$USER_VAR" ]; then
   masked="${USER_VAR:0:6}...${USER_VAR: -4}"
   echo "[OK] Key found in Windows user env var PULSE_API_KEY  -> $masked"
-  echo "     Note: .env is not set. Default storage is $ENV_FILE -- consider mirroring there."
+  echo "     !! That is the wrong home. No other e-stack skill can read it and it does"
+  echo "        not survive a move to a new machine. Move the line into $ENV_FILE,"
+  echo "        then clear the env var. Write the value straight to the file --"
+  echo "        never echo the key into the chat."
 else
   echo "[MISSING] No PULSE_API_KEY configured."
   echo "ACTION: Do not run the script yet. Walk the user through 'First-time setup' below."
@@ -63,7 +70,7 @@ If the check above said `[MISSING]`, the user has not configured a RunPulse API 
    ```
    PULSE_API_KEY=<paste-the-key-here>
    ```
-   **Append to that file, never overwrite it** — other skills keep their keys there too. Create it if it does not exist. Offer to do this via the Write tool once they paste the key in chat. Only fall back to a Windows user env var if the user explicitly prefers that. Never write the key inside the installed skill folder; the installer overwrites that on every sync.
+   **Append to that file, never overwrite it** — other skills keep their keys there too. Create it if it does not exist. Offer to do this via the Write tool once they paste the key in chat. That file is the only place the key belongs: not a Windows user env var, not a shell profile, not a per-skill `.env`, and never inside the installed skill folder, which the installer overwrites on every sync.
 5. **Re-run the startup check** by re-invoking the skill, and confirm it now reports `[OK]`.
 
 **Never echo a real key back to the user in chat.** Confirm with a masked form (first 6 + last 4 chars) like the startup check does.
@@ -105,8 +112,8 @@ The script prints exactly which pages it's skipping (e.g. `Skipping 3 page(s): 4
 ## How to run
 
 The script auto-loads `PULSE_API_KEY` from these sources, in order:
-1. The current shell's `PULSE_API_KEY` env var (PowerShell picks up Windows user env vars automatically; Bash does not).
-2. `~/.e-stack/.env` (the shared credential file for every e-stack skill). Older per-skill locations are still read, but the startup check will tell you to move the key.
+1. The current shell's `PULSE_API_KEY` env var — a one-off override for a single run, not a place to store the key.
+2. `~/.e-stack/.env` (the shared credential file for every e-stack skill), which is where it belongs. Older per-skill locations are still read, but the startup check will tell you to move the key.
 
 So in either shell, just invoke directly — no need to pass the key explicitly:
 

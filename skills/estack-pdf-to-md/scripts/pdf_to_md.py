@@ -407,8 +407,9 @@ def convert_pdf(
 ) -> Path:
     if not API_KEY:
         sys.exit(
-            "PULSE_API_KEY is not set. Open a new terminal so the user env var is loaded, "
-            "or set it manually: $env:PULSE_API_KEY = '...'"
+            "PULSE_API_KEY is not set. Add the line PULSE_API_KEY=<key> to "
+            "~/.e-stack/.env, the one credential file every e-stack skill reads. "
+            "Append to that file; do not overwrite it."
         )
 
     pdf_path = pdf_path.resolve()

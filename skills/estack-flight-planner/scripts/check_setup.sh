@@ -137,9 +137,19 @@ echo ""
 # --- SERPAPI_KEY: environment, then the pack's shared credential file ---
 # One .env for every e-stack skill, so a key two skills need is stored once.
 SHARED_ENV="$HOME/.e-stack/.env"
-if [ -n "${SERPAPI_KEY:-}" ]; then
-  echo "SERPAPI_KEY: set in environment (wins over every file)"
-elif [ -f "$SHARED_ENV" ] && grep -qE '^SERPAPI_KEY=.+' "$SHARED_ENV" 2>/dev/null; then
+IN_SHARED=no
+if [ -f "$SHARED_ENV" ] && grep -qE '^SERPAPI_KEY=.+' "$SHARED_ENV" 2>/dev/null; then
+  IN_SHARED=yes
+fi
+if [ -n "${SERPAPI_KEY:-}" ] && [ "$IN_SHARED" = no ]; then
+  # An env var is a fine one-off override but a bad home: no other skill sees it,
+  # and it does not survive a move to a new machine.
+  echo "SERPAPI_KEY: set in the environment ONLY, not in $SHARED_ENV"
+  echo "             Move it there so the whole pack can read it. Print the value"
+  echo "             into the file yourself - never echo the key into the chat."
+elif [ -n "${SERPAPI_KEY:-}" ]; then
+  echo "SERPAPI_KEY: set in $SHARED_ENV (a live env var is overriding it this run)"
+elif [ "$IN_SHARED" = yes ]; then
   echo "SERPAPI_KEY: set in $SHARED_ENV"
 else
   echo "SERPAPI_KEY: not set. Add 'SERPAPI_KEY=<key>' to $SHARED_ENV"

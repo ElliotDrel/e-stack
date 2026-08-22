@@ -117,6 +117,15 @@ SERPAPI_KEY=def456
 `~/.e-stack/.env`. A real environment variable wins so a one-off override works
 without editing the file.
 
+**An environment variable is an override, never a home.** Never tell a user to
+persist a key with `setx`, `SetEnvironmentVariable`, a shell profile, or
+`$env:KEY = ...`. A key stored that way is invisible to every other skill in the
+pack and does not survive a move to a new machine, and because the live
+environment wins, the copy in `~/.e-stack/.env` silently goes stale beside it.
+That is exactly how `SERPAPI_KEY` ended up living in two places at once. When a
+setup check finds a key in the environment and not in the file, it says so and
+tells the user to move it.
+
 Rules:
 
 - **Append, never overwrite.** The file is shared. A skill that writes a key by
@@ -136,9 +145,13 @@ Rules:
   implementations, and there is a bash equivalent in each skill's setup check.
 - **Never print a key.** Report it as set/not-set, or mask to first 6 and last 4
   characters. This applies to setup checks, logs, and error messages.
-- **Enforcement:** `node scripts/check-paths.cjs` fails on a per-skill `.env` and
-  on a `.env` resolved relative to the script's own location. Mark a deliberate
-  legacy read with an `estack-path-ok` comment on the line.
+- **Enforcement:** `node scripts/check-paths.cjs` fails on a per-skill `.env`, on
+  a `.env` resolved relative to the script's own location, and on any instruction
+  to store a credential-looking variable in the OS environment (`setx`,
+  `export KEY=`, `$env:KEY =`, `SetEnvironmentVariable`). Assigning `$null` or an
+  empty value is exempt — that clears a variable, which is the fix rather than the
+  violation. Mark a deliberate legacy read with an `estack-path-ok` comment on the
+  line.
 - **Some env vars must stay unset.** `estack-drive-cli-agent` deliberately tells
   callers never to set `OPENAI_API_KEY`, `CODEX_API_KEY`, or
   `ANTHROPIC_API_KEY`, because each one silently switches billing from the

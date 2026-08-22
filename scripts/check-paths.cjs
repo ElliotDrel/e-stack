@@ -12,6 +12,11 @@
 //                                            home folder, nothing under ~/.claude
 //   2. Credentials live in ~/.e-stack/.env — one shared file, never a per-skill
 //                                            .env and never inside the skill folder
+//   3. No skill tells a user to STORE a key — an OS or shell environment variable
+//      in an OS environment variable      is invisible to every other skill and
+//                                            does not survive a move to a new
+//                                            machine. This is how SERPAPI_KEY ended
+//                                            up living in two places at once.
 //
 // Reading somebody else's directory is fine and common: estack-read-agent-history
 // reads ~/.claude, estack-vscode-file-recovery reads ~/.config/Code. The rule is
@@ -59,6 +64,17 @@ const ALLOWED_PREFIXES = [
 // these is still flagged unless ALLOWED_PREFIXES covers it, which is what keeps
 // "~/.claude/doc-review" (state parked in someone else's directory) a failure.
 const ALLOWED_EXACT = new Set(['~/.claude', '~/.codex', '~/.config', '~/Library']);
+
+// Ways a skill can tell a user to persist a value in the OS/shell environment.
+// Group 1 is the variable name, so the credential test below only fires on a
+// name that looks like a secret. A $null/empty/omitted value is the fix (it
+// CLEARS the variable), so the negative lookaheads let those through.
+const ENV_SETTERS = [
+  /\bsetx\s+["']?([A-Z][A-Z0-9_]*)/,
+  /\$env:([A-Z][A-Z0-9_]*)\s*=(?!\s*(?:\\?\$null\b|''|""|$))/,
+  /\bexport\s+([A-Z][A-Z0-9_]*)\s*=\s*\S/,
+  /SetEnvironmentVariable\(\s*["']([A-Z][A-Z0-9_]*)["']\s*,(?!\s*(?:\\?\$null\b|''|""|null\b|\)))/,
+];
 
 // ── CLI ─────────────────────────────────────────────────────────────────────
 const only = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : null;
@@ -139,6 +155,25 @@ function checkSkill(skillName) {
         fail('per-skill credential file: "' + ref + '" at ' + at +
              '\n        Every key in the pack lives in ~/.e-stack/.env. Read that instead,' +
              '\n        or mark a legacy-compatibility read with a ' + ESCAPE_HATCH + ' comment.');
+      }
+
+      // ── 3. Credentials told to live in an OS environment variable ───────
+      // The path rules above cannot see this one: a skill that instructs the
+      // user to run `setx SERPAPI_KEY ...` never names a path at all, yet the
+      // key ends up outside ~/.e-stack, invisible to every other skill, and
+      // gone the moment they switch machines. Clearing a variable is the fix,
+      // not the violation, so a $null/empty assignment is exempt.
+      const credName = /(KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL)/;
+      for (const re of ENV_SETTERS) {
+        const m = line.match(re);
+        if (!m || !credName.test(m[1])) continue;
+        violations++;
+        fail('tells the user to store ' + m[1] + ' in an OS environment variable at ' + at +
+             '\n        No other skill can read it and it is lost on a new machine. Every key' +
+             '\n        in the pack lives in ~/.e-stack/.env. A one-off override for a single' +
+             '\n        run is fine - say so; do not instruct the user to persist it there.' +
+             '\n        Mark a deliberate exception with a ' + ESCAPE_HATCH + ' comment.');
+        break;
       }
 
       // A .env resolved relative to the script's own location lands inside the
