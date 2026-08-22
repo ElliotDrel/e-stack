@@ -1,11 +1,11 @@
 ---
 name: estack-purdue-stickers
-version: 1.0.0
+version: 1.1.0
 description: >-
   (purdue-stickers) End-to-end Purdue Knowledge Lab sticker production - take a
   sticker idea (text/logo/concept), design it, render print-ready files, and
   package everything for submission to the Knowledge Lab (free sticker printing
-  at Purdue Libraries). Use when Elliot wants to make/print stickers, mentions
+  at Purdue Libraries). Use when the user wants to make or print stickers, mentions
   the Knowledge Lab, sticker printing at Purdue, BuildPurdue stickers, or wants
   files prepped for the Roland sticker printer.
 ---
@@ -54,7 +54,7 @@ Uses headless Chrome (needed for the webfont + data-URI logo; cairosvg/resvg can
 
 ## Step 3 — Package and submit
 
-Output folder: `C:\Users\2supe\Other Claude Code\purdue-stickers\output\<YYYY-MM-DD-slug>\` (create it; fall back to a folder next to the design files if that workspace doesn't exist). Produce:
+Output folder: ask the user where to put it, defaulting to `./purdue-stickers-output/<YYYY-MM-DD-slug>/` in the working directory (create it). These are deliverables, so they go where the user wants them, never into the skill's own storage. Produce:
 1. Final PNGs, named `sticker_<slug> - <project>.png`, plus the source SVGs.
 2. `SUBMISSION-NOTES.md`: per-sticker physical size, finish, quantity wanted, and the sender name for the file-naming rule (FirstName_LastName_Sticker).
 

@@ -138,7 +138,7 @@ echo ""
 # One .env for every e-stack skill, so a key two skills need is stored once.
 SHARED_ENV="$HOME/.e-stack/.env"
 IN_SHARED=no
-if [ -f "$SHARED_ENV" ] && grep -qE '^SERPAPI_KEY=.+' "$SHARED_ENV" 2>/dev/null; then
+if [ -f "$SHARED_ENV" ] && grep -qE '^[[:space:]]*SERPAPI_KEY=.+' "$SHARED_ENV" 2>/dev/null; then
   IN_SHARED=yes
 fi
 if [ -n "${SERPAPI_KEY:-}" ] && [ "$IN_SHARED" = no ]; then

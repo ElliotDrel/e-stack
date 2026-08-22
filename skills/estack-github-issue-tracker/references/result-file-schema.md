@@ -32,7 +32,7 @@ comment_count: N
 
 ### Role Field
 
-The role MUST describe what the user **did**, not just a label.
+The role describes what the user **did**, not just a label.
 
 Bad: `"Author"`, `"Commenter"`
 Good: `"Author (filed with 3 crash instances, posted workaround)"`,

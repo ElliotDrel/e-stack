@@ -43,6 +43,9 @@ jobs:
       - name: Verify per-skill versions bumped
         run: node scripts/check-versions.cjs
 
+      - name: Verify every skill's feedback section matches the template
+        run: node scripts/update-skill-feedback.cjs --check
+
       - name: Verify README and CLAUDE.md list every skill and hook
         run: node scripts/check-docs.cjs
 

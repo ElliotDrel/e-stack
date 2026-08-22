@@ -1,6 +1,6 @@
 ---
 name: estack-github-issue-tracker
-version: 1.3.0
+version: 1.4.0
 description: >
   (github-issue-tracker) GitHub issue tracker management. Checks all open issues the user is involved in,
   finds related/duplicate issues, reports what changed, and recommends next steps.
@@ -78,12 +78,20 @@ issues just need a quick diff check.
    creation. If `auth` is false, show the user the `error` message from the output and STOP.
    If `search_errors` is non-empty, warn the user that some discovery queries failed —
    the results may be incomplete.
-4. Extract `$TODAY` (the YYYY-MM-DD date) from the `$STARTUP.today` string — use this as today's date for everything.
-5. Extract `$TEMP_DIR` from `$STARTUP.temp_dir`.
-6. Extract `$CONFIG` from `$STARTUP.config`. This is the user's plain English config
+4. **If `$STARTUP.legacy_tracker` is not null, STOP and tell the user before doing anything else.**
+   The tracker used to live in the Documents folder. Their old file is still sitting at
+   `legacy_tracker.path`, and the new location is empty — so continuing would run the
+   first-run wizard and overwrite months of goals, root causes, and pending actions with
+   a blank tracker. Show them `legacy_tracker.path` and offer to run
+   `legacy_tracker.move_command`, which moves the file to the new location. Wait for their
+   answer. Do not move, copy, or delete the file without it, and do not continue to Step 1
+   until the tracker is either moved or they tell you to start fresh.
+5. Extract `$TODAY` (the YYYY-MM-DD date) from the `$STARTUP.today` string — use this as today's date for everything.
+6. Extract `$TEMP_DIR` from `$STARTUP.temp_dir`.
+7. Extract `$CONFIG` from `$STARTUP.config`. This is the user's plain English config
    (excluded repos, preferences, etc.) parsed from the tracker's `## Config` section.
    If null, the tracker has no config yet — you'll ask the user in Step 1.
-7. Read the tracker's `## Pending Actions` section into `$PENDING_ACTIONS` (read it
+8. Read the tracker's `## Pending Actions` section into `$PENDING_ACTIONS` (read it
    directly from `$TRACKER_PATH` with the Read tool; if the section or file is absent,
    treat it as empty). Every unfinished `- [ ]` item is an action carried over from a
    prior run — Step 5a surfaces these as "Carried Over". This tracker section is the
@@ -106,7 +114,7 @@ Sources (all from `$STARTUP`):
 
 **Check `$CONFIG` from startup.** If it contains directives (excluded repos, preferences),
 apply them when filtering issues throughout this step. For example, if config says
-"Excluded repos: ElliotDrel/*", skip any issues from repos owned by ElliotDrel.
+"Excluded repos: my-org/*", skip any issues from repos owned by `my-org`.
 
 If `$CONFIG` is null (tracker has no Config section), ask the user if they want to set
 one up (which repos to track/exclude). The agent writes Config directly to the tracker
@@ -424,7 +432,7 @@ Examples of the `--desc` text:
 - `Posted comment on #1234 linking to duplicate #5678`
 - `Rebased PR branch onto upstream/main and force-pushed`
 - `Goal set: "Get maintainer to respond"`
-- `Added Config section to tracker (excluded: ElliotDrel/*)`
+- `Added Config section to tracker (excluded: my-org/*)`
 
 ### 5d: Collect missing Goals
 

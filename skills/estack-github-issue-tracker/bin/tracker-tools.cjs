@@ -1010,6 +1010,31 @@ async function cmdStartup(flags) {
     }
   }
 
+  // The tracker used to live in the user's Documents folder. Someone upgrading
+  // has a full history there -- goals, root causes, the pending-actions queue --
+  // none of which is recoverable from GitHub. Without this check the new path is
+  // simply absent, startup reports a first run, and the rediscovery wizard
+  // overwrites a file the user spent months building. Report it and let them
+  // move it; never move or read-and-copy it here.
+  let legacyTracker = null;
+  if (!trackerExists) {
+    const legacyCandidates = [
+      path.join(os.homedir(), 'OneDrive', 'Documents', 'github-tracker.md'), // estack-path-ok: legacy location, detected not written
+      path.join(os.homedir(), 'Documents', 'github-tracker.md'),             // estack-path-ok: legacy location, detected not written
+    ];
+    for (const candidate of legacyCandidates) {
+      try {
+        if (fs.existsSync(candidate) && fs.readFileSync(candidate, 'utf8').trim()) {
+          legacyTracker = {
+            path: candidate,
+            move_command: `mkdir -p "${path.dirname(trackerPath)}" && mv "${candidate}" "${trackerPath}"`,
+          };
+          break;
+        }
+      } catch (_) { /* unreadable means it cannot be the tracker we want */ }
+    }
+  }
+
   const oldestCheckDate = parsed.active_issues
     .map(i => i.last_check_date)
     .filter(Boolean)
@@ -1097,6 +1122,7 @@ async function cmdStartup(flags) {
     temp_dir: tempDir,
     tracker_exists: trackerExists,
     tracker_path: trackerPath,
+    legacy_tracker: legacyTracker,
     config: parsed.config,
     tracker_data: {
       username: parsed.username,

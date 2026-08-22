@@ -66,5 +66,5 @@ Tell the user, briefly:
 
 - What this work added to `[Unreleased]`
 - Which skill/hook versions were bumped
-- All five gates green (or what was fixed)
+- All six gates green (or what was fixed)
 - What remains for whoever publishes: just run `steps/publish.md` (promote CHANGELOG → `npm version` → push tag). This work gets swept into that release automatically.
