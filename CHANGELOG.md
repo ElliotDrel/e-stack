@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.68] - 2026-08-22
+
 ### Changed
 - **One credential file for the whole pack: `~/.e-stack/.env`.** Every skill that needs an API key now reads the same file instead of keeping its own, so a key you set once is set for every skill that needs it. Format is `KEY=value` per line; a real environment variable still wins over anything in the file. Append to it — never overwrite it, since other skills keep their keys there too.
 - Where skills put the files they create is now a documented rule, not a per-skill habit. Skill state goes in `~/.e-stack/<skill>/`; a deliverable you asked for goes where you asked; throwaway scratch goes in the temp dir. `docs/skill-authoring.md` carries the full direction, and every skill in the pack now follows it.
@@ -636,7 +640,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.67...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.68...HEAD
+[1.0.68]: https://github.com/ElliotDrel/e-stack/compare/v1.0.67...v1.0.68
 [1.0.67]: https://github.com/ElliotDrel/e-stack/compare/v1.0.66...v1.0.67
 [1.0.66]: https://github.com/ElliotDrel/e-stack/compare/v1.0.65...v1.0.66
 [1.0.65]: https://github.com/ElliotDrel/e-stack/compare/v1.0.64...v1.0.65
