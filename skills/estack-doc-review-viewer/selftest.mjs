@@ -9,9 +9,10 @@
 // render path shows up as a blank page with no console error. Without this test
 // you find out by opening the browser and seeing nothing.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { slugOwningThread } from './registry.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 // diff.js and app.js are two classic scripts sharing one top-level scope in the
@@ -567,6 +568,41 @@ console.log('13. diff rows are reused, not rebuilt');
   const css = readFileSync(resolve(here, 'public/styles.css'), 'utf8');
   check('the page marks elements hidden', /\shidden(\s|>)/.test(html), true);
   check('so the stylesheet must force them so', /\[hidden\]\s*\{[^}]*display\s*:\s*none\s*!important/.test(css), true);
+}
+
+// --- a thread id identifies its own document ------------------------------
+// reply/resolve/reopen take a thread id and no --slug. With two documents open
+// that used to throw, and the failure landed at the worst moment: right before
+// publish, which then recorded the comment as orphaned with no answer on it.
+{
+  console.log('\na thread id resolves to its own document');
+  const dir = mkdtempSync(resolve(tmpdir(), 'drv-selftest-'));
+  const state = (name, threads) => {
+    const stateDir = resolve(dir, name);
+    mkdirSync(stateDir, { recursive: true });
+    writeFileSync(resolve(stateDir, 'review.json'), JSON.stringify({ threads }), 'utf8');
+    return [name, { stateDir }];
+  };
+  const slugs = [
+    state('plan', [{ id: 't-plan-1' }, { id: 't-plan-2' }]),
+    state('brief', [{ id: 't-brief-1' }]),
+    state('empty', []),
+  ];
+  check('a thread in the second document finds it', await slugOwningThread(slugs, 't-brief-1'), 'brief');
+  check('a thread in the first document finds it', await slugOwningThread(slugs, 't-plan-2'), 'plan');
+  check('an unknown thread owns nothing', await slugOwningThread(slugs, 't-nope'), null);
+
+  // A half-written or unreadable state file must not abort the search -- the
+  // document that does own the thread can come after it in the list.
+  const broken = resolve(dir, 'broken');
+  mkdirSync(broken, { recursive: true });
+  writeFileSync(resolve(broken, 'review.json'), '{ not json', 'utf8');
+  check('malformed state is skipped, not fatal',
+    await slugOwningThread([['broken', { stateDir: broken }], ...slugs], 't-brief-1'), 'brief');
+  check('a missing state file is skipped too',
+    await slugOwningThread([['gone', { stateDir: resolve(dir, 'nope') }], ...slugs], 't-plan-1'), 'plan');
+
+  rmSync(dir, { recursive: true, force: true });
 }
 
 console.log(failures === 0 ? '\nOK: estack-doc-review-viewer self-test passed.' : `\n${failures} ASSERTION(S) FAILED`);

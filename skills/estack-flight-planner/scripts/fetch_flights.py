@@ -51,13 +51,17 @@ def estack_env(name: str) -> str:
     try:
         if not path.exists():
             return ""
+        found = ""
         for raw in path.read_text(encoding="utf-8").splitlines():
             line = raw.strip()
             if not line or line.startswith("#") or "=" not in line:
                 continue
             k, _, v = line.partition("=")
             if k.strip() == name:
-                return v.strip().strip('"').strip("'")
+                # Last wins. Keys are appended, never overwritten, so a re-added
+                # key leaves the stale line sitting above the live one.
+                found = v.strip().strip('"').strip("'")
+        return found
     except Exception:
         pass
     return ""

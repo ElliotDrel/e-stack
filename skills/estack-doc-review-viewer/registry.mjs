@@ -84,3 +84,17 @@ export function allocateSlug(registry, docPath, requested) {
   while (taken[`${tagged}-${n}`]) n += 1;
   return `${tagged}-${n}`;
 }
+
+// Which open document owns this thread? A thread id already identifies its
+// document, so reply/resolve/reopen do not need --slug when several are open.
+// An unreadable or half-written state file is skipped rather than fatal: the
+// document that owns the thread can come after it in the list.
+export async function slugOwningThread(slugs, threadId) {
+  for (const [slug, entry] of slugs) {
+    try {
+      const state = JSON.parse(await readFile(resolve(entry.stateDir, 'review.json'), 'utf8'));
+      if ((state.threads || []).some((thread) => thread.id === threadId)) return slug;
+    } catch { /* unreadable or not yet written: it cannot be the owner */ }
+  }
+  return null;
+}

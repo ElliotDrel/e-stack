@@ -70,10 +70,14 @@ const ALLOWED_EXACT = new Set(['~/.claude', '~/.codex', '~/.config', '~/Library'
 // name that looks like a secret. A $null/empty/omitted value is the fix (it
 // CLEARS the variable), so the negative lookaheads let those through.
 const ENV_SETTERS = [
-  /\bsetx\s+["']?([A-Z][A-Z0-9_]*)/,
-  /\$env:([A-Z][A-Z0-9_]*)\s*=(?!\s*(?:\\?\$null\b|''|""|$))/,
-  /\bexport\s+([A-Z][A-Z0-9_]*)\s*=\s*\S/,
-  /SetEnvironmentVariable\(\s*["']([A-Z][A-Z0-9_]*)["']\s*,(?!\s*(?:\\?\$null\b|''|""|null\b|\)))/,
+  // setx and export needed the same value exemption as the other two: clearing a
+  // variable is the fix, and flagging `export KEY=""` made the gate contradict
+  // its own documented behavior. PowerShell's env: provider is case-insensitive,
+  // so `$Env:` -- the casing Microsoft's own docs use -- has to match too.
+  /\bsetx\s+["']?([A-Za-z_][A-Za-z0-9_]*)["']?\s+(?!(?:""|'')\s*$)\S/,
+  /\$[Ee][Nn][Vv]:([A-Za-z_][A-Za-z0-9_]*)\s*=(?!\s*(?:\\?\$null\b|''|""|$))/,
+  /\bexport\s+([A-Za-z_][A-Za-z0-9_]*)=(?!\s*(?:''|""|$))\S/,
+  /SetEnvironmentVariable\(\s*["']([A-Za-z_][A-Za-z0-9_]*)["']\s*,(?!\s*(?:\\?\$null\b|''|""|null\b|\)))/,
 ];
 
 // ── CLI ─────────────────────────────────────────────────────────────────────
@@ -103,12 +107,24 @@ function walkFiles(dir) {
 // Normalize $HOME/x, ${HOME}/x, %USERPROFILE%\x and Path.home()/"x" to ~/x so one
 // set of rules covers bash, python, node, and prose.
 function normalizeHomeRefs(line) {
-  return line
+  const head = line
     .replace(/\$\{?HOME\}?[\\/]/g, '~/')
     .replace(/%USERPROFILE%[\\/]/g, '~/')
     .replace(/\$env:USERPROFILE[\\/]/g, '~/')
     .replace(/homedir\(\)\s*,\s*['"]/g, '~/')
     .replace(/Path\.home\(\)\s*\/\s*["']/g, '~/');
+
+  // Only a line that already resolved to a home root gets its remaining quoted
+  // segments joined -- pathlib's `Path.home() / ".e-stack" / "skill" / ".env"`
+  // and path.join's `homedir(), 'a', 'b'`. Normalizing only the head left the
+  // rest behind a closing quote, so the rules below saw `~/.e-stack` and
+  // stopped: a per-skill .env in the idiom this repo uses sailed straight past.
+  // Collapsing unconditionally is wrong -- it also eats the argument separator
+  // in SetEnvironmentVariable('KEY','value','User') and disarms rule 3.
+  if (!head.includes('~/')) return head;
+  return head
+    .replace(/["']\s*\/\s*["']/g, '/')
+    .replace(/["']\s*,\s*["']/g, '/');
 }
 
 function isAllowed(ref) {
@@ -163,7 +179,7 @@ function checkSkill(skillName) {
       // key ends up outside ~/.e-stack, invisible to every other skill, and
       // gone the moment they switch machines. Clearing a variable is the fix,
       // not the violation, so a $null/empty assignment is exempt.
-      const credName = /(KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL)/;
+      const credName = /(^|_)(KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL)(_|$)/i;
       for (const re of ENV_SETTERS) {
         const m = line.match(re);
         if (!m || !credName.test(m[1])) continue;
@@ -174,6 +190,18 @@ function checkSkill(skillName) {
              '\n        run is fine - say so; do not instruct the user to persist it there.' +
              '\n        Mark a deliberate exception with a ' + ESCAPE_HATCH + ' comment.');
         break;
+      }
+
+      // ~/.claude/skills has to stay allowlisted above (skills are invoked from
+      // there), which left a credential file parked under it passing every rule.
+      // The only credential file in the pack is ~/.e-stack/.env.
+      const foreignEnv = line.match(/~\/\.claude\/[A-Za-z0-9._\/-]*\.env\b/g) || [];
+      for (const ref of foreignEnv) {
+        violations++;
+        fail('credential file outside the shared .env: "' + ref + '" at ' + at +
+             '\n        ~/.claude belongs to Claude Code, not to this pack, and a key there is' +
+             '\n        invisible to every other skill. Use ~/.e-stack/.env, or mark a legacy' +
+             '\n        read with an ' + ESCAPE_HATCH + ' comment.');
       }
 
       // A .env resolved relative to the script's own location lands inside the

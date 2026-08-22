@@ -69,20 +69,25 @@ def estack_env(name: str) -> str:
         Path.home() / ".e-stack" / ".env",
         Path.home() / ".e-stack" / "estack-pdf-to-md" / ".env",  # legacy, per-skill  estack-path-ok
         Path(__file__).parent.parent / ".env",  # legacy, inside the installed skill  estack-path-ok
-        Path.home() / ".claude" / "skills" / "estack-pdf-to-md" / ".env",  # legacy
-        Path.home() / ".claude" / "skills" / "pdf-to-md" / ".env",  # legacy, pre-prefix
+        Path.home() / ".claude" / "skills" / "estack-pdf-to-md" / ".env",  # legacy  estack-path-ok
+        Path.home() / ".claude" / "skills" / "pdf-to-md" / ".env",  # legacy, pre-prefix  estack-path-ok
     ]
     for p in candidates:
         try:
             if not p.exists():
                 continue
+            found = ""
             for raw in p.read_text(encoding="utf-8").splitlines():
                 line = raw.strip()
                 if not line or line.startswith("#") or "=" not in line:
                     continue
                 k, _, v = line.partition("=")
                 if k.strip() == name:
-                    return v.strip().strip('"').strip("'")
+                    # Last wins. Keys are appended, never overwritten, so a
+                    # re-added key leaves the stale line above the live one.
+                    found = v.strip().strip('"').strip("'")
+            if found:
+                return found
         except Exception:
             pass
     return ""

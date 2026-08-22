@@ -23,7 +23,7 @@ import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readRegistry, readDaemon, clearDaemon, isAlive } from './registry.mjs';
+import { readRegistry, readDaemon, clearDaemon, isAlive, slugOwningThread } from './registry.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
@@ -110,15 +110,6 @@ async function call(method, path, body, base) {
 // otherwise fail the disambiguation check, and the most likely moment for that
 // is right before `publish` -- which then orphans the comment with no reply on
 // it, the one outcome this skill is built to prevent.
-async function slugOwningThread(slugs, threadId) {
-  for (const [slug, entry] of slugs) {
-    try {
-      const state = JSON.parse(await readFile(resolve(entry.stateDir, 'review.json'), 'utf8'));
-      if ((state.threads || []).some((thread) => thread.id === threadId)) return slug;
-    } catch { /* unreadable or not yet written: it cannot be the owner */ }
-  }
-  return null;
-}
 
 async function resolveSlug(threadId) {
   const explicit = flag('slug');
