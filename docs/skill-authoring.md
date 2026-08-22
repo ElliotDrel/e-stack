@@ -35,11 +35,16 @@ description: >-
 
 ---
 
-### Where a Skill Stores Its State
+### Where a Skill Puts the Files It Creates
 
-A skill that persists anything between runs — config, caches, history, generated
-artifacts — writes it under **`~/.e-stack/<skill-folder>/`**, using the skill's
-full folder name. `estack-doc-review-viewer` therefore owns
+Every file a skill creates lands in one of four places. Decide which kind of file
+it is first, then the location follows.
+
+**1. Skill state → `~/.e-stack/<skill-folder>/`**
+
+Anything the skill persists for its own use between runs: config, credentials,
+caches, history, registries, cloned repos, internal artifacts. Use the skill's
+full folder name — `estack-doc-review-viewer` owns
 `~/.e-stack/estack-doc-review-viewer/`. The name is deliberately not shortened:
 the installed skill, its frontmatter `name:`, and its state directory all answer
 to one identity, which is also what keeps `check-skill-name.cjs` honest.
@@ -48,12 +53,34 @@ One folder holds everything every e-stack skill has ever written. The user has a
 single directory to find, back up, inspect, or delete, instead of a dotfile per
 skill scattered across the home directory.
 
+**2. A deliverable the user asked for → wherever they said**
+
+A document, export, or design the user requested is theirs, not skill state. It
+goes where they asked, defaulting to the working directory. Never file a
+deliverable into `~/.e-stack/` — they would never find it again.
+
+**3. Ephemeral scratch → the system temp dir or the session scratchpad**
+
+Intermediate output that does not outlive the run. `estack-flight-planner`'s
+fetch scripts use `tempfile.gettempdir()` for raw API responses; that is correct
+and should not move.
+
+**4. A skill this skill generates → the skills directory**
+
+`estack-book-extractor` installs what it produces into the user's skills folder,
+unprefixed, because the result is their own reference library rather than part of
+this pack.
+
 Rules:
 
-- **Never write beside the user's documents.** Their working directory holds
-  their files and nothing a skill made.
-- **Never invent a new top-level dotfile** (`~/.my-skill/`) and never store state
-  under `~/.claude/`, which belongs to Claude Code rather than to this pack.
+- **Never write beside the user's documents** unless the file *is* the
+  deliverable. Their working directory holds their files and nothing a skill made
+  for its own bookkeeping.
+- **Never invent a new top-level dotfile** (`~/.my-skill/`), never use a bare home
+  folder (`~/my-skill-storage/`), and never store state under `~/.claude/`, which
+  belongs to Claude Code rather than to this pack.
+- **Never store state inside the installed skill folder.** The installer
+  overwrites it on every update.
 - **Define the path once**, in a single exported constant, and derive every other
   path (including in tests) from it. A literal repeated in a test is how a moved
   root silently goes stale.

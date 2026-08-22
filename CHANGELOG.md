@@ -8,7 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Where skills put the files they create is now a documented rule, not a per-skill habit. Skill state goes in `~/.e-stack/<skill>/`; a deliverable you asked for goes where you asked; throwaway scratch goes in the temp dir. `docs/skill-authoring.md` carries the full direction, and every skill in the pack now follows it.
 - `estack-flight-planner` skill — preferences and search history move from `~/.flight-planner/` to `~/.e-stack/estack-flight-planner/`, so every e-stack skill keeps its files in one folder. Your existing config is not moved for you: the setup check now detects the old location and prints the command to move it, because that file holds your SerpAPI key. Run the skill once and it will tell you what to do.
+- `estack-repo-search` skill — cloned repos move from `~/repo-search-storage/` to `~/.e-stack/estack-repo-search/`, out of the top level of your home directory. Existing clones are not moved for you; the skill re-clones on demand, or you can move the folder yourself. The skill also no longer hardcodes one machine's absolute path in its subagent instructions.
+- `estack-pdf-to-md` skill — the RunPulse API key now lives in `~/.e-stack/estack-pdf-to-md/.env` instead of inside the installed skill folder, where the installer overwrote it on every update. Existing key locations are still read, and the startup check tells you where the key was found and to move it if it is in an old spot.
 
 ---
 

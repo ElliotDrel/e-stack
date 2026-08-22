@@ -1,6 +1,6 @@
 ---
 name: estack-repo-search
-version: 1.1.0
+version: 1.2.0
 description: >-
   (repo-search) Clone and search external GitHub repositories to answer questions about their
   code. Use this skill whenever the user references a repo you don't have local
@@ -17,16 +17,16 @@ description: >-
 
 Search external repositories by cloning them into a persistent sandbox and exploring with subagents.
 
-**Read-only sandbox — never edit, write, or delete files inside `~/repo-search-storage/`.** This directory holds cloned copies of other people's repos purely for you to `Read`/`Grep`/`Explore`. It is not a workspace to modify, patch, or "fix" anything in. It's fine to be extra careful here: on every invocation this skill hard-resets each repo to match its remote HEAD (see below), so any local edits would be silently discarded anyway — but the point stands regardless of that safety net. If the user wants to *change* code in one of these repos, that's a different task (fork it, clone it elsewhere as a real working copy) — not something this skill does.
+**Read-only sandbox — never edit, write, or delete files inside `~/.e-stack/estack-repo-search/`.** This directory holds cloned copies of other people's repos purely for you to `Read`/`Grep`/`Explore`. It is not a workspace to modify, patch, or "fix" anything in. It's fine to be extra careful here: on every invocation this skill hard-resets each repo to match its remote HEAD (see below), so any local edits would be silently discarded anyway — but the point stands regardless of that safety net. If the user wants to *change* code in one of these repos, that's a different task (fork it, clone it elsewhere as a real working copy) — not something this skill does.
 
 ## Available repos
 
 ```!
-mkdir -p ~/repo-search-storage
-echo "=== Repo Sandbox: ~/repo-search-storage ==="
+mkdir -p ~/.e-stack/estack-repo-search
+echo "=== Repo Sandbox: ~/.e-stack/estack-repo-search ==="
 echo ""
 found=0
-for dir in ~/repo-search-storage/*/; do
+for dir in ~/.e-stack/estack-repo-search/*/; do
   [ -d "$dir/.git" ] || continue
   found=1
   name=$(basename "$dir")
@@ -63,12 +63,12 @@ Before cloning, you must have the exact GitHub URL. Follow these rules:
 Once you have a confirmed URL, shallow clone into the sandbox:
 
 ```bash
-git clone --depth 1 <repo-url> ~/repo-search-storage/<repo-name>
+git clone --depth 1 <repo-url> ~/.e-stack/estack-repo-search/<repo-name>
 ```
 
 ## Searching
 
-To explore a repo, spawn one or more **Haiku** subagents using the Agent tool with `model: "haiku"` and `subagent_type: "Explore"`. In the prompt, always include the **full absolute path** to the cloned repo (e.g. `C:/Users/2supe/repo-search-storage/gstack`) and tell the subagent to search within that directory. Without this, the subagent won't know where to look.
+To explore a repo, spawn one or more **Haiku** subagents using the Agent tool with `model: "haiku"` and `subagent_type: "Explore"`. In the prompt, always include the **full absolute path** to the cloned repo, with `~` expanded — the subagent will not resolve it. Run `echo ~/.e-stack/estack-repo-search` once and use that, giving each subagent `<that path>/<repo-name>`. Without an absolute path the subagent won't know where to look.
 
 If the question spans multiple areas of the repo, spawn multiple subagents in parallel — each focused on a different aspect — to get answers faster.
 

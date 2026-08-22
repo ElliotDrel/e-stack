@@ -1,6 +1,6 @@
 ---
 name: estack-pdf-to-md
-version: 1.0.1
+version: 1.1.0
 description: (pdf-to-md) Convert a PDF file to Markdown or plain text using the RunPulse API. Use this skill whenever the user wants to extract text from a PDF, convert a PDF to .md or .txt, OCR a PDF, "turn this PDF into text/markdown", drops a .pdf path into chat asking for its contents, or asks to run the RunPulse / Pulse converter. Trigger even when the user only says "convert this PDF" without naming the tool.
 ---
 
@@ -10,14 +10,22 @@ Convert a PDF (or several PDFs) to Markdown or plain text using the RunPulse API
 ## API key check (runs on skill load)
 
 ```!
-SKILL_DIR="$HOME/.claude/skills/estack-pdf-to-md"
-ENV_FILE="$SKILL_DIR/.env"
+STATE_DIR="$HOME/.e-stack/estack-pdf-to-md"
+ENV_FILE="$STATE_DIR/.env"
 echo "=== PULSE_API_KEY status ==="
 
+# Older installs kept the key inside the installed skill folder, where the
+# installer overwrites it on every sync. Read those, but write to STATE_DIR.
+LEGACY_FILES="$HOME/.claude/skills/estack-pdf-to-md/.env $HOME/.claude/skills/pdf-to-md/.env"
+
 ENV_KEY=""
-if [ -f "$ENV_FILE" ]; then
-  ENV_KEY=$(grep -E '^PULSE_API_KEY=' "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'" | tr -d '\r' | xargs)
-fi
+FOUND_IN="$ENV_FILE"
+for f in "$ENV_FILE" $LEGACY_FILES; do
+  if [ -f "$f" ]; then
+    ENV_KEY=$(grep -E '^PULSE_API_KEY=' "$f" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'" | tr -d '\r' | xargs)
+    if [ -n "$ENV_KEY" ]; then FOUND_IN="$f"; break; fi
+  fi
+done
 
 USER_VAR=""
 if command -v powershell.exe >/dev/null 2>&1; then
@@ -26,12 +34,17 @@ fi
 
 if [ -n "$ENV_KEY" ]; then
   masked="${ENV_KEY:0:6}...${ENV_KEY: -4}"
-  echo "[OK] Key found in skill .env  ($ENV_FILE)  -> $masked"
+  echo "[OK] Key found in $FOUND_IN  -> $masked"
+  if [ "$FOUND_IN" != "$ENV_FILE" ]; then
+    echo "     !! That is the OLD location, inside the installed skill folder, where"
+    echo "        the installer overwrites it on every sync. Move it to $ENV_FILE"
+    echo "        and delete the old file. Ask the user before touching a key file."
+  fi
   [ -n "$USER_VAR" ] && echo "     (also present in Windows user env var; .env wins)"
 elif [ -n "$USER_VAR" ]; then
   masked="${USER_VAR:0:6}...${USER_VAR: -4}"
   echo "[OK] Key found in Windows user env var PULSE_API_KEY  -> $masked"
-  echo "     Note: skill .env is not set. Default storage is $ENV_FILE -- consider mirroring there."
+  echo "     Note: .env is not set. Default storage is $ENV_FILE -- consider mirroring there."
 else
   echo "[MISSING] No PULSE_API_KEY configured."
   echo "ACTION: Do not run the script yet. Walk the user through 'First-time setup' below."
@@ -45,11 +58,11 @@ If the check above said `[MISSING]`, the user has not configured a RunPulse API 
 1. **Open** https://www.runpulse.com in a browser and create an account (Google/email signup).
 2. **Find the API keys section** in the RunPulse dashboard (typically under Settings → API Keys or Developers).
 3. **Generate a new key** and copy it. Keys look like a 40-ish character random string (e.g. `kwMLkDai0V7Q...`).
-4. **Store it** by creating `~/.claude/skills/estack-pdf-to-md/.env` with one line:
+4. **Store it** by creating `~/.e-stack/estack-pdf-to-md/.env` with one line:
    ```
    PULSE_API_KEY=<paste-the-key-here>
    ```
-   Offer to do this for them via the Write tool once they paste the key in chat. Default storage is the skill-local `.env` at `~/.claude/skills/estack-pdf-to-md/.env`; only fall back to setting the Windows user env var if the user explicitly prefers that.
+   Offer to do this for them via the Write tool once they paste the key in chat. Default storage is `~/.e-stack/estack-pdf-to-md/.env`; only fall back to setting the Windows user env var if the user explicitly prefers that. Never write the key inside the installed skill folder — the installer overwrites that on every sync.
 5. **Re-run the startup check** by re-invoking the skill, and confirm it now reports `[OK]`.
 
 **Never echo a real key back to the user in chat.** Confirm with a masked form (first 6 + last 4 chars) like the startup check does.
@@ -92,7 +105,7 @@ The script prints exactly which pages it's skipping (e.g. `Skipping 3 page(s): 4
 
 The script auto-loads `PULSE_API_KEY` from these sources, in order:
 1. The current shell's `PULSE_API_KEY` env var (PowerShell picks up Windows user env vars automatically; Bash does not).
-2. `~/.claude/skills/estack-pdf-to-md/.env` (the default storage for this skill).
+2. `~/.e-stack/estack-pdf-to-md/.env` (the default storage for this skill). Older installs that kept the key inside the skill folder are still read, but the startup check will tell you to move it.
 
 So in either shell, just invoke directly — no need to pass the key explicitly:
 
@@ -104,7 +117,7 @@ python "$env:USERPROFILE\.claude\skills\estack-pdf-to-md\scripts\pdf_to_md.py" "
 python "$HOME/.claude/skills/estack-pdf-to-md/scripts/pdf_to_md.py" "<input-pdf>" --output-dir "<output-dir>"
 ```
 
-If the script exits with `PULSE_API_KEY is not set`, the startup check missed something — re-run the skill to re-trigger the check, or inspect `<skill_dir>/.env` directly. Never echo the key value back to the user.
+If the script exits with `PULSE_API_KEY is not set`, the startup check missed something — re-run the skill to re-trigger the check, or inspect `~/.e-stack/estack-pdf-to-md/.env` directly. Never echo the key value back to the user.
 
 ## Dependencies
 

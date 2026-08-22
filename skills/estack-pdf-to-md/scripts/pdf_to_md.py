@@ -50,16 +50,19 @@ except ImportError:
     sys.exit("Missing dependency: pip install pypdf")
 
 def _load_env_key() -> str:
-    """Look for PULSE_API_KEY in a .env file co-located with the skill or script.
+    """Look for PULSE_API_KEY in a .env file in the skill's state directory.
 
-    The skill stores the key in `<skill_root>/.env` by default so the script
-    works without requiring a Windows user env var to be set. Env var wins if
-    both are present.
+    The key lives in `~/.e-stack/estack-pdf-to-md/.env` so the script works
+    without requiring a Windows user env var to be set. Env var wins if both are
+    present. The older locations are still read so an existing install keeps
+    working, but they are no good as the default: a .env inside the installed
+    skill folder is overwritten whenever the installer syncs that skill.
     """
     candidates = [
-        Path(__file__).parent.parent / ".env",  # skill root: ~/.agents/skills/estack-pdf-to-md/.env
-        Path.home() / ".claude" / "skills" / "estack-pdf-to-md" / ".env",
-        Path.home() / ".claude" / "skills" / "pdf-to-md" / ".env",  # legacy location
+        Path.home() / ".e-stack" / "estack-pdf-to-md" / ".env",
+        Path(__file__).parent.parent / ".env",  # legacy: inside the installed skill
+        Path.home() / ".claude" / "skills" / "estack-pdf-to-md" / ".env",  # legacy
+        Path.home() / ".claude" / "skills" / "pdf-to-md" / ".env",  # legacy, pre-prefix
     ]
     for p in candidates:
         if not p.exists():
