@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.67] - 2026-08-22
+
 ### Added
 - `estack-doc-review-viewer` skill — a local, dependency-free live-reloading viewer for reviewing a markdown document. Versions the document automatically, shows a diff between any two versions, lets you highlight any passage and hold a threaded conversation on it, and sends feedback back to the agent with one button.
 - Every e-stack skill that stores anything now keeps it in one place, `~/.e-stack/<skill>/`, instead of its own dotfile in your home directory. One folder to find, back up, or delete. `estack-doc-review-viewer` is the first skill on it; `docs/skill-authoring.md` documents the convention for new skills.
@@ -620,7 +624,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.64...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.67...HEAD
+[1.0.67]: https://github.com/ElliotDrel/e-stack/compare/v1.0.66...v1.0.67
+[1.0.66]: https://github.com/ElliotDrel/e-stack/compare/v1.0.65...v1.0.66
+[1.0.65]: https://github.com/ElliotDrel/e-stack/compare/v1.0.64...v1.0.65
 [1.0.64]: https://github.com/ElliotDrel/e-stack/compare/v1.0.63...v1.0.64
 [1.0.63]: https://github.com/ElliotDrel/e-stack/compare/v1.0.62...v1.0.63
 [1.0.62]: https://github.com/ElliotDrel/e-stack/compare/v1.0.61...v1.0.62
