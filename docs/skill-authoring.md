@@ -35,6 +35,36 @@ description: >-
 
 ---
 
+### Where a Skill Stores Its State
+
+A skill that persists anything between runs — config, caches, history, generated
+artifacts — writes it under **`~/.e-stack/<skill-folder>/`**, using the skill's
+full folder name. `estack-doc-review-viewer` therefore owns
+`~/.e-stack/estack-doc-review-viewer/`. The name is deliberately not shortened:
+the installed skill, its frontmatter `name:`, and its state directory all answer
+to one identity, which is also what keeps `check-skill-name.cjs` honest.
+
+One folder holds everything every e-stack skill has ever written. The user has a
+single directory to find, back up, inspect, or delete, instead of a dotfile per
+skill scattered across the home directory.
+
+Rules:
+
+- **Never write beside the user's documents.** Their working directory holds
+  their files and nothing a skill made.
+- **Never invent a new top-level dotfile** (`~/.my-skill/`) and never store state
+  under `~/.claude/`, which belongs to Claude Code rather than to this pack.
+- **Define the path once**, in a single exported constant, and derive every other
+  path (including in tests) from it. A literal repeated in a test is how a moved
+  root silently goes stale.
+- **A skill that stores nothing needs none of this** — most skills are prose and
+  should stay that way.
+
+Known exception: `estack-flight-planner` still uses `~/.flight-planner/`, which
+predates this convention and has not been migrated.
+
+---
+
 ### Doc Listings (README.md + CLAUDE.md)
 
 Every skill and hook must be listed in two places:

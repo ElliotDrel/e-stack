@@ -16,7 +16,8 @@ import { existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tmpdir, homedir } from 'node:os';
+import { tmpdir } from 'node:os';
+import { ROOT } from './registry.mjs';
 
 const SKILL = dirname(fileURLToPath(import.meta.url));
 const dir = resolve(tmpdir(), 'doc-review-e2e');
@@ -42,9 +43,10 @@ const api = async (path, method = 'GET', body) => {
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// State lives under ~/.claude/doc-review now, so it outlives the working
-// directory and a previous run would otherwise hand this one its versions.
-const stateHome = resolve(homedir(), '.claude', 'doc-review', 'docs', 'brief');
+// State lives under ~/.e-stack/estack-doc-review-viewer now, so it outlives the working
+// directory and a previous run would otherwise hand this one its versions. Taken
+// from ROOT rather than spelled out, so moving the root cannot leave this stale.
+const stateHome = resolve(ROOT, 'docs', 'brief');
 await rm(dir, { recursive: true, force: true });
 await rm(stateHome, { recursive: true, force: true });
 await mkdir(dir, { recursive: true });
@@ -73,7 +75,7 @@ try {
   // --- nothing this skill makes lands beside the document -----------------
   console.log('\n2. state lives outside the working directory');
   check('the working directory holds only the document', (await readdir(dir)).join(','), 'brief.md');
-  check('state lives under ~/.claude/doc-review', existsSync(resolve(homedir(), '.claude', 'doc-review', 'docs', 'brief', 'review.json')), true);
+  check('state lives under ~/.e-stack/estack-doc-review-viewer', existsSync(resolve(stateHome, 'review.json')), true);
 
   // --- freezing the working file -----------------------------------------
   console.log('\n3. the working file is frozen while the round is claimed');

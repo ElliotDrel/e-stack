@@ -10,7 +10,13 @@ import { resolve, dirname, basename } from 'node:path';
 import { readFile, writeFile, rename, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 
-export const ROOT = resolve(homedir(), '.claude', 'doc-review');
+// Every e-stack skill that needs to persist something owns exactly one folder
+// under ~/.e-stack, named for the skill. One directory to find, one to back up,
+// one to delete -- and no skill scatters dotfiles across the home directory.
+// The folder carries the full skill name so that the installed skill, its
+// frontmatter, and its state all answer to one identity.
+export const ESTACK_ROOT = resolve(homedir(), '.e-stack');
+export const ROOT = resolve(ESTACK_ROOT, 'estack-doc-review-viewer');
 export const REGISTRY_PATH = resolve(ROOT, 'registry.json');
 export const DAEMON_PATH = resolve(ROOT, 'daemon.json');
 export const DEFAULT_PORT = 4173;
@@ -46,8 +52,8 @@ export function isAlive(pid) {
   try { process.kill(pid, 0); return true; } catch (error) { return error.code === 'EPERM'; }
 }
 
-// State lives under ~/.claude/doc-review, never beside the document. The
-// directory Elliot is working in holds his files and nothing this skill made.
+// State lives under ~/.e-stack/estack-doc-review-viewer, never beside the document. The
+// directory the user is working in holds their files and nothing this skill made.
 export function stateDirFor(docPath, slug) {
   return resolve(ROOT, 'docs', slug);
 }

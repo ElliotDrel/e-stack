@@ -51,7 +51,7 @@ export async function snapshot(stateDir, docPath, versions, { round, label }) {
 }
 
 // Which snapshot the file on disk currently corresponds to. The picker says
-// "working file" and Elliot could not tell whether that was v2 or something
+// "working file" and the reviewer could not tell whether that was v2 or something
 // past it, so the label names its base and whether it has moved off it. Not a
 // version number: v3 does not exist until publish mints it, and calling the
 // working file v3 early would make the same label mean two different documents.

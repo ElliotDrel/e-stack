@@ -192,7 +192,7 @@ body.read-only .selection-comment-btn { display:none; }
 
 /* The editing curtain. While the agent holds the round the document underneath
    is the last published version, not the live file, so the page is showing
-   something real -- it just is not what Elliot is waiting for. Cover it rather
+   something real -- it just is not what the reviewer is waiting for. Cover it rather
    than let him start reading a draft that is about to be replaced. */
 .editing-curtain { position:fixed; inset:0; z-index:40; display:grid; place-items:center; background:color-mix(in srgb,var(--page) 88%,transparent); backdrop-filter:blur(3px); }
 .curtain-card { max-width:420px; padding:28px 32px; border:1px solid var(--border); border-radius:10px; background:var(--surface); text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.18); }

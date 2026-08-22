@@ -8,6 +8,8 @@ One naming note: "the skill folder" means `~/.agents/skills/` — that's where C
 
 The same split applies inside this repo, one level down: this repo's own dev-tooling skill lives at `.agents/skills/manage-e-stack/` (source of truth, tracked in git). `.claude/skills/` is a local directory junction pointing at `.agents/skills/` — untracked, gitignored, regenerated per machine. Don't edit anything under `.claude/skills/` directly; edit `.agents/skills/manage-e-stack/` instead. `.claude/settings.json` is the one exception — it's Claude Code-only config, not agent-agnostic, so it stays a real file directly under `.claude/` rather than moving under `.agents/`.
 
+Where skills put their files matters to me. Anything a skill writes and keeps goes under one folder, `~/.e-stack/<skill-folder>/` — one directory I can find, back up, or delete, not a dotfile per skill sprayed across my home directory. Nothing gets written next to my documents, and nothing gets stored under `~/.claude/`, which isn't ours. See `docs/skill-authoring.md`.
+
 Two things I care enough about to name explicitly: publishing and syncing. Publishing is tag-triggered — any version tag kicks off a real npm release, so never push one without intent. Prep is split from publish — "get it ready but don't publish" is its own route (prep) in manage-e-stack. Syncing skills to the live location is destructive — always show me the diff and wait for my go-ahead before running the install. Before any publish, update all relevant docs to reflect what changed — README descriptions, AGENTS.md listing, and any docs/ reference files.
 
 | Task | Action |
@@ -20,7 +22,7 @@ Two things I care enough about to name explicitly: publishing and syncing. Publi
 
 | Doc | Read when… |
 |---|---|
-| `docs/skill-authoring.md` | Creating or editing a skill — versioning rules, feedback section, auto-run commands, doc listing requirements |
+| `docs/skill-authoring.md` | Creating or editing a skill — versioning rules, feedback section, auto-run commands, doc listing requirements, where a skill stores its state |
 | `docs/hook-authoring.md` | Creating or editing a hook — script shape, stdin/stdout contract, settings.json registration, testing |
 | `docs/publishing.md` | Releasing to npm or auditing repo security — publish flow, branch protection, OIDC configuration |
 | `docs/manual-publish.md` | Publishing manually from the CLI when GitHub Actions are unavailable — prerequisite settings to re-enable, token bypass, cleanup checklist |

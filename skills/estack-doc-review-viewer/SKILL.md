@@ -129,6 +129,9 @@ $R ps | stop | close --slug <slug>
 With one document open, `--slug` is optional. With several, the CLI refuses to
 guess and names the choices. `--doc <file>` works instead of `--slug`.
 
+`reply`, `resolve`, and `reopen` are the exception: a thread id identifies its
+document on its own, so those never need `--slug` even with several open.
+
 Two sessions can review two documents at once. Each runs its own `open` and its
 own `watch`; the second `open` finds the daemon already running and registers
 with it. Slugs come from the filename and are stable across restarts.
@@ -138,10 +141,15 @@ with it. Slugs come from the filename and are stable across restarts.
 Nothing this skill creates is written next to the document. The user's working
 directory keeps their files and only their files.
 
+Everything this skill persists lives in one folder, `~/.e-stack/estack-doc-review-viewer`.
+Every e-stack skill that stores anything gets its own folder under `~/.e-stack`,
+so there is one directory to find, back up, or delete rather than a dotfile per
+skill scattered across the home directory.
+
 ```
-~/.claude/doc-review/registry.json    slug -> {document, stateDir}
-~/.claude/doc-review/daemon.json      the daemon's url and pid
-~/.claude/doc-review/docs/<slug>/
+~/.e-stack/estack-doc-review-viewer/registry.json    slug -> {document, stateDir}
+~/.e-stack/estack-doc-review-viewer/daemon.json      the daemon's url and pid
+~/.e-stack/estack-doc-review-viewer/docs/<slug>/
   review.json     phase, round, seq, version manifest, every thread
   versions/       v0001.md, v0002.md, ...
 ```

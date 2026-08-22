@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `estack-doc-review-viewer` skill — a local, dependency-free live-reloading viewer for reviewing a markdown document. Versions the document automatically, shows a diff between any two versions, lets you highlight any passage and hold a threaded conversation on it, and sends feedback back to the agent with one button.
+- Every e-stack skill that stores anything now keeps it in one place, `~/.e-stack/<skill>/`, instead of its own dotfile in your home directory. One folder to find, back up, or delete. `estack-doc-review-viewer` is the first skill on it; `docs/skill-authoring.md` documents the convention for new skills.
+
+### Changed
+- `estack-doc-review-viewer` skill — `reply`, `resolve`, and `reopen` no longer need `--slug` when several documents are open. A thread id already identifies its document, and the old behavior failed exactly when it hurt most: right before `publish`, which then recorded the comment as orphaned with no answer on it.
+- `estack-doc-review-viewer` skill — the viewer labels your own comments "You" rather than the author's name, and the CLI and docs describe a generic reviewer.
 
 ---
 

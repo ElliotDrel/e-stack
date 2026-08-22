@@ -343,7 +343,9 @@ function isUnread(thread) { const seq = newestClaudeSeq(thread); if (!seq) retur
 function markSeen(thread) { const seq = newestClaudeSeq(thread); if (seq) LS.set(`thread-read-${thread.id}`, seq); }
 
 function messageHtml(msg, threadId) {
-  const badge = msg.author === 'claude' ? 'Claude' : 'Elliot';
+  // The stored author value stays `elliot` for wire compatibility; only the
+  // label a reader sees is generic.
+  const badge = msg.author === 'claude' ? 'Claude' : 'You';
   return `<div class="thread-msg ${msg.author}" data-message-id="${msg.id}">
     <div class="msg-head"><span class="author-badge ${msg.author}">${badge}</span><span class="msg-time">${relativeTime(msg.updatedAt || msg.createdAt)}</span></div>
     <div class="msg-body">${esc(msg.body)}</div>
@@ -381,7 +383,7 @@ function buildComposerElement(pending) {
 // Comment cards are re-derived from state.threads every call, same as the
 // diff body. The one exception: a card whose id is in state.locked (an open
 // reply box, edit box, or delete confirmation) is reused as-is rather than
-// rebuilt, so a poll-triggered refresh never clobbers text Elliot is mid-typing.
+// rebuilt, so a poll-triggered refresh never clobbers text the reviewer is mid-typing.
 function renderCommentsPanel(anchors) {
   const openGeneral = anchors.filter((a) => a.general && !a.comment.resolved).sort((a, b) => a.comment.createdAt.localeCompare(b.comment.createdAt));
   const openLine = anchors.filter((a) => !a.general && !a.orphaned && !a.comment.resolved).sort((a, b) => a.line - b.line);
@@ -440,7 +442,7 @@ function renderCommentsPanel(anchors) {
 // left to get stuck in the wrong position.
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 // Sticky until the next successful send. A failed send leaves the phase alone,
-// so without this the very next render would wipe the only notice Elliot gets.
+// so without this the very next render would wipe the only notice the reviewer gets.
 let sendError = null;
 
 function setSendStatus(text, kind) {
@@ -628,7 +630,7 @@ function openReplyBox(id) {
 function closeReplyBox(id) { state.locked.delete(id); render(); }
 // A reply appends to the bottom of its card. On a long thread that lands below
 // the panel fold, so the click produced no visible change and read as a dead
-// button -- Elliot posted the same reply three times before giving up. Every
+// button -- the reviewer posted the same reply three times before giving up. Every
 // write to a thread now brings its result into view.
 function revealThread(id) {
   const card = document.querySelector(`[data-card-key="${id}"]`);
@@ -815,7 +817,7 @@ async function doSendToClaude() {
     if (!response.ok) throw new Error(data.error || `server returned ${response.status}`);
     sendError = null;
   } catch (error) {
-    // Never fail quietly. A dead server is the most likely cause and Elliot has
+    // Never fail quietly. A dead server is the most likely cause and the reviewer has
     // no other way to find out that the click did nothing.
     sendError = `Send failed: ${error.message}. Is the viewer server still running?`;
     sending = false; renderSendButton(); return;

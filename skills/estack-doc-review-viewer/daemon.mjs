@@ -151,7 +151,7 @@ process.on('SIGINT', () => void shutdown('SIGINT'));
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 
 // --- index page -----------------------------------------------------------
-// `open` sends Elliot straight to /s/<slug>/, so this page exists for the rare
+// `open` sends the reviewer straight to /s/<slug>/, so this page exists for the rare
 // moment he lands on the root with several documents open. A list of links is
 // the whole job; it does not need a stylesheet of its own to keep in sync.
 async function indexPage() {
@@ -179,7 +179,7 @@ function staticFile(pathname, response) {
 const RESERVED = new Set(['index', 'open', 'close', 'shutdown']);
 
 // A comment anchors to the text it quotes. Rewrite that text and the comment
-// has nothing to point at. The client already flags these for Elliot; this is
+// has nothing to point at. The client already flags these for the reviewer; this is
 // the same fact computed for the agent, so it learns its edit orphaned a
 // comment instead of leaving a card on screen with no explanation.
 async function orphanedThreads(record) {

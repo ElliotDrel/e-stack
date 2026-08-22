@@ -5,7 +5,7 @@
 // mutation, so phase and threads can never disagree.
 //
 // The design rule that matters here: this state is LEVEL-TRIGGERED. Nothing is
-// an event that has to be consumed exactly once. "Elliot is waiting on Claude"
+// an event that has to be consumed exactly once. "the reviewer is waiting on Claude"
 // is a field, not a signal, so any process starting at any time reads the file
 // and knows the truth. A dead watcher, a restarted server, or a crashed agent
 // session cannot lose a click, because there is no click to lose.
@@ -18,8 +18,8 @@ import { writeJsonAtomic } from './registry.mjs';
 export const SCHEMA = 2;
 
 // Phases, and who moves them:
-//   reviewing  Elliot's turn. He reads, comments, and eventually submits.
-//   submitted  Elliot clicked Send. Claude has not picked the round up yet.
+//   reviewing  the reviewer's turn. He reads, comments, and eventually submits.
+//   submitted  the reviewer clicked Send. Claude has not picked the round up yet.
 //   editing    Claude claimed the round and is working. The page freezes.
 // Only claim(), submit(), and publish() ever move it, so the list is here to
 // read, not to validate against.
@@ -323,7 +323,7 @@ export function createStore(stateDir, legacyDir = stateDir) {
       });
     },
 
-    // Elliot's Send button. Flips the phase and nothing else: the messages are
+    // the reviewer's Send button. Flips the phase and nothing else: the messages are
     // already durable, so this only records whose turn it is.
     submit() {
       return mutate((state) => {

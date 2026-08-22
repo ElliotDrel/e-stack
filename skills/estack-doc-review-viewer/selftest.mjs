@@ -209,7 +209,7 @@ review = { ...review, phase: 'editing', updatedAt: stamp() };
 await mod.poll();
 check('editing phase shows in the button', els['send-toggle'].textContent, 'Claude is editing');
 check('editing phase stays locked', els['send-toggle'].disabled, true);
-// Claude published: back to Elliot, and every thread now ends with a Claude
+// Claude published: back to the reviewer, and every thread now ends with a Claude
 // message, so there is nothing left to send.
 threads = threads.map((t) => (t.resolved ? t : { ...t, messages: [...t.messages, msg(`${t.id}-r`, 20, 'claude', 'Handled.', 0)] }));
 review = { ...review, phase: 'reviewing', round: 3, lastSeenByClaude: 20, updatedAt: stamp() };

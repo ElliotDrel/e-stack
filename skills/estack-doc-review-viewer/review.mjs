@@ -4,7 +4,7 @@
 //   node review.mjs open <file.md>          start hosting a document, snapshot v1
 //   node review.mjs watch --slug <slug>     the Monitor stream for one document
 //   node review.mjs status  [--slug s]      phase, round, counts
-//   node review.mjs pending [--slug s]      what Elliot said that you have not read
+//   node review.mjs pending [--slug s]      what the reviewer said that you have not read
 //   node review.mjs claim   [--slug s]      read it and take the round
 //   node review.mjs reply <threadId> <text...>
 //   node review.mjs resolve <threadId>   |  reopen <threadId>
@@ -20,6 +20,7 @@
 // open document, else an error naming the choices.
 
 import { spawn } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readRegistry, readDaemon, clearDaemon, isAlive } from './registry.mjs';
@@ -104,7 +105,22 @@ async function call(method, path, body, base) {
 }
 
 // --- slug resolution ------------------------------------------------------
-async function resolveSlug() {
+// Thread ids are uuids, so they identify their document on their own. Commands
+// that take one pass it here: with two documents open, `reply <threadId>` would
+// otherwise fail the disambiguation check, and the most likely moment for that
+// is right before `publish` -- which then orphans the comment with no reply on
+// it, the one outcome this skill is built to prevent.
+async function slugOwningThread(slugs, threadId) {
+  for (const [slug, entry] of slugs) {
+    try {
+      const state = JSON.parse(await readFile(resolve(entry.stateDir, 'review.json'), 'utf8'));
+      if ((state.threads || []).some((thread) => thread.id === threadId)) return slug;
+    } catch { /* unreadable or not yet written: it cannot be the owner */ }
+  }
+  return null;
+}
+
+async function resolveSlug(threadId) {
   const explicit = flag('slug');
   if (explicit) return explicit;
   const registry = await readRegistry();
@@ -118,6 +134,11 @@ async function resolveSlug() {
   }
   if (slugs.length === 1) return slugs[0][0];
   if (!slugs.length) throw new Error('Nothing is open. Run: review.mjs open <file.md>');
+  if (threadId) {
+    const owner = await slugOwningThread(slugs, threadId);
+    if (owner) return owner;
+    throw new Error(`No open document has thread ${threadId}. Open documents: ${slugs.map(([s]) => s).join(', ')}.`);
+  }
   throw new Error(`${slugs.length} documents are open (${slugs.map(([s]) => s).join(', ')}). Pass --slug <slug>.`);
 }
 
@@ -140,7 +161,7 @@ function printThread(thread, unseenFrom = Infinity) {
 }
 
 // Orphan reporting. The daemon computes which open comments no longer match any
-// text in the document; printing it here is what turns "Elliot sees a yellow
+// text in the document; printing it here is what turns "the reviewer sees a yellow
 // card" into "the agent knows it did that and can answer for it".
 function printOrphans(orphaned, when) {
   if (!orphaned || !orphaned.length) return;
@@ -149,7 +170,7 @@ function printOrphans(orphaned, when) {
     console.log(`   ${t.id}  quoted: ${JSON.stringify(t.quote.slice(0, 70))}`);
   }
   console.log('   The quoted text is no longer in the document. Reply in each thread saying what');
-  console.log('   you changed, then resolve it, or Elliot is left with a flagged card and no answer.');
+  console.log('   you changed, then resolve it, or the reviewer is left with a flagged card and no answer.');
 }
 
 function openBrowser(url) {
@@ -284,8 +305,8 @@ try {
       break;
     }
     case 'reply': {
-      const slug = await resolveSlug();
       const [id, ...rest] = args;
+      const slug = await resolveSlug(id);
       const text = rest.join(' ') || flag('body');
       if (!id || !text) throw new Error('usage: reply <threadId> <text...>');
       const message = await call('POST', `/api/${slug}/threads/${encodeURIComponent(id)}/messages`, { author: 'claude', body: text });
@@ -294,8 +315,8 @@ try {
     }
     case 'resolve':
     case 'reopen': {
-      const slug = await resolveSlug();
       const [id] = args;
+      const slug = await resolveSlug(id);
       if (!id) throw new Error(`usage: ${command} <threadId>`);
       await call('PATCH', `/api/${slug}/threads/${encodeURIComponent(id)}`, { resolved: command === 'resolve' });
       console.log(`Thread ${id} ${command === 'resolve' ? 'resolved' : 'reopened'}.`);
