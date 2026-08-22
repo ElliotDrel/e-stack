@@ -1,6 +1,6 @@
 ---
 name: estack-flight-planner
-version: 1.3.0
+version: 1.4.0
 description: >-
   (flight-planner) Find and rank flights between any two airports. Handles the
   parts worth automating (fetching every route, parsing SerpAPI's nested shape,
@@ -145,16 +145,16 @@ bash ~/.agents/skills/estack-flight-planner/scripts/check_setup.sh
 
 The output reports:
 - Today's date and local timezone (use this when converting relative dates in Phase 1)
-- Whether `~/.e-stack/estack-flight-planner/config.json` exists, and if so, all current preferences (with the SerpAPI key masked to "set" or "null")
+- Whether `~/.e-stack/estack-flight-planner/config.json` exists, and if so, all current preferences (and a warning if a deprecated `serpapi_key` is still sitting in it)
 - Any saved **trip presets**, with their aliases — these are the fast path in Phase 1
 - The shuttle service: providers, costs, buffer settings, and how many schedule URLs to fetch
-- Whether `SERPAPI_KEY` is set in the environment
+- Whether `SERPAPI_KEY` is set, in the environment or in `~/.e-stack/.env`
 - Whether `~/.e-stack/estack-flight-planner/flight_history.json` exists and how many entries it has
 
 **Decision tree based on output:**
 - **Config exists** → Phase 1 (ask trip details), then Phase 2 in confirmation mode (show saved prefs, ask "still right?")
 - **Config missing** → Phase 1 (ask trip details), then Phase 2 in wizard mode (walk through each preference, offer to save at end)
-- **Config exists but `serpapi_key: null` AND no env var** → tell the user up front that you'll use the WebSearch fallback in Phase 3 Step 2, with the caveat about coverage
+- **No `SERPAPI_KEY` in the environment or `~/.e-stack/.env`** → tell the user up front that you'll use the WebSearch fallback in Phase 3 Step 2, with the caveat about coverage
 - **Shuttle configured but zero schedule URLs** → say so now. Pairing cannot run without them, and finding that out in Phase 3 wastes a full search.
 
 Don't repeat back the setup output to the user verbatim — just internalize it and adapt your behavior.
@@ -249,7 +249,7 @@ Your saved preferences:
   Nonstop:          preferred (soft)
   Time priority:    11:00–14:00, 14:00–22:00 (soft)
   Max duration:     8h (soft)
-  SerpAPI key:      set
+  SerpAPI key:      set (~/.e-stack/.env)
   Shuttle service:  Acme Express — IND $25, ORD $55
 
 For this trip:
@@ -492,10 +492,12 @@ If the user doesn't have a SerpAPI key and asks for help getting one:
 1. Tell them: "SerpAPI gives the skill structured Google Flights data. Free tier is 100 searches/month — usually enough for personal trip planning. Paid plans start at $50/month."
 2. Walk them to https://serpapi.com/users/sign_up — sign up with email.
 3. After signup, the API key is at https://serpapi.com/manage-api-key.
-4. To set it permanently, walk them through either:
-   - Saving it in their `~/.e-stack/estack-flight-planner/config.json` (`serpapi_key` field), or
-   - Setting `SERPAPI_KEY` as an environment variable in their shell profile.
-5. If they don't want a key: confirm they want the WebSearch fallback. Set `serpapi_key: null` in config. Tell them: "I'll use WebSearch each run. Results won't be as complete and prices may be approximations."
+4. To set it permanently, add one line to `~/.e-stack/.env`, the shared credential file every e-stack skill reads:
+   ```
+   SERPAPI_KEY=<their-key>
+   ```
+   **Append to that file, never overwrite it** — other skills keep their keys there too. Create it if it does not exist. Setting `SERPAPI_KEY` in their shell profile also works and takes precedence. Never put the key in `config.json`; nothing reads it there.
+5. If they don't want a key: confirm they want the WebSearch fallback. Tell them: "I'll use WebSearch each run. Results won't be as complete and prices may be approximations."
 
 ## Important behaviors
 

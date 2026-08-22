@@ -49,38 +49,46 @@ try:
 except ImportError:
     sys.exit("Missing dependency: pip install pypdf")
 
-def _load_env_key() -> str:
-    """Look for PULSE_API_KEY in a .env file in the skill's state directory.
+def estack_env(name: str) -> str:
+    """Read a credential the e-stack way: environment first, then ~/.e-stack/.env.
 
-    The key lives in `~/.e-stack/estack-pdf-to-md/.env` so the script works
-    without requiring a Windows user env var to be set. Env var wins if both are
-    present. The older locations are still read so an existing install keeps
-    working, but they are no good as the default: a .env inside the installed
-    skill folder is overwritten whenever the installer syncs that skill.
+    One file holds the credentials for every e-stack skill rather than one file
+    per skill, so a key two skills both need is stored once. Format is KEY=value
+    per line; blank lines and lines starting with # are ignored, and surrounding
+    quotes are stripped.
+
+    A live environment variable always wins, so a one-off override works without
+    editing the file. The legacy per-skill locations are still read last so an
+    older install keeps working; they were never a good home, since a .env inside
+    the installed skill folder is overwritten whenever the installer syncs it.
     """
+    live = os.environ.get(name)
+    if live:
+        return live
     candidates = [
-        Path.home() / ".e-stack" / "estack-pdf-to-md" / ".env",
-        Path(__file__).parent.parent / ".env",  # legacy: inside the installed skill
+        Path.home() / ".e-stack" / ".env",
+        Path.home() / ".e-stack" / "estack-pdf-to-md" / ".env",  # legacy, per-skill
+        Path(__file__).parent.parent / ".env",  # legacy, inside the installed skill
         Path.home() / ".claude" / "skills" / "estack-pdf-to-md" / ".env",  # legacy
         Path.home() / ".claude" / "skills" / "pdf-to-md" / ".env",  # legacy, pre-prefix
     ]
     for p in candidates:
-        if not p.exists():
-            continue
         try:
+            if not p.exists():
+                continue
             for raw in p.read_text(encoding="utf-8").splitlines():
                 line = raw.strip()
                 if not line or line.startswith("#") or "=" not in line:
                     continue
                 k, _, v = line.partition("=")
-                if k.strip() == "PULSE_API_KEY":
+                if k.strip() == name:
                     return v.strip().strip('"').strip("'")
         except Exception:
             pass
     return ""
 
 
-API_KEY = os.environ.get("PULSE_API_KEY", "") or _load_env_key()
+API_KEY = estack_env("PULSE_API_KEY")
 BASE_URL = "https://api.runpulse.com"
 POLL_INTERVAL = 2   # seconds between status checks
 POLL_TIMEOUT  = 600 # seconds before giving up on a job (raised for refine pass)

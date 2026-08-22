@@ -91,6 +91,51 @@ Rules:
   always provides (Documents, Desktop) has no `mkdir` anywhere in it and will
   throw `ENOENT` the first time it runs after moving.
 
+---
+
+### Credentials and Environment Variables
+
+**Every API key, token, and secret in the pack lives in one file:
+`~/.e-stack/.env`.** Not one per skill. A user who sets a key once has set it
+for every skill that needs it, and a key two skills share is stored once.
+
+Format is `KEY=value`, one per line. Blank lines and lines starting with `#` are
+ignored. Surrounding quotes are stripped.
+
+```
+# ~/.e-stack/.env
+PULSE_API_KEY=abc123
+SERPAPI_KEY=def456
+```
+
+**Resolution order, always:** the live process environment first, then
+`~/.e-stack/.env`. A real environment variable wins so a one-off override works
+without editing the file.
+
+Rules:
+
+- **Append, never overwrite.** The file is shared. A skill that writes a key by
+  rewriting the whole file destroys every other skill's credentials. Read,
+  replace-or-append the one line, write back — or tell the user to add the line
+  themselves.
+- **Store credentials only here.** Not in a per-skill `.env`, not in a skill's
+  `config.json` next to preferences, and never inside the installed skill folder
+  (the installer overwrites it on every sync). `estack-flight-planner` used to
+  keep `serpapi_key` in its `config.json`; that field is gone, and preferences
+  stay there without it.
+- **Each skill reads the file itself.** Skills are installed independently, so a
+  shared loader module would be a dependency a single-skill install cannot
+  satisfy. Copy the ~15-line reader — `estack_env(name)` in
+  `estack-pdf-to-md/scripts/pdf_to_md.py` and
+  `estack-flight-planner/scripts/fetch_flights.py` are the reference
+  implementations, and there is a bash equivalent in each skill's setup check.
+- **Never print a key.** Report it as set/not-set, or mask to first 6 and last 4
+  characters. This applies to setup checks, logs, and error messages.
+- **Some env vars must stay unset.** `estack-drive-cli-agent` deliberately tells
+  callers never to set `OPENAI_API_KEY`, `CODEX_API_KEY`, or
+  `ANTHROPIC_API_KEY`, because each one silently switches billing from the
+  logged-in subscription to API-key mode. Those do not belong in this file.
+
 Every skill that stores anything is on this convention. When you move an existing
 skill's state, leave a legacy check behind: detect the old location, tell the user
 where it moved and how to move their files, and let them decide. Never relocate a

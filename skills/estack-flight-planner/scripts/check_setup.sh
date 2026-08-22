@@ -43,7 +43,12 @@ except Exception as e:
     sys.exit(0)
 
 key = c.get('serpapi_key')
-print('  SerpAPI key:           ' + ('set' if key else 'null (will use WebSearch fallback)'))
+if key:
+    print('  SerpAPI key:           !! still in config.json - DEPRECATED')
+    print('                         Move it to ~/.e-stack/.env as SERPAPI_KEY=<key>,')
+    print('                         then delete the field. Nothing reads it here.')
+else:
+    print('  SerpAPI key:           not in config.json (correct - see .env below)')
 print('  Budget:                \$' + str(c.get('budget_usd', '?')) + ' (' + str(c.get('budget_strength', '?')) + ')')
 airlines = c.get('airline_preferences') or []
 print('  Airlines:              ' + (', '.join(airlines) if airlines else 'any') + ' (' + str(c.get('airline_preference_strength', '?')) + ')')
@@ -129,11 +134,18 @@ fi
 
 echo ""
 
-# --- Environment SERPAPI_KEY ---
+# --- SERPAPI_KEY: environment, then the pack's shared credential file ---
+# One .env for every e-stack skill, so a key two skills need is stored once.
+SHARED_ENV="$HOME/.e-stack/.env"
 if [ -n "${SERPAPI_KEY:-}" ]; then
-  echo "SERPAPI_KEY: set in environment (will be used if config key is null)"
+  echo "SERPAPI_KEY: set in environment (wins over every file)"
+elif [ -f "$SHARED_ENV" ] && grep -qE '^SERPAPI_KEY=.+' "$SHARED_ENV" 2>/dev/null; then
+  echo "SERPAPI_KEY: set in $SHARED_ENV"
 else
-  echo "SERPAPI_KEY: not set in environment"
+  echo "SERPAPI_KEY: not set. Add 'SERPAPI_KEY=<key>' to $SHARED_ENV"
+  echo "             (append to that file, never overwrite it - other skills"
+  echo "              keep their keys there too). Without it the skill falls"
+  echo "              back to WebSearch."
 fi
 
 echo ""

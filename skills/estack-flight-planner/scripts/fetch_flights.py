@@ -15,7 +15,8 @@ Args:
     --stops       Optional. 0=any (default), 1=nonstop only, 2=one-stop-max.
 
 Auth:
-    Reads SERPAPI_KEY from environment. Override with --api-key.
+    Reads SERPAPI_KEY from the environment, then ~/.e-stack/.env (the shared
+    credential file for every e-stack skill). Override with --api-key.
 """
 import argparse
 import os
@@ -32,6 +33,34 @@ BASE_PARAMS = {
     "sort_by": "2",       # price
     "currency": "USD",
 }
+
+
+def estack_env(name: str) -> str:
+    """Read a credential the e-stack way: environment first, then ~/.e-stack/.env.
+
+    One file holds the credentials for every e-stack skill rather than one file
+    per skill, so a key two skills both need is stored once. Format is KEY=value
+    per line; blank lines and lines starting with # are ignored, and surrounding
+    quotes are stripped. A live environment variable always wins, so a one-off
+    override works without editing the file.
+    """
+    live = os.environ.get(name)
+    if live:
+        return live
+    path = Path.home() / ".e-stack" / ".env"
+    try:
+        if not path.exists():
+            return ""
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, _, v = line.partition("=")
+            if k.strip() == name:
+                return v.strip().strip('"').strip("'")
+    except Exception:
+        pass
+    return ""
 
 
 def default_output_dir() -> Path:
@@ -67,9 +96,10 @@ def main() -> int:
     p.add_argument("--api-key", default=None, help="SerpAPI key (else uses $SERPAPI_KEY)")
     args = p.parse_args()
 
-    api_key = args.api_key or os.environ.get("SERPAPI_KEY")
+    api_key = args.api_key or estack_env("SERPAPI_KEY")
     if not api_key:
-        print("ERROR: provide --api-key or set SERPAPI_KEY env var", file=sys.stderr)
+        print("ERROR: provide --api-key, set SERPAPI_KEY, or add it to ~/.e-stack/.env",
+              file=sys.stderr)
         return 2
 
     out_dir = Path(args.output_dir) if args.output_dir else default_output_dir()

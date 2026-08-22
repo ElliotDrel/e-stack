@@ -8,8 +8,6 @@ The skill stores user preferences in this file. It lives outside `~/.agents/skil
 
 ```json
 {
-  "serpapi_key": "abc123 or null",
-
   "budget_usd": 200,
   "budget_strength": "soft",
 
@@ -35,10 +33,10 @@ The skill stores user preferences in this file. It lives outside `~/.agents/skil
 
 ## Field reference
 
-### `serpapi_key`
-- Type: string or null
-- SerpAPI key for Google Flights queries. If null, the skill falls back to WebSearch (less comprehensive — see SKILL.md).
-- Get one at https://serpapi.com/manage-api-key.
+### `serpapi_key` — removed
+- **Credentials no longer live in this file.** The SerpAPI key goes in `~/.e-stack/.env` as `SERPAPI_KEY=<key>`, the one credential file every e-stack skill reads. Append to it; never overwrite it.
+- Nothing reads `serpapi_key` from `config.json`. If your config still has the field, move the value to `~/.e-stack/.env` and delete it here — the setup check flags it.
+- With no key anywhere, the skill falls back to WebSearch (less comprehensive — see SKILL.md). Get one at https://serpapi.com/manage-api-key.
 
 ### `budget_usd`
 - Type: int — max flight price in USD.
@@ -147,7 +145,6 @@ A preset never bypasses confirmation — the skill still shows the resolved plan
 
 ```json
 {
-  "serpapi_key": "sk_xxx",
   "budget_usd": 350,
   "budget_strength": "soft",
   "airline_preferences": ["DL"],
@@ -169,7 +166,6 @@ A preset never bypasses confirmation — the skill still shows the resolved plan
 
 ```json
 {
-  "serpapi_key": null,
   "budget_usd": 250,
   "budget_strength": "hard",
   "airline_preferences": [],
@@ -191,7 +187,6 @@ A preset never bypasses confirmation — the skill still shows the resolved plan
 
 ```json
 {
-  "serpapi_key": "sk_xxx",
   "budget_usd": 200,
   "budget_strength": "soft",
   "airline_preferences": [],
