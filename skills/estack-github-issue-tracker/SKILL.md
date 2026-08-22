@@ -1,6 +1,6 @@
 ---
 name: estack-github-issue-tracker
-version: 1.2.0
+version: 1.3.0
 description: >
   (github-issue-tracker) GitHub issue tracker management. Checks all open issues the user is involved in,
   finds related/duplicate issues, reports what changed, and recommends next steps.
@@ -40,7 +40,7 @@ Extract the date from this string. If you see multiple `today` values in your co
 **stdout/stderr convention:** `compile-report` outputs the report text to stdout and
 metadata (including `today`) to stderr. Parse accordingly.
 
-**Tracker file:** `$HOME/OneDrive/Documents/github-tracker.md`
+**Tracker file:** `$HOME/.e-stack/estack-github-issue-tracker/github-tracker.md`
 This is the AI's knowledge base and source of truth. It stores everything in full detail:
 
 - Every tracked issue with complete context, history, and technical data
@@ -69,7 +69,7 @@ issues just need a quick diff check.
 
 ## Step 0: Startup
 
-1. Set `$TRACKER_PATH` to `$HOME/OneDrive/Documents/github-tracker.md`.
+1. Set `$TRACKER_PATH` to `$HOME/.e-stack/estack-github-issue-tracker/github-tracker.md`.
 2. Run startup:
    ```bash
    node "$SKILL_DIR/bin/tracker-tools.cjs" startup --tracker "$TRACKER_PATH"

@@ -22,6 +22,14 @@ const path = require('path');
 const os = require('os');
 const { exec, execSync } = require('child_process');
 
+// The tracker lives in ~/.e-stack/estack-github-issue-tracker/, which does not
+// exist on a fresh install. It used to live in the user's Documents folder,
+// which always did, so nothing here ever had to create a directory.
+function writeTracker(trackerPath, contents) {
+  fs.mkdirSync(path.dirname(trackerPath), { recursive: true });
+  fs.writeFileSync(trackerPath, contents, 'utf8');
+}
+
 function localDate() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -846,7 +854,7 @@ function cmdUpdateTracker(flags) {
     return;
   }
 
-  fs.writeFileSync(trackerPath, updated, 'utf8');
+  writeTracker(trackerPath, updated);
   console.log(JSON.stringify({ today: todayTag(), updated: true, changes }));
 }
 
@@ -911,7 +919,7 @@ function cmdAppendHistory(flags) {
   }
 
   const updated = content.slice(0, start) + newSection + content.slice(end);
-  fs.writeFileSync(trackerPath, updated, 'utf8');
+  writeTracker(trackerPath, updated);
   console.log(JSON.stringify({
     today: todayTag(), updated: true, issue: `${owner}/${repo}#${number}`,
     date, appended,
@@ -1429,7 +1437,7 @@ function cmdBuildTracker(flags) {
   }
 
   // Step 6: Write tracker
-  fs.writeFileSync(trackerPath, tracker, 'utf8');
+  writeTracker(trackerPath, tracker);
 
   console.log(JSON.stringify({
     today: todayTag(),

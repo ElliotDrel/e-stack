@@ -86,6 +86,10 @@ Rules:
   root silently goes stale.
 - **A skill that stores nothing needs none of this** — most skills are prose and
   should stay that way.
+- **Create the directory before writing to it.** `~/.e-stack/<skill>/` does not
+  exist on a fresh install. A skill that used to write into a folder the OS
+  always provides (Documents, Desktop) has no `mkdir` anywhere in it and will
+  throw `ENOENT` the first time it runs after moving.
 
 Every skill that stores anything is on this convention. When you move an existing
 skill's state, leave a legacy check behind: detect the old location, tell the user
