@@ -49,6 +49,9 @@ jobs:
       - name: Verify skill names are converted correctly (estack- prefix, description, self-references)
         run: node scripts/check-skill-name.cjs --all
 
+      - name: Verify skills store state in ~/.e-stack and credentials in the shared .env
+        run: node scripts/check-paths.cjs
+
       - name: Setup Python
         uses: actions/setup-python@v6
         with:

@@ -17,7 +17,7 @@ echo "=== PULSE_API_KEY status ==="
 # Older installs kept the key per-skill, including inside the installed skill
 # folder that the installer overwrites on every sync. Read those, but write to
 # the shared file.
-LEGACY_FILES="$HOME/.e-stack/estack-pdf-to-md/.env $HOME/.claude/skills/estack-pdf-to-md/.env $HOME/.claude/skills/pdf-to-md/.env"
+LEGACY_FILES="$HOME/.e-stack/estack-pdf-to-md/.env $HOME/.claude/skills/estack-pdf-to-md/.env $HOME/.claude/skills/pdf-to-md/.env"  # estack-path-ok: read-only legacy fallback
 
 ENV_KEY=""
 FOUND_IN="$ENV_FILE"

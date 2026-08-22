@@ -86,6 +86,11 @@ Rules:
   root silently goes stale.
 - **A skill that stores nothing needs none of this** — most skills are prose and
   should stay that way.
+- **Enforcement:** `node scripts/check-paths.cjs` fails on a new home-directory
+  dotfile, a bare home folder, and state under `~/.claude/`. A path a skill only
+  *reads* (another tool's data) belongs in that script's `ALLOWED_PREFIXES`; a
+  deliberate legacy-compatibility line gets an `estack-path-ok` comment on the
+  line. The publish workflow runs it as a hard gate.
 - **Create the directory before writing to it.** `~/.e-stack/<skill>/` does not
   exist on a fresh install. A skill that used to write into a folder the OS
   always provides (Documents, Desktop) has no `mkdir` anywhere in it and will
@@ -131,6 +136,9 @@ Rules:
   implementations, and there is a bash equivalent in each skill's setup check.
 - **Never print a key.** Report it as set/not-set, or mask to first 6 and last 4
   characters. This applies to setup checks, logs, and error messages.
+- **Enforcement:** `node scripts/check-paths.cjs` fails on a per-skill `.env` and
+  on a `.env` resolved relative to the script's own location. Mark a deliberate
+  legacy read with an `estack-path-ok` comment on the line.
 - **Some env vars must stay unset.** `estack-drive-cli-agent` deliberately tells
   callers never to set `OPENAI_API_KEY`, `CODEX_API_KEY`, or
   `ANTHROPIC_API_KEY`, because each one silently switches billing from the

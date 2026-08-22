@@ -13,13 +13,13 @@ CONFIG_DIR="$HOME/.e-stack/estack-flight-planner"
 CONFIG_FILE="$CONFIG_DIR/config.json"
 HISTORY_FILE="$CONFIG_DIR/flight_history.json"
 
-# State moved from ~/.flight-planner to ~/.e-stack/estack-flight-planner, so
+# State moved from ~/.flight-planner to ~/.e-stack/estack-flight-planner, so  estack-path-ok
 # every e-stack skill keeps its files in one place. An install that predates
 # the move still has the old folder. Report it rather than moving it: the
 # config holds an API key, and silently relocating a user's file is not this
 # script's call. Without this the skill would find nothing and open the
 # first-run wizard, and the user would retype preferences they already set.
-LEGACY_DIR="$HOME/.flight-planner"
+LEGACY_DIR="$HOME/.flight-planner"  # estack-path-ok: legacy detection only
 
 echo "=== Flight Planner Setup ==="
 echo "Today: $(date +%Y-%m-%d)  (timezone: $(date +%Z))"

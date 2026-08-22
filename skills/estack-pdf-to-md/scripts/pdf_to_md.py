@@ -67,8 +67,8 @@ def estack_env(name: str) -> str:
         return live
     candidates = [
         Path.home() / ".e-stack" / ".env",
-        Path.home() / ".e-stack" / "estack-pdf-to-md" / ".env",  # legacy, per-skill
-        Path(__file__).parent.parent / ".env",  # legacy, inside the installed skill
+        Path.home() / ".e-stack" / "estack-pdf-to-md" / ".env",  # legacy, per-skill  estack-path-ok
+        Path(__file__).parent.parent / ".env",  # legacy, inside the installed skill  estack-path-ok
         Path.home() / ".claude" / "skills" / "estack-pdf-to-md" / ".env",  # legacy
         Path.home() / ".claude" / "skills" / "pdf-to-md" / ".env",  # legacy, pre-prefix
     ]
