@@ -168,7 +168,8 @@ POST   /api/<slug>/claim                              submitted -> editing, retu
 POST   /api/<slug>/publish                            editing -> reviewing, mints a version, returns orphaned
 ```
 
-Authors are `elliot` (the default when omitted) and `claude`.
+Authors are `elliot` (the stored value for the human reviewer, and the default
+when omitted) and `claude`.
 
 There is no escape hatch for a wedged phase and none is needed: `claim` and
 `publish` have no phase guards, so `publish` unsticks a stranded `editing` and

@@ -1,16 +1,16 @@
 ---
 name: estack-doc-review-viewer
 version: 1.0.0
-description: (doc-review-viewer) Open a local live-reloading viewer for a markdown document so Elliot can read it, highlight passages, leave threaded comments, and push them back to the agent with one button. Use whenever you have written or rewritten a document he needs to review, whenever he asks to "see the diff", "show me the changes", "let me comment on this", "open the viewer", "review this doc", or wants to mark up a draft instead of describing edits in chat. Also use before pushing a rewritten Google Doc or any document back to its source, so he can approve the change visually first.
+description: (doc-review-viewer) Open a local live-reloading viewer for a markdown document so the user can read it, highlight passages, leave threaded comments, and push them back to the agent with one button. Use whenever you have written or rewritten a document they need to review, whenever they ask to "see the diff", "show me the changes", "let me comment on this", "open the viewer", "review this doc", or want to mark up a draft instead of describing edits in chat. Also use before pushing a rewritten Google Doc or any document back to its source, so they can approve the change visually first.
 ---
 
 # estack-doc-review-viewer
 
 A dependency-free local web app for reviewing a markdown document with a human in
 the loop. It versions the document automatically, shows a diff between any two
-versions, lets Elliot highlight any passage and hold a threaded conversation on
-it, and gives him a **Send to Claude** button that wakes you without switching
-back to the terminal.
+versions, lets the reviewer highlight any passage and hold a threaded
+conversation on it, and gives them a **Send to Claude** button that wakes you
+without switching back to the terminal.
 
 Node standard library only on the server. The page carries one vendored file,
 google/diff-match-patch (Apache-2.0), checked in rather than installed. No
@@ -53,43 +53,44 @@ One field says whose turn it is, and everything follows from it.
 
 | Phase | Meaning | Who moves it |
 |---|---|---|
-| `reviewing` | Elliot's turn. He reads and comments. | you, via `publish` |
-| `submitted` | He clicked Send. You have not picked the round up. | him, via the button |
+| `reviewing` | The user's turn. They read and comment. | you, via `publish` |
+| `submitted` | They clicked Send. You have not picked the round up. | them, via the button |
 | `editing` | You claimed the round and are working. The button locks. | you, via `claim` |
 
 The loop:
 
 1. `open` the document. v1 is snapshotted before you touch it.
-2. You edit. `publish`. That mints v2 and returns the document to Elliot.
-3. He comments and clicks **Send to Claude**. The phase becomes `submitted`.
+2. You edit. `publish`. That mints v2 and returns the document to the user.
+3. They comment and click **Send to Claude**. The phase becomes `submitted`.
 4. Your watcher prints one line. You wake.
 5. `claim` prints the unread messages and flips to `editing`.
 6. You edit and reply in-thread. `publish` mints v3. Back to step 3.
 
 While you hold the round the page is curtained and the server serves the last
-snapshot instead of the working file, so Elliot can never catch a half-written
+snapshot instead of the working file, so the user can never catch a half-written
 document mid-`Write`.
 
 This state is **level-triggered**. If your session dies, the daemon is killed, or
 the machine reboots, `review.json` still says `submitted` and the next process to
 look knows exactly what is owed. Nothing has to be consumed exactly once.
 
-New to you is every Elliot message the marker has not passed. `claim` returns
-those and advances the marker in one atomic write, so a crash cannot half-claim
-a round. `pending` shows the same thing without claiming, and is safe any time.
+New to you is every message from the user that the marker has not passed. `claim`
+returns those and advances the marker in one atomic write, so a crash cannot
+half-claim a round. `pending` shows the same thing without claiming, and is safe
+any time.
 
 ## Comment anchoring, and what it means for your edits
 
 Comments anchor to the **quoted text**, not the line number, and re-resolve on
 every render. Insert twenty lines above a commented bullet and the comment
-follows it. That is deliberate: you will be editing the document while his
+follows it. That is deliberate: you will be editing the document while their
 comments sit on it.
 
-If you **rewrite the exact text he quoted**, the comment orphans. It is not lost
-and never silently reattached to text it was not written about. It moves to an
-**Anchor lost** group above the resolved fold, drawn in yellow, still showing the
-quote it was written against. It is flagged, not faded: it still counts and still
-sends.
+If you **rewrite the exact text they quoted**, the comment orphans. It is not
+lost and never silently reattached to text it was not written about. It moves to
+an **Anchor lost** group above the resolved fold, drawn in yellow, still showing
+the quote it was written against. It is flagged, not faded: it still counts and
+still sends.
 
 You are told when this happens. `claim`, `pending`, and `publish` all report
 orphaned threads by id and quote, so you do not have to remember to check:
@@ -100,7 +101,7 @@ orphaned threads by id and quote, so you do not have to remember to check:
 ```
 
 When you see that, **reply in the thread saying what you changed, then resolve
-it**. Otherwise Elliot is left with a flagged card and no answer.
+it**. Otherwise the user is left with a flagged card and no answer.
 
 ## Versioning
 
@@ -134,8 +135,8 @@ with it. Slugs come from the filename and are stable across restarts.
 
 ## Where state lives
 
-Nothing this skill creates is written next to the document. Elliot's working
-directory keeps his files and only his files.
+Nothing this skill creates is written next to the document. The user's working
+directory keeps their files and only their files.
 
 ```
 ~/.claude/doc-review/registry.json    slug -> {document, stateDir}
@@ -153,11 +154,11 @@ overwritten by the next mutation.
 
 - **Run `open` before your first edit.** It snapshots v1 from the file as it
   stands. Edit first and v1 is your rewrite, with the original gone.
-- **Do not reply to a thread while he is testing the Send button.** Replying
+- **Do not reply to a thread while they are testing the Send button.** Replying
   flips it out of the awaiting set, the button greys out to "nothing to send",
   and it looks broken.
 - **If `review.json` stops parsing, the daemon refuses to overwrite it** and
-  returns the error instead of resetting. That is what keeps his comments
+  returns the error instead of resetting. That is what keeps their comments
   recoverable. Fix it by hand and restart.
 
 ## Editing this skill's own code
