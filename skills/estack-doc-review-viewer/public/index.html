@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Document review</title><link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar"><div class="title-group"><h1>Document review</h1><span id="status" class="status">watching</span></div>
+    <div class="controls">
+      <span class="compare"><label for="left-version">Compare</label><select id="left-version"></select><span class="compare-arrow">&rarr;</span><select id="right-version"></select></span>
+      <span id="summary" class="summary"></span>
+      <button id="view-toggle" type="button">Unified view</button>
+      <button id="changes-toggle" type="button" aria-pressed="true">Changes only</button>
+      <button id="comments-toggle" type="button" aria-pressed="true">Comments (0)</button>
+      <button id="theme-toggle" type="button">Dark mode</button>
+      <button id="send-toggle" type="button" class="primary" disabled title="nothing to send">Send to Claude</button>
+      <span id="send-status" class="send-status" role="status" aria-live="polite"></span>
+    </div>
+  </header>
+  <div id="history-banner" class="history-banner" hidden></div>
+  <div class="layout"><aside id="sections" class="sections" aria-label="Document sections"></aside><main id="diff" class="diff" aria-live="polite"></main>
+    <aside id="comments-panel" class="comments-panel open" aria-label="Comments">
+      <div class="comments-header">
+        <button id="new-general-comment" type="button" class="new-general">+ General comment</button>
+        <span id="send-status-panel" class="send-status" role="status" aria-live="polite"></span>
+      </div>
+      <div id="comments-list" class="comments-list"></div>
+    </aside>
+  </div>
+  <div id="editing-curtain" class="editing-curtain" hidden></div>
+  <!-- google/diff-match-patch, Apache-2.0, vendored as one file. It is the diff
+       engine and, more to the point, the semantic cleanup pass that makes a
+       prose diff readable. Nothing installs it: it is checked in. -->
+  <script src="/dmp.js"></script>
+  <script src="/diff.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-doc-review-viewer` skill — a local, dependency-free live-reloading viewer for reviewing a markdown document. Versions the document automatically, shows a diff between any two versions, lets you highlight any passage and hold a threaded conversation on it, and sends feedback back to the agent with one button.
+
 ---
 
 ## [1.0.66] - 2026-08-17

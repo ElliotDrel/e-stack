@@ -1,0 +1,207 @@
+:root {
+  color-scheme: light;
+  --orphan-bg:#fdf6e0; --orphan-border:#d9a520; --orphan-text:#8a6206;
+  --page:#f7f8f6; --surface:#fff; --surface-muted:#eef1ed; --text:#263129; --muted:#69746c; --border:#d8ded8; --accent:#396b52;
+  --added-bg:#e3f2e6; --added-border:#287143; --added-word:#b9e2c2; --deleted-bg:#f8e5e3; --deleted-border:#a43d37; --deleted-word:#efb9b5; --marker:#33443a; --unchanged:#e6e9e6; --focus:#a77712;
+  --comment-mark:#a77712; --comment-mark-resolved:#b7ae98; --comment-mark-bg-hover:rgba(167,119,18,0.12);
+  --claude-badge-bg:#e6ecf5; --claude-badge-text:#2d4f8f; --claude-accent:#3f66b3;
+  --elliot-badge-bg:#e6f1ea; --elliot-badge-text:#2a6b45;
+  --card-bg:#fff; --card-border:#d8ded8; --unread-dot:#c1522c; --danger:#a43d37; --danger-bg:#f8e5e3;
+  --primary-bg:#396b52; --primary-text:#fff; --primary-bg-hover:#2d5641;
+  --send-ok:#1f6b43;
+}
+/* Guarded with :not([data-theme="light"]) so an explicit light toggle beats the OS
+   preference. Without the guard, toggling to light on a dark OS resets color-scheme
+   but leaves every dark token in place. */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme:dark; --orphan-bg:#3a3216; --orphan-border:#c39b2c; --orphan-text:#f0d9a8; --page:#1b211d; --surface:#252d27; --surface-muted:#303a32; --text:#e7eee9; --muted:#aab7ad; --border:#465249; --accent:#9bceb0; --added-bg:#203b29; --added-border:#6bc184; --added-word:#387c4d; --deleted-bg:#412725; --deleted-border:#e47e76; --deleted-word:#934f49; --marker:#f1f7f2; --unchanged:#374039; --focus:#e4be58;
+  --comment-mark:#e4be58; --comment-mark-resolved:#5c5842; --comment-mark-bg-hover:rgba(228,190,88,0.16);
+  --claude-badge-bg:#26324a; --claude-badge-text:#a9c1ee; --claude-accent:#7fa0e0;
+  --elliot-badge-bg:#1f3227; --elliot-badge-text:#8fd1a7;
+  --card-bg:#232a25; --card-border:#465249; --unread-dot:#ef8560; --danger:#e47e76; --danger-bg:#412725;
+  --primary-bg:#6bc184; --primary-text:#132018; --primary-bg-hover:#84cd98;
+  --send-ok:#7fd6a0;
+} }
+:root[data-theme="light"] { color-scheme:light; }
+:root[data-theme="dark"] { color-scheme:dark; --orphan-bg:#3a3216; --orphan-border:#c39b2c; --orphan-text:#f0d9a8; --page:#1b211d; --surface:#252d27; --surface-muted:#303a32; --text:#e7eee9; --muted:#aab7ad; --border:#465249; --accent:#9bceb0; --added-bg:#203b29; --added-border:#6bc184; --added-word:#387c4d; --deleted-bg:#412725; --deleted-border:#e47e76; --deleted-word:#934f49; --marker:#f1f7f2; --unchanged:#374039; --focus:#e4be58;
+  --comment-mark:#e4be58; --comment-mark-resolved:#5c5842; --comment-mark-bg-hover:rgba(228,190,88,0.16);
+  --claude-badge-bg:#26324a; --claude-badge-text:#a9c1ee; --claude-accent:#7fa0e0;
+  --elliot-badge-bg:#1f3227; --elliot-badge-text:#8fd1a7;
+  --card-bg:#232a25; --card-border:#465249; --unread-dot:#ef8560; --danger:#e47e76; --danger-bg:#412725;
+  --primary-bg:#6bc184; --primary-text:#132018; --primary-bg-hover:#84cd98;
+  --send-ok:#7fd6a0;
+}
+/* The hidden attribute must beat a class that sets display. The UA rule
+   [hidden]{display:none} loses to any author rule of equal specificity, so a
+   class like .editing-curtain{display:grid} silently pins the element open.
+   That shipped once: the curtain covered the page at 88% opacity in every
+   phase, with no card in it, and swallowed every click. */
+[hidden] { display:none !important; }
+* { box-sizing:border-box; } html { scroll-behavior:smooth; } body { margin:0; background:var(--page); color:var(--text); font:15px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; overflow-x:hidden; }
+.topbar { position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:13px 22px; background:var(--surface); border-bottom:1px solid var(--border); } h1 { margin:0; font-size:18px; font-weight:650; } .title-group,.controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; } .status,.summary { color:var(--muted); font-size:13px; } button { border:1px solid var(--border); border-radius:5px; padding:6px 10px; background:var(--surface); color:var(--text); cursor:pointer; font:inherit; font-size:13px; } button:hover,button:focus-visible { border-color:var(--accent); outline:2px solid color-mix(in srgb,var(--accent) 35%,transparent); } button:disabled { cursor:default; opacity:0.6; }
+button.primary { background:var(--primary-bg); color:var(--primary-text); border-color:var(--primary-bg); font-weight:600; } button.primary:hover:not(:disabled),button.primary:focus-visible { background:var(--primary-bg-hover); border-color:var(--primary-bg-hover); } button.primary.primary-disabled { background:var(--surface-muted); color:var(--muted); border-color:var(--border); font-weight:400; }
+button.primary.pulse-waiting { animation:sendPulse 1.6s ease-in-out infinite; }
+@keyframes sendPulse { 0%,100% { box-shadow:0 0 0 0 color-mix(in srgb,var(--primary-bg) 45%,transparent); } 50% { box-shadow:0 0 0 6px color-mix(in srgb,var(--primary-bg) 0%,transparent); } }
+
+.layout { display:grid; grid-template-columns:220px minmax(0,1fr); max-width:1500px; margin:0 auto; } .sections { position:sticky; top:61px; align-self:start; max-height:calc(100vh - 75px); overflow:auto; padding:22px 12px 22px 22px; } .section-link { display:flex; align-items:center; gap:8px; width:100%; border:0; padding:7px 5px; background:transparent; color:var(--text); text-align:left; font:inherit; font-size:13px; cursor:pointer; } .section-link:hover { color:var(--accent); } .dot { width:8px; height:8px; flex:0 0 8px; border-radius:50%; background:var(--muted); } .dot.add { background:var(--added-border); } .dot.del { background:var(--deleted-border); } .dot.both { background:var(--focus); } .badge { margin-left:auto; min-width:20px; border-radius:10px; padding:0 5px; background:var(--surface-muted); color:var(--muted); text-align:center; font-size:11px; }
+body.comments-open .layout { grid-template-columns:220px minmax(0,1fr) 320px; }
+.diff { min-width:0; padding:22px 22px 80px 0; } .diff-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); min-height:30px; border-bottom:1px solid var(--border); background:var(--surface); } .cell { display:grid; grid-template-columns:45px 22px minmax(0,1fr); min-width:0; padding:4px 9px 4px 0; } .cell + .cell { border-left:1px solid var(--border); } .gutter,.marker { color:var(--muted); font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace; text-align:right; user-select:none; } .marker { padding-left:8px; color:var(--marker); font-weight:700; } .line-text { min-width:0; padding-left:10px; white-space:pre-wrap; overflow-wrap:anywhere; } .added { background:var(--added-bg); border-left:4px solid var(--added-border); } .deleted { background:var(--deleted-bg); border-left:7px solid var(--deleted-border); } .empty { background:var(--surface-muted); border-left:0; } .word-added { background:var(--added-word); border-radius:2px; } .word-deleted { background:var(--deleted-word); border-radius:2px; } .unchanged-collapse { display:block; width:100%; padding:7px 15px; border:0; border-bottom:1px solid var(--border); background:var(--unchanged); color:var(--muted); text-align:left; cursor:pointer; } .section-heading { scroll-margin-top:75px; } .unified .diff-row { display:block; } .unified .cell { border-left:0; } .unified .empty { display:none; }
+
+/* Comment highlights: an underline/bottom-border layered on top of word-diff
+   backgrounds rather than a competing fill, so both stay legible together. */
+mark.comment-mark { background:none; color:inherit; padding:0 1px; border-bottom:2px solid var(--comment-mark); cursor:pointer; }
+mark.comment-mark:hover { background:var(--comment-mark-bg-hover); }
+mark.comment-mark.resolved { border-bottom-color:var(--comment-mark-resolved); border-bottom-style:dotted; }
+mark.comment-mark.pulse { animation:markPulse 0.9s ease-out; }
+@keyframes markPulse { 0% { background:var(--comment-mark-bg-hover); } 100% { background:transparent; } }
+.selection-comment-btn { position:absolute; z-index:15; border:1px solid var(--accent); border-radius:5px; padding:5px 10px; background:var(--surface); color:var(--text); font-size:12px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.18); }
+.selection-comment-btn:hover,.selection-comment-btn:focus-visible { background:var(--accent); color:var(--surface); outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent); }
+
+/* --- comments sidebar --- */
+.comments-panel { display:none; flex-direction:column; min-width:0; border-left:1px solid var(--border); background:var(--page); position:sticky; top:61px; align-self:start; max-height:calc(100vh - 61px); }
+body.comments-open .comments-panel { display:flex; }
+.comments-header { display:flex; flex-direction:column; gap:8px; padding:14px 14px 10px; border-bottom:1px solid var(--border); }
+.new-general { align-self:flex-start; }
+/* Send status. Empty text collapses the element so it takes no room until there
+   is something to say. Every send outcome writes here, including failures. */
+.send-status { font-size:12px; line-height:1.4; color:var(--muted); }
+.send-status:empty { display:none; }
+#send-status { max-width:260px; }
+#send-status-panel { display:block; margin-top:6px; }
+#send-status-panel:empty { display:none; }
+.send-status.pending { color:var(--text); }
+.send-status.done { color:var(--send-ok); font-weight:600; }
+.send-status.error { color:var(--danger); font-weight:600; }
+.comments-list { flex:1; overflow:auto; padding:12px; display:flex; flex-direction:column; gap:10px; }
+.comments-empty { color:var(--muted); font-size:13px; padding:12px 4px; }
+.comment-card { position:relative; border:1px solid var(--card-border); border-radius:8px; background:var(--card-bg); padding:10px 12px; font-size:13px; }
+.comment-card:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+.comment-card.pulse { animation:cardPulse 0.9s ease-out; }
+@keyframes cardPulse { 0% { box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 55%,transparent); } 100% { box-shadow:0 0 0 0 transparent; } }
+/* Block-level markdown, same rule as the inline styling: label the text, never
+   rewrite it. A heading gets heading size, a bullet gets a hanging indent so its
+   wrapped lines line up under the words rather than under the dash, and a nested
+   bullet steps in. Every character stays exactly where the file has it, so the
+   diff and the comment anchors are unaffected. */
+.md-block { display:block; }
+.md-h1 { font-size:1.32em; font-weight:700; line-height:1.35; }
+.md-h2 { font-size:1.17em; font-weight:680; line-height:1.4; }
+.md-h3 { font-size:1.05em; font-weight:660; }
+.md-h4 { font-weight:640; }
+.md-li { padding-left:1.35em; text-indent:-1.35em; }
+.md-depth-1 { margin-left:1.2em; } .md-depth-2 { margin-left:2.4em; }
+.md-depth-3 { margin-left:3.6em; } .md-depth-4 { margin-left:4.8em; }
+.md-quote { padding-left:9px; border-left:3px solid var(--border); color:var(--muted); font-style:italic; }
+.md-code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:0.92em; }
+.md-rule { color:var(--muted); opacity:0.5; }
+
+/* Inline markdown, styled in place rather than rendered away. Rendering both
+   sides to HTML would make "this became bold" an invisible change, and would
+   break comment anchors, which are character offsets into the source. So the
+   source stays and the syntax recedes: the prose reads like prose, the markers
+   are still there to be diffed, and every offset is unchanged. */
+.md-syntax, .md-lead { color:var(--muted); opacity:0.55; }
+.md-strong { font-weight:700; }
+.md-em { font-style:italic; }
+.md-strike { text-decoration:line-through; text-decoration-color:var(--muted); }
+.md-code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:0.92em; }
+/* A link target is never the point of the sentence. It stays selectable and
+   still diffs, it just stops shouting over the words around it. */
+.md-url { color:var(--muted); opacity:0.6; font-size:0.86em; word-break:break-all; }
+
+/* An orphaned comment is flagged, not faded. The old build dimmed it to 0.75
+   and dashed the border, which reads as "less important" for the one card
+   that needs a decision. Yellow is its own state, distinct from the accent
+   border a general comment gets and from the red of a deletion. */
+.comment-card.orphaned { border-color:var(--orphan-border); border-left:4px solid var(--orphan-border); background:var(--orphan-bg); }
+.comment-card.resolved { opacity:0.8; }
+.card-quote { border-left:3px solid var(--comment-mark); padding:2px 0 2px 8px; margin-bottom:6px; color:var(--muted); font-style:italic; word-break:break-word; }
+.card-quote-general { border-left-color:var(--accent); font-style:normal; font-weight:600; color:var(--text); }
+.card-orphan-note { color:var(--orphan-text); font-size:11px; font-weight:650; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em; }
+.card-quote-orphaned { border-left-color:var(--orphan-border); color:var(--muted); text-decoration:line-through; text-decoration-color:var(--orphan-border); }
+.card-orphan-hint { color:var(--muted); font-size:11px; margin:4px 0 8px; }
+.card-line-ref { color:var(--muted); font-size:11px; margin-bottom:6px; }
+.card-thread { display:flex; flex-direction:column; gap:8px; }
+.thread-msg { border-left:2px solid transparent; padding-left:8px; }
+.thread-msg.claude { border-left-color:var(--claude-accent); }
+.msg-head { display:flex; align-items:center; gap:8px; margin-bottom:2px; }
+.author-badge { border-radius:10px; padding:1px 8px; font-size:11px; font-weight:600; }
+.author-badge.claude { background:var(--claude-badge-bg); color:var(--claude-badge-text); }
+.author-badge.elliot { background:var(--elliot-badge-bg); color:var(--elliot-badge-text); }
+.msg-time { color:var(--muted); font-size:11px; }
+.msg-body { white-space:pre-wrap; word-break:break-word; }
+.msg-actions,.card-actions { display:flex; gap:6px; margin-top:4px; }
+.msg-actions button,.card-actions button { padding:2px 7px; font-size:11px; }
+.confirm-label { font-size:11px; color:var(--danger); }
+.confirm-yes,.confirm-no { padding:2px 7px; font-size:11px; }
+.confirm-yes { border-color:var(--danger); color:var(--danger); }
+.reply-slot:not(:empty) { margin-top:8px; }
+.composer-card textarea,.reply-input,.edit-input { width:100%; resize:vertical; border:1px solid var(--border); border-radius:5px; padding:6px 8px; background:var(--surface); color:var(--text); font:inherit; font-size:13px; }
+.composer-card textarea:focus-visible,.reply-input:focus-visible,.edit-input:focus-visible { outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent); border-color:var(--accent); }
+.composer-quote,.composer-label { border-left:3px solid var(--comment-mark); padding:2px 0 2px 8px; margin-bottom:6px; color:var(--muted); font-style:italic; }
+.composer-label { font-style:normal; font-weight:600; color:var(--text); border-left-color:var(--accent); }
+.composer-actions { display:flex; gap:6px; margin-top:6px; }
+.unread-dot { position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; background:var(--unread-dot); }
+.resolved-group { border:none; }
+/* The disclosure marker used to be hidden and the row left as bare muted text.
+   A resolved thread's Reopen button lives inside this fold, so the only way to
+   reach it looked like an inert label. It reads as a control now. */
+.resolved-group summary { display:flex; align-items:center; gap:7px; margin-top:8px; padding:6px 9px; border:1px solid var(--border); border-radius:5px; background:var(--surface); color:var(--muted); font-size:12px; cursor:pointer; list-style:none; }
+.resolved-group summary::-webkit-details-marker { display:none; }
+.resolved-group summary::before { content:"\25B8 "; display:inline-block; transition:transform 120ms ease; }
+.resolved-group[open] > summary::before { transform:rotate(90deg); }
+.resolved-group summary:hover { color:var(--text); border-color:var(--accent); }
+.resolved-group summary:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce) { .resolved-group summary::before { transition:none; } }
+.resolved-body { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+.orphaned-header { color:var(--orphan-text); font-size:12px; font-weight:650; padding:8px 2px 4px; }
+
+@media (max-width:900px) { .topbar { align-items:flex-start; flex-direction:column; } .controls { flex-wrap:wrap; } .layout { display:block; } .sections { position:sticky; top:105px; z-index:4; display:flex; gap:5px; max-height:none; overflow-x:auto; padding:7px 12px; background:var(--page); border-bottom:1px solid var(--border); } .section-link { flex:0 0 auto; width:auto; white-space:nowrap; } .diff { padding:14px 10px 60px; } .side-by-side .diff-row { display:block; } .side-by-side .cell + .cell { border-left:0; border-top:1px dotted var(--border); } .side-by-side .empty { display:none; }
+  body.comments-open .layout { grid-template-columns:none; }
+  .comments-panel { display:none; position:fixed; top:0; right:0; bottom:0; width:min(320px,90vw); max-height:none; z-index:20; box-shadow:-4px 0 18px rgba(0,0,0,0.25); }
+  body.comments-open .comments-panel { display:flex; }
+}
+
+/* --- version compare + history mode ------------------------------------ */
+.compare { display:inline-flex; align-items:center; gap:6px; margin-right:8px; }
+.compare label { color:var(--muted); font-size:12px; }
+.compare select { font:inherit; font-size:12px; padding:4px 6px; border-radius:5px; color:var(--text); background:var(--surface); border:1px solid var(--border); max-width:180px; }
+.compare select:hover, .compare select:focus-visible { border-color:var(--accent); }
+.compare-arrow { color:var(--muted); }
+.history-banner { padding:9px 22px; font-size:13px; color:#7a4b00; background:#fff3d4; border-bottom:1px solid #e8c583; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .history-banner { color:#f0d9a8; background:#3a2f16; border-bottom-color:#6b5824; } }
+:root[data-theme="dark"] .history-banner { color:#f0d9a8; background:#3a2f16; border-bottom-color:#6b5824; }
+/* Every affordance that would write a comment disappears in a historical view,
+   rather than failing when clicked. */
+body.read-only .new-general,
+body.read-only .card-actions,
+body.read-only .msg-actions,
+body.read-only .selection-comment-btn { display:none; }
+
+/* Two-level change highlight. The word tint (.word-added/.word-deleted) says
+   "this word changed"; .char-hot picks out the characters inside it that moved,
+   so fixing "recieve" reads as two letters rather than a whole replaced word.
+   An underline layers over the tint without fighting it for colour. */
+.char-hot { text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:2px; font-weight:640; }
+
+/* A change that only touched markdown syntax. Muted so it does not compete with
+   an actual edit to the prose, and marked '~' in the gutter instead of -/+. */
+.formatting-only .cell.added, .formatting-only .cell.deleted { background:var(--surface); border-left-color:var(--muted); }
+.formatting-only .word-added, .formatting-only .word-deleted { background:var(--surface-muted); }
+.formatting-only .char-hot { text-decoration-color:var(--muted); }
+.formatting-only .marker { color:var(--muted); font-weight:600; }
+
+/* The editing curtain. While the agent holds the round the document underneath
+   is the last published version, not the live file, so the page is showing
+   something real -- it just is not what Elliot is waiting for. Cover it rather
+   than let him start reading a draft that is about to be replaced. */
+.editing-curtain { position:fixed; inset:0; z-index:40; display:grid; place-items:center; background:color-mix(in srgb,var(--page) 88%,transparent); backdrop-filter:blur(3px); }
+.curtain-card { max-width:420px; padding:28px 32px; border:1px solid var(--border); border-radius:10px; background:var(--surface); text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.18); }
+.curtain-card h2 { margin:14px 0 8px; font-size:19px; font-weight:650; }
+.curtain-card p { margin:0 0 6px; color:var(--muted); font-size:13px; line-height:1.5; }
+.curtain-note { font-size:12px; opacity:0.85; }
+.curtain-spinner { width:26px; height:26px; margin:0 auto; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:curtain-spin 900ms linear infinite; }
+@keyframes curtain-spin { to { transform:rotate(360deg); } }
+/* Respect a reduced-motion preference: the card still says what is happening. */
+@media (prefers-reduced-motion: reduce) { .curtain-spinner { animation:none; } }
+/* Nothing behind the curtain should be reachable by keyboard or by selection. */
+body.editing .layout { user-select:none; }
