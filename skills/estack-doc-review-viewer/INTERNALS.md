@@ -1,4 +1,4 @@
-# doc-review-viewer internals
+# estack-doc-review-viewer internals
 
 For editing this skill's own code. An agent that is only using the skill to run a
 review needs `SKILL.md` and nothing here.

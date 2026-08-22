@@ -1,4 +1,4 @@
-// doc-review-viewer state store.
+// estack-doc-review-viewer state store.
 //
 // One file holds everything: the review phase, the round counter, the sequence
 // counter, and every thread with every message in it. One atomic write per

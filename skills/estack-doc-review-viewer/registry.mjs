@@ -1,4 +1,4 @@
-// Global registry for doc-review-viewer.
+// Global registry for estack-doc-review-viewer.
 //
 // Lives outside any single document so that two Claude Code sessions running in
 // different working directories agree on which slugs exist and where the daemon

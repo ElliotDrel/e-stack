@@ -1,4 +1,4 @@
-// Version history for doc-review-viewer.
+// Version history for estack-doc-review-viewer.
 //
 // Snapshots are taken by code, never by the agent. Claude edits one file and
 // nothing else; the numbering, the hashing, and the decision about whether a

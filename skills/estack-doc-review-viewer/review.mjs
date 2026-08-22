@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// doc-review-viewer CLI -- the only interface Claude needs.
+// estack-doc-review-viewer CLI -- the only interface Claude needs.
 //
 //   node review.mjs open <file.md>          start hosting a document, snapshot v1
 //   node review.mjs watch --slug <slug>     the Monitor stream for one document
@@ -44,7 +44,7 @@ function positionals() {
   return out;
 }
 function usage() {
-  console.log(`doc-review-viewer
+  console.log(`estack-doc-review-viewer
 
   open <file.md> [--slug s] [--no-browser]   host a document, snapshot v1, print the watch command
   watch --slug <slug>                        run this through Monitor with persistent: true

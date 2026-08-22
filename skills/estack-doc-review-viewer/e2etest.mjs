@@ -1,4 +1,4 @@
-// doc-review-viewer end-to-end test.
+// estack-doc-review-viewer end-to-end test.
 //
 //   node e2etest.mjs
 //

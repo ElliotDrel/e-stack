@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// doc-review-viewer daemon -- hosts every open document on one port.
+// estack-doc-review-viewer daemon -- hosts every open document on one port.
 //
 // Started by `review.mjs open`, never by hand. Its stdout goes nowhere on
 // purpose: waking an agent is the watcher's job, not the host's, because the

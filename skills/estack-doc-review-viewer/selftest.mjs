@@ -1,4 +1,4 @@
-// doc-review-viewer self-test.
+// estack-doc-review-viewer self-test.
 //
 //   node selftest.mjs
 //
@@ -569,5 +569,5 @@ console.log('13. diff rows are reused, not rebuilt');
   check('so the stylesheet must force them so', /\[hidden\]\s*\{[^}]*display\s*:\s*none\s*!important/.test(css), true);
 }
 
-console.log(failures === 0 ? '\nOK: doc-review-viewer self-test passed.' : `\n${failures} ASSERTION(S) FAILED`);
+console.log(failures === 0 ? '\nOK: estack-doc-review-viewer self-test passed.' : `\n${failures} ASSERTION(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);
