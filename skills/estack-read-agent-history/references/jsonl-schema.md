@@ -59,6 +59,34 @@ When the meta file is missing, `subagents.load_meta` returns `{"agentType": "unk
 
 Subagent entries inside the parent transcript are marked with `isSidechain: true` and carry an `agentId` field.
 
+### Orphaned session directories
+
+`<project-dir>\<session-uuid>\` and `<project-dir>\<session-uuid>.jsonl` are
+independent on disk, so the directory can outlive the transcript. A session
+whose `subagents\` directory exists while its top-level `.jsonl` does not is
+**orphaned**: unresumable, because `--resume` has no transcript to load.
+
+This is the fingerprint of the March 2026 auto-update deletion bug
+(GitHub #41591) — it removed parent transcripts but left the subagent
+directories untouched. Because backups then mirrored the already-broken state,
+an orphan typically appears identically in the live tree **and every backup
+root**, which makes "it's in the backup" misleading: the directory is, the
+resumable file never was.
+
+Two consequences worth knowing:
+
+- `lookup` resolves only top-level `<uuid>.jsonl`, so it reports an orphan as
+  "no session found" and hides the surviving evidence. Use `--mode resumable`,
+  which reports `ORPHAN` and counts the sidecars.
+- The sidecars are still readable and often carry the real work:
+  `--file <uuid>\subagents\agent-<id>.jsonl --mode dump`.
+
+An orphaned subagent's first line also carries `sessionId` set to the **parent**
+session's UUID, alongside its `cwd` and `version`. That makes it the strongest
+available proof that a now-deleted parent session genuinely existed — a
+fabricated or mistyped UUID cannot match a real `sessionId` field. `--mode
+resumable --deep` grades on exactly this.
+
 ## Entry types
 
 Each line in a `.jsonl` is a JSON object with a `type` field. Entry classifications:

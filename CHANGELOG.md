@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-read-agent-history` — new `resumable` mode. `lookup` answers one UUID against one root; `resumable` answers many against every root in a single filesystem walk, which is what triaging a saved list of `c -r` / `claude --resume` commands actually needs (cost is per-sweep, not per-UUID). Takes `--uuid` (comma- or space-separated) or `--uuid-file`, which harvests every UUID out of a notes file in any format. Verdicts: `LIVE`, `BACKUP` (names which root holds it), `CODEX` (a `~/.codex/sessions` rollout, so `codex resume` not `claude --resume`), `ORPHAN`, and `MISSING`; exit 0 only when every UUID is resumable. `ORPHAN` is the new one that matters — a session whose `<uuid>/subagents/` directory outlived its parent `.jsonl`, the fingerprint of the March 2026 auto-update deletion bug (#41591). Because backups mirrored the already-broken state, an orphan appears in the live tree *and* every backup root while the resumable file exists nowhere, so "it's in the backup" is misleading; `lookup` reports these as "no session found" and hides the surviving sidecars. Optional `--deep` grades `MISSING` UUIDs by evidence tier: `WAS-REAL` when the session's own `"sessionId":"<uuid>"` survives in another transcript (definitive — a mistyped UUID cannot match a real one), `LIKELY-REAL` when only a `<uuid>.jsonl` directory listing survives (a doc writing that filename as an example matches too). Raw mention counts are deliberately never treated as evidence, since documentation placeholders score dozens of hits; the current session's own transcript is excluded for the same reason.
+
 ---
 
 ## [1.0.69] - 2026-08-23

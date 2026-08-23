@@ -85,6 +85,7 @@ PY="$HOME/.claude/skills/estack-read-agent-history/scripts/read_transcript.py"
 |---|---|
 | THIS session's path | `python "$PY" --mode whoami --cwd "<cwd>"` |
 | UUID prefix → path (either agent) | `python "$PY" --mode lookup --uuid abc123de` |
+| **Are these UUIDs still resumable?** (batch, every root) | `python "$PY" --mode resumable --uuid-file ids.txt --deep` |
 | List sessions (both agents) | `python "$PY" --mode list --all-projects --since 7d` |
 | Keyword search everywhere | `python "$PY" --mode search --all-projects --query "supabase migration"` |
 | 6-line session summary (either agent) | `python "$PY" --file <session-or-rollout.jsonl> --mode brief` |

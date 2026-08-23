@@ -74,6 +74,23 @@ The `brief --include-subagents` output is the densest form of the standard "what
 
 ## 4. Deletion-incident recovery (March 2026 auto-update bug, GitHub #41591)
 
+**Start here when you have a list of UUIDs to triage** (saved `c -r` lines, a
+notes file, a Coursicle-style backlog). One sweep classifies all of them across
+every root, so you know which are worth chasing before opening anything:
+
+```bash
+python "$PY" --mode resumable --uuid-file ids.txt --deep
+```
+
+- `LIVE` → resume normally. `BACKUP` → restore from the named root (below).
+- `ORPHAN` → the parent transcript is gone from live AND every backup; only
+  subagent sidecars survive. Do not go hunting in the backups, it is not there.
+  Read what is left with `--file <uuid>\subagents\agent-*.jsonl --mode dump`.
+- `WAS-REAL` / `LIKELY-REAL` → genuinely existed, nothing recoverable locally.
+- `MISSING` → no trace at all; suspect a typo before assuming data loss.
+
+The per-uuid recovery flow below is for the `BACKUP` ones.
+
 When a live `.jsonl` has been wiped but the backup is intact:
 
 ```bash

@@ -516,6 +516,275 @@ def mode_lookup(
     return 0, str(matches[0])
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# resumable — batch "is this session still resumable?" across every root
+#
+# `lookup` answers ONE uuid against ONE root. This answers many uuids against
+# EVERY root in a single filesystem walk, which is what you actually need when
+# triaging a saved list of `c -r` / `claude --resume` commands.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I
+)
+_UUID_ANY = re.compile(
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.I
+)
+
+
+def extract_uuids(*blobs: str) -> list[str]:
+    """Pull every UUID out of arbitrary text, de-duplicated, order preserved.
+
+    Deliberately forgiving so a pasted wall of resume commands works as-is.
+    When harvesting from a notes file, pre-filter to lines that actually carry
+    a resume command — UUID-shaped ids also appear in unrelated URLs.
+    """
+    seen: set[str] = set()
+    out: list[str] = []
+    for blob in blobs:
+        if not blob:
+            continue
+        for m in _UUID_ANY.findall(blob):
+            if m.lower() not in seen:
+                seen.add(m.lower())
+                out.append(m)
+    return out
+
+
+def _resumable_index() -> tuple[dict, dict, list[str]]:
+    """One walk over every known root. Returns (files, dirs, unavailable_roots).
+
+    files: {uuid: {root: [path, ...]}}  top-level <uuid>.jsonl (resumable)
+    dirs:  {uuid: {root: [path, ...]}}  <uuid>/ dirs holding subagent sidecars
+    """
+    files: dict[str, dict[str, list[str]]] = {}
+    dirs: dict[str, dict[str, list[str]]] = {}
+    unavailable: list[str] = []
+    for name in ["live"] + sorted(P.KNOWN_ROOTS - {"live"}):
+        try:
+            root = P.resolve_root(name)
+        except ValueError:
+            unavailable.append(name)
+            continue
+        if not root.is_dir():
+            unavailable.append(name)
+            continue
+        for pd in P.list_projects(root):
+            for f in pd.glob("*.jsonl"):
+                if _UUID_RE.match(f.stem):
+                    files.setdefault(f.stem.lower(), {}).setdefault(
+                        name, []).append(str(f))
+            try:
+                for d in pd.iterdir():
+                    if d.is_dir() and _UUID_RE.match(d.name):
+                        dirs.setdefault(d.name.lower(), {}).setdefault(
+                            name, []).append(str(d))
+            except OSError:
+                continue
+    return files, dirs, unavailable
+
+
+def _deep_evidence(uuids: list[str], roots: list[Path]) -> dict | None:
+    """Grade WHY a vanished uuid is referenced elsewhere. None if ripgrep absent.
+
+    Raw mention counts are NOT evidence — placeholder ids written into docs
+    ("aaaaaaaa-bbbb-…") score dozens of hits. Only two things prove a session
+    existed: its own `"sessionId":"<uuid>"` field preserved in a surviving
+    transcript, or a literal `<uuid>.jsonl` captured in an old directory
+    listing.
+
+    Three exact passes, never one windowed regex: a listing can put "<uuid>/"
+    and "<uuid>.jsonl" on separate lines, so a window taken after the first
+    match catches a newline and silently misgrades the hit.
+    """
+    import shutil
+    import subprocess
+
+    rg = os.environ.get("ESTACK_RG") or shutil.which("rg")
+    if not rg or not uuids:
+        return None
+    me = (P.current_session_id() or "").lower()
+    ev: dict[str, dict[str, set]] = {
+        u.lower(): {"sessionid": set(), "filename": set(), "text": set()}
+        for u in uuids
+    }
+
+    def run(patterns: list[str]) -> str:
+        cmd = [rg, "--no-messages", "--no-heading", "--with-filename",
+               "--only-matching", "--ignore-case", "--fixed-strings"]
+        for pat in patterns:
+            cmd += ["-e", pat]
+        cmd += [str(r) for r in roots]
+        try:
+            return subprocess.run(
+                cmd, capture_output=True, text=True,
+                encoding="utf-8", errors="replace", timeout=900).stdout
+        except (subprocess.SubprocessError, OSError):
+            return ""
+
+    passes = {
+        "filename": run([f"{u}.jsonl" for u in uuids]),
+        "sessionid": run([f'"sessionId":"{u}"' for u in uuids]),
+        "text": run(list(uuids)),
+    }
+    for kind, stdout in passes.items():
+        for line in stdout.splitlines():
+            i = line.rfind(":")
+            if i < 0:
+                continue
+            path, matched = line[:i], line[i + 1:].strip().lower()
+            # Asking about a uuid writes it into the CURRENT transcript; that
+            # self-reference is not evidence the session ever existed.
+            if me and me in path.lower():
+                continue
+            m = _UUID_ANY.search(matched)
+            if not m or m.group(0).lower() not in ev:
+                continue
+            # Collapse the same session appearing in every root.
+            ev[m.group(0).lower()][kind].add(os.path.basename(path).lower())
+    return {u: {k: len(v) for k, v in d.items()} for u, d in ev.items()}
+
+
+def mode_resumable(
+    uuids: list[str], fmt: str = "text", deep: bool = False, agent: str = "both"
+) -> tuple[int, object]:
+    """Batch-classify session UUIDs by whether they can still be resumed.
+
+    Verdicts:
+      LIVE      <uuid>.jsonl under the live root         -> resume normally
+      BACKUP    <uuid>.jsonl only in a backup root       -> restore first
+      CODEX     a Codex rollout under ~/.codex/sessions  -> use `codex resume`
+      ORPHAN    only <uuid>/ with subagent sidecars      -> NOT resumable
+      MISSING   nothing anywhere                         -> typo / long gone
+
+    With --deep, MISSING splits by how strong the surviving evidence is:
+      WAS-REAL     its own "sessionId":"<uuid>" survives  -> definitely existed
+      LIKELY-REAL  seen as <uuid>.jsonl in a listing      -> probably existed,
+                   but a doc writing that filename as an EXAMPLE matches too
+      MISSING      loose mentions only, or nothing        -> unconfirmed
+
+    ORPHAN is the fingerprint of a parent-transcript deletion (see
+    references/jsonl-schema.md): the subagent directory survives in the live
+    tree AND in every backup while the resumable file exists nowhere.
+
+    Exit 0 when every uuid is resumable (LIVE/BACKUP/CODEX), else 1.
+    """
+    if not uuids:
+        msg = "no UUIDs given — pass --uuid (comma-separated ok) or --uuid-file"
+        return 1, ({"error": msg} if fmt == "json" else msg)
+
+    files, dirs, unavailable = _resumable_index()
+    codex_idx: dict[str, list[str]] = {}
+    if _wants_codex(agent):
+        for f in CX.list_codex_sessions():
+            cu = CX.rollout_uuid(f)
+            if cu:
+                codex_idx.setdefault(cu.lower(), []).append(str(f))
+
+    results: list[dict] = []
+    for u in uuids:
+        key = u.lower()
+        fh, dh = files.get(key, {}), dirs.get(key, {})
+        if "live" in fh:
+            verdict = "LIVE"
+        elif fh:
+            verdict = "BACKUP"
+        elif key in codex_idx:
+            verdict = "CODEX"
+        elif dh:
+            verdict = "ORPHAN"
+        else:
+            verdict = "MISSING"
+        rec: dict = {
+            "uuid": u,
+            "verdict": verdict,
+            "file_roots": sorted(fh),
+            "dir_roots": sorted(dh),
+            "paths": dict(fh),
+            "dir_paths": dict(dh),
+            "codex_paths": codex_idx.get(key, []),
+            "project": None,
+            "subagents": None,
+        }
+        anchor_list = next(iter(fh.values()), None) or next(iter(dh.values()), None)
+        if anchor_list:
+            parts = Path(anchor_list[0]).parts
+            for i, part in enumerate(parts):
+                if part == "projects" and i + 1 < len(parts):
+                    rec["project"] = parts[i + 1]
+                    break
+        if dh:
+            sub = Path(next(iter(dh.values()))[0]) / "subagents"
+            if sub.is_dir():
+                rec["subagents"] = len(list(sub.glob("*.jsonl")))
+        results.append(rec)
+
+    if deep:
+        gone = [r["uuid"] for r in results if r["verdict"] == "MISSING"]
+        roots = [P.resolve_root(n)
+                 for n in ["live"] + sorted(P.KNOWN_ROOTS - {"live"})
+                 if n not in unavailable]
+        ev = _deep_evidence(gone, [r for r in roots if r.is_dir()])
+        for r in results:
+            if r["verdict"] != "MISSING":
+                continue
+            if ev is None:
+                r["evidence_note"] = "ripgrep not found (set ESTACK_RG) — skipped"
+                continue
+            e = ev.get(r["uuid"].lower(), {})
+            r["evidence"] = e
+            if e.get("sessionid"):
+                r["verdict"] = "WAS-REAL"
+                r["evidence_note"] = (
+                    f"PROVEN: sessionId field in {e['sessionid']} transcript(s)")
+            elif e.get("filename"):
+                # Weaker than sessionId: a doc that writes "<uuid>.jsonl" as an
+                # EXAMPLE matches this too, so it is never upgraded to WAS-REAL.
+                r["verdict"] = "LIKELY-REAL"
+                r["evidence_note"] = (
+                    f"listed as <uuid>.jsonl in {e['filename']} transcript(s)")
+            elif e.get("text"):
+                r["evidence_note"] = f"{e['text']} loose mention(s) only — unconfirmed"
+            else:
+                r["evidence_note"] = "no reference anywhere"
+
+    resumable = {"LIVE", "BACKUP", "CODEX"}
+    code = 0 if all(r["verdict"] in resumable for r in results) else 1
+
+    if fmt == "json":
+        return code, {"results": results, "unavailable_roots": unavailable}
+
+    lines: list[str] = []
+    if unavailable:
+        lines.append(f"!! roots not present: {', '.join(unavailable)}")
+    width = max(len(r["verdict"]) for r in results)
+    for r in results:
+        bits = []
+        if r["file_roots"]:
+            bits.append("jsonl in: " + ",".join(r["file_roots"]))
+        if r["dir_roots"]:
+            extra = "dir in: " + ",".join(r["dir_roots"])
+            if r.get("subagents"):
+                extra += f" ({r['subagents']} subagent file(s))"
+            bits.append(extra)
+        if r["codex_paths"]:
+            bits.append("codex: " + os.path.basename(r["codex_paths"][0]))
+        if r["project"]:
+            bits.append(f"project: {r['project']}")
+        if r.get("evidence_note"):
+            bits.append(r["evidence_note"])
+        line = f"{r['verdict']:<{width}}  {r['uuid']}"
+        if bits:
+            line += "  [" + " | ".join(bits) + "]"
+        lines.append(line)
+    tally: dict[str, int] = {}
+    for r in results:
+        tally[r["verdict"]] = tally.get(r["verdict"], 0) + 1
+    lines.append("")
+    lines.append("  ".join(f"{k}={v}" for k, v in sorted(tally.items())))
+    return code, "\n".join(lines)
+
+
 def mode_whoami(root: Path, cwd: str | None, fmt: str = "text") -> tuple[int, object]:
     """Resolve the CURRENT live session (via CLAUDE_CODE_SESSION_ID) to its .jsonl path.
 
@@ -1976,7 +2245,7 @@ def json_debug(lines: list[dict]) -> dict:
 
 ALL_MODES = {
     "last", "advisor", "pre-compact", "dump", "search", "debug",
-    "list", "lookup", "find", "resume-cmd", "whoami", "brief",
+    "list", "lookup", "resumable", "find", "resume-cmd", "whoami", "brief",
     "changelog", "file-edits", "tool-calls", "tool-usage",
     "subagent-list", "subagent-finals", "subagent-tools", "subagent-files",
     "resume-prev", "count", "journal", "diff", "timeline", "engagement",
@@ -2025,7 +2294,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--full", action="store_true",
                    help="Wide-scope search: expand to full match windows instead of "
                         "the per-session summary (bounded; degrades back to summary if oversized)")
-    p.add_argument("--uuid", help="UUID prefix (for lookup/resume-cmd modes)")
+    p.add_argument("--uuid", help="UUID prefix (lookup/resume-cmd); "
+                                  "comma- or space-separated list for resumable")
+    p.add_argument("--uuid-file",
+                   help="File to harvest UUIDs from (resumable mode). Any line "
+                        "format works — every UUID in the file is extracted.")
+    p.add_argument("--deep", action="store_true",
+                   help="resumable mode: prove whether MISSING uuids ever existed "
+                        "by grepping surviving transcripts (needs ripgrep)")
     p.add_argument("--title", help="Title substring (for find mode)")
     p.add_argument("--first-prompt", dest="first_prompt", help="First-prompt substring (for find mode)")
     # No hardcoded default: search treats unset as "both", last as "assistant".
@@ -2102,6 +2378,19 @@ def main() -> int:
         return 0
     if mode == "lookup":
         code, out = mode_lookup(args.uuid or "", root, fmt=fmt, agent=args.agent)
+        _emit(out)
+        return code
+    if mode == "resumable":
+        blobs = [args.uuid or ""]
+        if args.uuid_file:
+            try:
+                blobs.append(Path(args.uuid_file).read_text(
+                    encoding="utf-8", errors="replace"))
+            except OSError as e:
+                print(f"--uuid-file unreadable: {e}", file=sys.stderr)
+                return 1
+        code, out = mode_resumable(
+            extract_uuids(*blobs), fmt=fmt, deep=args.deep, agent=args.agent)
         _emit(out)
         return code
     if mode == "whoami":

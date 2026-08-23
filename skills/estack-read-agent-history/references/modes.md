@@ -174,6 +174,57 @@ python read_transcript.py --mode lookup --uuid <prefix>
 - Exit 1: no match.
 - Exit 2: ambiguous prefix — prints all matches.
 
+### `resumable`
+
+Batch-classify session UUIDs by whether they can still be resumed. Where
+`lookup` answers ONE uuid against ONE root, this answers MANY uuids against
+EVERY root in a single filesystem walk — the mode to reach for when triaging a
+saved list of `c -r` / `claude --resume` commands.
+
+```bash
+# comma- or space-separated
+python read_transcript.py --mode resumable --uuid "<uuid1>,<uuid2>,<uuid3>"
+
+# harvest from a notes file (any line format; every UUID in it is extracted)
+python read_transcript.py --mode resumable --uuid-file ids.txt
+
+# prove whether the MISSING ones ever existed
+python read_transcript.py --mode resumable --uuid-file ids.txt --deep
+```
+
+| Verdict | Meaning | Action |
+|---|---|---|
+| `LIVE` | `<uuid>.jsonl` under the live root | resume normally |
+| `BACKUP` | `<uuid>.jsonl` only in a backup root | restore from the named root first |
+| `CODEX` | a rollout under `~/.codex/sessions` | use `codex resume`, not `claude --resume` |
+| `ORPHAN` | only `<uuid>/` with subagent sidecars, no parent | NOT resumable; sidecars still readable |
+| `MISSING` | nothing anywhere | typo, or deleted before any backup ran |
+
+- Cost is per-sweep, not per-uuid: 50 uuids cost the same as 1.
+- Exit 0 when every uuid is resumable (`LIVE`/`BACKUP`/`CODEX`), else 1.
+- A root that is not present is reported in the output (and in
+  `unavailable_roots` under `--format json`), never silently skipped.
+- `ORPHAN` is the fingerprint of a parent-transcript deletion — the subagent
+  directory survives in the live tree AND every backup while the resumable file
+  exists nowhere. See `jsonl-schema.md` ("Orphaned session directories").
+- Read what's left of an `ORPHAN` with
+  `--file <uuid>/subagents/agent-*.jsonl --mode dump`.
+
+**`--deep`** only runs on the `MISSING` ones (the sole ambiguous case) and
+grades the surviving evidence in tiers. It needs ripgrep on `PATH`, or set
+`ESTACK_RG` to its path.
+
+| Verdict | Evidence | Confidence |
+|---|---|---|
+| `WAS-REAL` | its own `"sessionId":"<uuid>"` in a surviving transcript | definitive — the session naming itself |
+| `LIKELY-REAL` | literal `<uuid>.jsonl` seen in an old directory listing | strong, but a doc writing that filename as an *example* also matches |
+| `MISSING` | loose mentions only, or nothing | unconfirmed |
+
+Raw mention counts are **not** evidence and are never used as such: placeholder
+ids written into documentation (`aaaaaaaa-bbbb-…`) score dozens of hits. The
+current session's own transcript is excluded too — asking about a uuid writes it
+into the transcript you are searching.
+
 ### `find`
 
 Search session metadata by title or first prompt.
