@@ -26,6 +26,9 @@ The skill stores user preferences in this file. It lives outside `~/.agents/skil
   "home_airport": null,
   "frequent_destinations": [],
 
+  "default_party": "1a",
+  "compare_parties": null,
+
   "trip_presets": {},
   "shuttle_service": null
 }
@@ -39,7 +42,7 @@ The skill stores user preferences in this file. It lives outside `~/.agents/skil
 - With no key anywhere, the skill falls back to WebSearch (less comprehensive — see SKILL.md). Get one at https://serpapi.com/manage-api-key.
 
 ### `budget_usd`
-- Type: int — max flight price in USD.
+- Type: int — max flight price in USD, **per seat**. `filter_flights.py` compares it against `price_per_seat`, so the number means the same thing whether one person is flying or four.
 
 ### `budget_strength`
 - Type: `"hard"` or `"soft"`
@@ -82,6 +85,38 @@ The skill stores user preferences in this file. It lives outside `~/.agents/skil
 ### `frequent_destinations`
 - Type: array of IATA codes. Surfaced as suggestions when asking for a destination.
 
+### `default_party`
+
+Who normally flies, as a party spec. This answers "how many seats am I buying" when nothing more specific applies, so a solo traveller sets `"1a"` once and never thinks about it again, and a family of five sets `"2a3c"` and gets family pricing on every search without re-stating it.
+
+| Spec | Means |
+|---|---|
+| `1a` | one adult |
+| `2a` | two adults |
+| `2a3c` | two adults, three children |
+| `1a1l` | one adult, one lap infant |
+
+Letters are `a` adults, `c` children, `i` infants in their own seat, `l` infants on a lap. Order does not matter (`1c2a` reads as `2a1c`). A bare number means adults, so `"2"` and `"2a"` are the same thing. A party with no adults is a hard error.
+
+**A lap infant is a passenger but not a seat.** Per-seat prices divide by seats, and a shuttle sells one ticket per rider who occupies a seat, so a lap infant never dilutes a per-seat number and never adds a shuttle fare.
+
+Defaults to `"1a"` when absent.
+
+### `compare_parties`
+
+Party specs to price side by side, so the output shows what each seat costs at each party size rather than one number. Set it when the party is genuinely undecided — a trip someone might take alone or with a partner — and leave it `null` when it is not.
+
+```json
+"compare_parties": ["1a", "2a"]
+```
+
+Each spec is its own SerpAPI call, so a two-entry list doubles the quota a search costs. That is the whole cost, and it buys two things worth knowing:
+
+- **Per-seat price moves with party size.** Airlines release seats in fare buckets. When the cheap bucket has one seat left, a 2-seat booking pushes both into the next bucket and the per-seat price rises. It also falls, sometimes sharply, because some fare products only quote at two or more.
+- **A fare can vanish entirely.** An itinerary that prices for one seat may return nothing at two. That flight is not an option for a pair, and it shows up nowhere in a solo-only search.
+
+Never compare on `price` — that is the party total, so a 2-adult search reads as roughly double for the same seat. Compare on `price_per_seat`.
+
 ### `trip_presets`
 - Type: object mapping a short slug to a saved route. **This is the fast path** — when the user names a preset (or says something that clearly matches its `aliases`), the skill skips airport research entirely and goes straight to confirming dates.
 
@@ -100,7 +135,9 @@ The skill stores user preferences in this file. It lives outside `~/.agents/skil
     "aliases": ["home", "back to nj", "purdue to nj"],
     "origins": ["IND", "ORD"],
     "destinations": ["EWR", "LGA", "JFK"],
-    "shuttle_legs": "departure"
+    "shuttle_legs": "departure",
+    "party": "2a",
+    "compare_parties": ["1a", "2a"]
   }
 }
 ```
@@ -114,8 +151,25 @@ Per-preset fields, all optional except `origins`/`destinations`:
 | `origins` / `destinations` | IATA lists passed straight to `--routes` / `--from` / `--to` |
 | `routes` | Optional explicit `["EWR-IND", "EWR-ORD"]` list, when the full cross-product isn't wanted |
 | `shuttle_legs` | Which end of *this* direction normally needs a ride: `"departure"`, `"arrival"`, `"both"`, or `"none"`. See below. |
+| `party` | Who normally flies *this route*, overriding the top-level `default_party`. See below. |
+| `compare_parties` | Party specs to price side by side on this route, overriding the top-level `compare_parties`. |
 | `notes` | Free text shown to the user during confirmation |
 | Any preference key | Per-preset override of a top-level preference (e.g. a higher `budget_usd` for a long route) |
+
+### `party` per preset — the route where the party is different
+
+The top-level `default_party` covers the usual case. A per-preset `party` covers the route that does not match it: someone who flies solo for work but drives their partner home for the holidays sets `default_party: "1a"` and `"party": "2a"` on the one preset where two people travel.
+
+Resolution order, most specific first:
+
+1. What the user said this run ("just me this time")
+2. The matched preset's `party`
+3. Top-level `default_party`
+4. `"1a"`
+
+The same order applies to `compare_parties`. A preset carrying `"compare_parties": ["1a", "2a"]` is saying *on this route the number of seats is genuinely up in the air, so always show me both* — a different statement from `party`, and the two coexist: `party` is what gets booked by default, `compare_parties` is what gets priced.
+
+**Confirm the party out loud every run, the way `shuttle_legs` is confirmed.** A wrong party size produces no error. It produces a correct-looking table for a trip with the wrong number of people in it.
 
 ### `shuttle_legs` — a default, never an assumption
 

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-flight-planner` skill — multi-passenger pricing. Searches now compare on `price_per_seat` instead of the party's total fare, since SerpAPI always returns a party total and comparing raw `price` makes a bigger party look like a worse deal on every row. New `default_party` and per-preset `party` config fields set who's flying (e.g. `2a3c`); `compare_parties` prices multiple party sizes side by side in one search, since a fare that exists solo can vanish entirely at a larger party size. Ground-shuttle cost now scales with seats (`shuttle_cost` per rider vs `shuttle_cost_party` for the group) while lap infants count as passengers but never as seats. `fetch_flights.py --routes` also now collapses multiple airports into one API call (`"IND,ORD-EWR,LGA,JFK"`) instead of one call per route pair.
+
 ---
 
 ## [1.0.68] - 2026-08-22

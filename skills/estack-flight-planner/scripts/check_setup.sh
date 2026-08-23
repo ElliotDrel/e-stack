@@ -62,6 +62,9 @@ print('  Max duration:          ' + (str(dur) + ' min (' + str(c.get('max_durati
 print('  Home airport:          ' + str(c.get('home_airport') or 'not set'))
 freq = c.get('frequent_destinations') or []
 print('  Frequent destinations: ' + (', '.join(freq) if freq else 'not set'))
+print('  Usual party:           ' + str(c.get('default_party') or '1a (default)'))
+cmp_p = c.get('compare_parties') or []
+print('  Compare party sizes:   ' + (', '.join(cmp_p) if cmp_p else 'no'))
 
 presets = c.get('trip_presets') or {}
 if presets:
@@ -78,6 +81,13 @@ if presets:
                 'none': 'no ride needed'}.get(legs, 'shuttle legs not set - ask')
         print('  ' + slug + ': ' + label + '  [' + origins + ' -> ' + dests + ']')
         print('      usually: ' + ride + '  (CONFIRM THIS OUT LOUD every run)')
+        if p.get('party') or p.get('compare_parties'):
+            bits = []
+            if p.get('party'):
+                bits.append('party ' + str(p['party']))
+            if p.get('compare_parties'):
+                bits.append('also price ' + ', '.join(p['compare_parties']))
+            print('      party: ' + '; '.join(bits) + '  (CONFIRM THIS OUT LOUD too)')
         aliases = p.get('aliases') or []
         if aliases:
             print('      also matches: ' + ', '.join(aliases))

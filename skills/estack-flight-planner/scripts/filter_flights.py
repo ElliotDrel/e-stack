@@ -16,7 +16,11 @@ stdout. Filters can be marked "soft" via --soft-filters — soft filters include
 non-matching flights but flag them with `soft_filter_violations` and rank them
 lower.
 
-Ranking is a single dollar-equivalent `rank_score`: the real price plus a
+Every dollar amount here -- --max-price and rank_score alike -- is PER SEAT.
+SerpAPI quotes a party total, so a 2-adult search would blow past a per-seat
+budget on every row if these compared raw prices. See seat_price().
+
+Ranking is a single dollar-equivalent `rank_score`: the per-seat price plus a
 per-violation penalty for each soft preference the flight misses (see
 DEFAULT_PENALTIES, override with --soft-penalties). This keeps a soft preference
 a thumb on the scale — a $400 flight that matches every preference should not
@@ -92,6 +96,20 @@ def load_flights(json_dir: Path):
     return flights
 
 
+def seat_price(f):
+    """The comparable price for one seat.
+
+    SerpAPI returns a PARTY TOTAL, so a 2-adult search quotes roughly double for
+    the same seat. Budgets and rank scores are per-seat amounts in the user's
+    head ("$150 a seat"), so everything here works off price_per_seat and a
+    2-seat search does not silently eliminate the entire result set. Files
+    loaded before per-seat existed fall back to the raw price, which is correct
+    for the single-adult case they came from.
+    """
+    per = f.get("price_per_seat")
+    return per if per is not None else f.get("price")
+
+
 def violations_for(f, max_price, bands, origins, dests, airlines, nonstop_required,
                    max_duration=None):
     """Return a list of filter names this flight violates, or [] if it passes all."""
@@ -101,7 +119,8 @@ def violations_for(f, max_price, bands, origins, dests, airlines, nonstop_requir
     if dests and f["to"] not in dests:
         if "route" not in v:
             v.append("route")
-    if max_price is not None and (f["price"] is None or f["price"] > max_price):
+    price = seat_price(f)
+    if max_price is not None and (price is None or price > max_price):
         v.append("max-price")
     if bands:
         if not f["departs"]:
@@ -154,7 +173,7 @@ def rank_score(f, violations, penalties, band_step):
 
     Returns (score, explanation_list). A flight with no price sorts last.
     """
-    price = f.get("price")
+    price = seat_price(f)
     if price is None:
         return float("inf"), ["no price available"]
     score = float(price)
@@ -184,7 +203,7 @@ def priority_band(f, bands):
 def cluster_analysis(flights, max_price, bands, origins, dests, airlines, nonstop_required,
                      max_duration=None):
     """Report which constraint eliminated which flight counts + price distribution."""
-    prices = sorted({f["price"] for f in flights if f["price"] is not None})
+    prices = sorted({seat_price(f) for f in flights if seat_price(f) is not None})
 
     # Per-constraint impact: how many would be eliminated by this filter alone
     constraint_impact = {}
@@ -246,7 +265,7 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     default_dir = Path(tempfile.gettempdir()) / "estack-flight-planner"
     p.add_argument("--json-dir", default=str(default_dir))
-    p.add_argument("--max-price", type=int, default=None,
+    p.add_argument("--max-price", type=int, default=None,  # per seat, not per party
                    help="Max price in USD. Omit for no price filter.")
     p.add_argument("--time-priority", default="",
                    help="Comma-separated priority bands HH:MM-HH:MM (e.g. 11:00-14:00,14:00-22:00). Empty = no time filter.")

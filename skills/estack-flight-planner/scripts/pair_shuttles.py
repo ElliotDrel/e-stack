@@ -368,19 +368,29 @@ def main() -> int:
                 if not args.include_unpaired:
                     continue
 
+        # Configured shuttle costs are one ticket for one rider. A party of two
+        # buys two shuttle seats, so the party's ground cost scales with seats
+        # while the per-seat figure does not. `seats` comes from load_flights.py
+        # and excludes lap infants, who ride without a seat on either vehicle.
+        seats = fl.get("seats") or 1
         shuttle_cost = 0
         if pre[0] is not None:
             shuttle_cost += shuttle_costs.get(fl["from"], 0)
         if post[0] is not None:
             shuttle_cost += shuttle_costs.get(fl["to"], 0)
+        shuttle_cost_party = shuttle_cost * seats
 
         worst = max(
             [VIABILITY_RANK[x[3]] for x in (pre, post) if x[3]] or [VIABILITY_RANK["COMFORTABLE"]]
         )
-        # One comparable scale: the flight's own dollar-equivalent score (price
-        # plus soft-preference penalties, from filter_flights.py) + real shuttle
-        # cost + what each awkward connection is worth avoiding.
+        # One comparable scale, and that scale is PER SEAT: filter_flights.py's
+        # rank_score is a per-seat price plus soft-preference penalties, so the
+        # shuttle side is one rider's fare, not the party's. Mixing the two
+        # would let party size distort the ranking instead of the itinerary.
+        # (The party totals still get reported below, just not scored on.)
         base = fl.get("rank_score")
+        if base is None:
+            base = fl.get("price_per_seat")
         if base is None:
             base = fl.get("price")
         if base is None:
@@ -422,9 +432,13 @@ def main() -> int:
                     "buffer_min": pre[2], "viability": pre[3]},
             "post": {"shuttle": post[0], "at": post[1].strftime("%Y-%m-%d %H:%M") if post[1] else None,
                      "buffer_min": post[2], "viability": post[3]},
-            "shuttle_cost": shuttle_cost,
-            "flight_price": fl.get("price"),
-            "total": (fl.get("price") or 0) + shuttle_cost,
+            "seats": seats,
+            "shuttle_cost": shuttle_cost,                  # one rider, one way
+            "shuttle_cost_party": shuttle_cost_party,      # every seat's ticket
+            "flight_price": fl.get("price"),               # party total
+            "total": (fl.get("price") or 0) + shuttle_cost_party,
+            "total_per_seat": round(
+                ((fl.get("price") or 0) + shuttle_cost_party) / seats, 2),
             "plan_score": round(plan_score, 2),
             "worst_viability": worst,
             "notes": notes,
@@ -478,10 +492,16 @@ def main() -> int:
             s, dt, buf, _ = r["_post_raw"]
             cells.append(leg_label(s, dt, buf, "post") if s else "-")
         price = f.get("price")
+        shuttle = f"${r['shuttle_cost_party']}"
+        if r["seats"] > 1:
+            shuttle += f" ({r['seats']}x${r['shuttle_cost']})"
+        total = f"**${r['total']}**"
+        if r["seats"] > 1:
+            total += f" (${r['total_per_seat']:.0f}/seat)"
         cells += [
             f"${price}" if price is not None else "?",
-            f"${r['shuttle_cost']}",
-            f"**${r['total']}**",
+            shuttle,
+            total,
             "; ".join(r["notes"]) or "-",
         ]
         print("| " + " | ".join(cells) + " |")

@@ -45,6 +45,10 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from party import (parse_party, party_label, party_seats,  # noqa: E402
+                   party_token)
+
 
 def _dt(s):
     """Parse SerpAPI's "YYYY-MM-DD HH:MM" into a datetime, or None."""
@@ -82,7 +86,26 @@ def parse_leg(lg: dict) -> dict:
     }
 
 
-def parse_group(fg: dict, dep: str, arr: str, date: str, result_group: str):
+def parse_filename(stem: str):
+    """Split "IND+ORD_EWR_2026-11-24_p2a1c" into (dep, arr, date, party).
+    A file written before the party token existed is read as a single adult, so
+    old temp dirs keep working."""
+    parts = stem.split("_")
+    if len(parts) < 3:
+        return None
+    party = parse_party("1a")
+    if len(parts) > 3 and parts[-1].lower().startswith("p"):
+        try:
+            party = parse_party(parts[-1][1:])
+            parts = parts[:-1]
+        except ValueError:
+            pass          # not a party token after all, so it belongs to the date
+    dep, arr = parts[0], parts[1]
+    date = "_".join(parts[2:])
+    return dep, arr, date, party
+
+
+def parse_group(fg: dict, dep: str, arr: str, date: str, result_group: str, party: dict = None):
     """Turn one SerpAPI flight group into a normalized itinerary, or None."""
     raw_legs = fg.get("flights", [])
     if not raw_legs:
@@ -104,12 +127,23 @@ def parse_group(fg: dict, dep: str, arr: str, date: str, result_group: str):
 
     carbon = fg.get("carbon_emissions") or {}
 
+    party = party or parse_party("1a")
     return {
         # --- what most passes key off ---
         "date": date,
         "from": first["from"] or dep,
         "to": last["to"] or arr,
+        # SerpAPI's price is the PARTY TOTAL, never a per-passenger fare. A
+        # 2-adult search reads roughly double for the same seat, so any
+        # comparison across party sizes has to use price_per_seat.
         "price": fg.get("price"),
+        "party": dict(party),
+        "party_token": party_token(party),
+        "party_label": party_label(party),
+        "seats": party_seats(party),
+        "price_per_seat": (round(fg["price"] / party_seats(party), 2)
+                           if fg.get("price") is not None and party_seats(party)
+                           else None),
         "currency": "USD",
         "stops": max(0, len(legs) - 1),
         "duration_min": fg.get("total_duration"),
@@ -147,6 +181,13 @@ def parse_group(fg: dict, dep: str, arr: str, date: str, result_group: str):
         "booking_token": fg.get("booking_token"),
         "result_group": result_group,   # "best" or "other", SerpAPI's own bucketing
         "searched_route": f"{dep}-{arr}",
+        # Same physical itinerary across party sizes. Join on this to compare
+        # a 1-seat and a 2-seat fetch row by row.
+        "fingerprint": "|".join([
+            date,
+            " / ".join(lg["flight"] for lg in legs if lg["flight"]),
+            first["departs_full"] or "",
+        ]),
     }
 
 
@@ -154,11 +195,10 @@ def load(json_dir: Path):
     """Return (itineraries, per-route metadata). Never filters anything out."""
     flights, meta = [], []
     for fname in sorted(glob.glob(str(json_dir / "*.json"))):
-        parts = Path(fname).stem.split("_")
-        if len(parts) < 3:
+        parsed = parse_filename(Path(fname).stem)
+        if not parsed:
             continue
-        dep, arr = parts[0], parts[1]
-        date = "_".join(parts[2:])
+        dep, arr, date, party = parsed
         try:
             with open(fname, encoding="utf-8") as f:
                 data = json.load(f)
@@ -169,7 +209,7 @@ def load(json_dir: Path):
         count = 0
         for group_name, key in (("best", "best_flights"), ("other", "other_flights")):
             for fg in data.get(key, []):
-                item = parse_group(fg, dep, arr, date, group_name)
+                item = parse_group(fg, dep, arr, date, group_name, party)
                 if item:
                     flights.append(item)
                     count += 1
@@ -178,6 +218,7 @@ def load(json_dir: Path):
         meta.append({
             "route": f"{dep}-{arr}",
             "date": date,
+            "party": party_token(party),
             "itineraries": count,
             "lowest_price": pi.get("lowest_price"),
             "price_level": pi.get("price_level"),
@@ -188,8 +229,12 @@ def load(json_dir: Path):
 
 def as_table(flights):
     out = io.StringIO()
+    multi = len({f.get("party_token") for f in flights}) > 1
     cols = ["date", "route", "flight", "airline", "departs", "arrives",
-            "stops", "dur", "price", "flags"]
+            "stops", "dur", "price"]
+    if multi:
+        cols += ["party", "$/seat"]
+    cols += ["flags"]
     rows = []
     for f in flights:
         flags = []
@@ -199,13 +244,19 @@ def as_table(flights):
             flags.append("overnight")
         if f["layover_min"]:
             flags.append(f"{f['layover_min']}m layover")
-        rows.append([
+        row = [
             f["date"], f"{f['from']}-{f['to']}", f["flight"], f["airline"],
             f["departs"], f["arrives"], str(f["stops"]),
             f"{(f['duration_min'] or 0)//60}h{(f['duration_min'] or 0)%60:02d}",
             f"${f['price']}" if f["price"] is not None else "?",
-            ", ".join(flags),
-        ])
+        ]
+        if multi:
+            row += [
+                f.get("party_token", "1a"),
+                f"${f['price_per_seat']:.0f}" if f.get("price_per_seat") is not None else "?",
+            ]
+        row.append(", ".join(flags))
+        rows.append(row)
     widths = [max(len(str(r[i])) for r in ([cols] + rows)) for i in range(len(cols))]
     for r in [cols] + rows:
         out.write("  ".join(str(c).ljust(w) for c, w in zip(r, widths)).rstrip() + "\n")
@@ -215,7 +266,8 @@ def as_table(flights):
 def as_csv(flights):
     out = io.StringIO()
     cols = ["date", "from", "to", "flight", "airline", "airline_iatas", "departs",
-            "arrives", "stops", "duration_min", "layover_min", "price", "delayed",
+            "arrives", "stops", "duration_min", "layover_min", "price",
+            "party_token", "seats", "price_per_seat", "delayed",
             "overnight", "aircraft", "legroom", "result_group"]
     w = csv.writer(out, lineterminator="\n")
     w.writerow(cols)

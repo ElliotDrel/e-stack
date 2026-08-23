@@ -1,6 +1,6 @@
 ---
 name: estack-flight-planner
-version: 1.4.2
+version: 1.5.0
 description: >-
   (flight-planner) Find and rank flights between any two airports. Handles the
   parts worth automating (fetching every route, parsing SerpAPI's nested shape,
@@ -53,7 +53,7 @@ json.dump(ok, open(OUT, "w"), indent=2)
 
 The output shape matches `filter_flights.py`, so `pair_shuttles.py` accepts it either way.
 
-## Two things that are easy to get wrong
+## Three things that are easy to get wrong
 
 **1. The shuttle can be on either end of the trip.** A ground shuttle pairs with a flight in two different ways, and which one applies depends on the direction the user is travelling:
 
@@ -72,7 +72,15 @@ A saved preset can carry a default (`shuttle_legs`), and that default is usually
 
 Once you know which legs are needed, fetch **only those directions** — and fetch them properly. A user flying *to* their home town needs the airport-to-town schedule, and scraping only the outbound one produces a table that silently drops every flight.
 
-**2. Soft means soft.** A soft preference is worth a fixed number of dollars in the ranking, not a veto. `filter_flights.py` scores every flight as `price + penalties` so a $400 flight matching every preference will not outrank a $189 flight that misses one. Don't re-sort the script's output by hand.
+**2. Every price SerpAPI returns is a party total, never a per-passenger fare.** A 2-adult search reads roughly double a 1-adult search for the same seat. `load_flights.py` does the division for you and emits `price_per_seat` alongside `price`, plus `seats` and `party_label`. **Compare on `price_per_seat`.** Comparing on `price` makes a bigger party look like a worse deal on every single row.
+
+Three consequences worth holding on to:
+
+- **Confirm the party out loud every run**, the same way `shuttle_legs` gets confirmed. A wrong party size throws no error. It produces a correct-looking table for a trip with the wrong number of people in it. Resolution order is: what the user said this run, then the matched preset's `party`, then top-level `default_party`, then `1a`.
+- **A fare can vanish at a larger party.** An itinerary that prices for one seat may return nothing at two, because the cheap bucket had one seat left. That flight is simply not an option for a pair, and a solo-only search never reveals it. `compare_parties` exists to surface exactly this.
+- **Ground cost scales with seats; the flight fare already did.** `price` covers everyone, but a shuttle fare is one ticket for one rider, so two people buy two shuttle seats. `pair_shuttles.py` reads `seats` off each itinerary and reports `shuttle_cost` (one rider), `shuttle_cost_party` (all of them), `total`, and `total_per_seat`. Lap infants are passengers but not seats, so they never dilute a per-seat number or add a shuttle ticket.
+
+**3. Soft means soft.** A soft preference is worth a fixed number of dollars in the ranking, not a veto. `filter_flights.py` scores every flight as `price + penalties` so a $400 flight matching every preference will not outrank a $189 flight that misses one. Don't re-sort the script's output by hand.
 
 ## Show progress on every question
 
@@ -116,6 +124,7 @@ This applies to every phase, not just Phase 1. If the user later says "actually,
 ## Files
 
 - `scripts/check_setup.sh` — Deterministic startup check (runs in Phase 0)
+- `scripts/party.py` — Party specs (`1a`, `2a3c`, `1a1l`), seat counting, filename tokens. Shared by fetch and load; don't reimplement the parsing.
 - `scripts/fetch_flights.py` — SerpAPI Google Flights wrapper
 - `scripts/load_flights.py` — Normalize every itinerary, filtering nothing. Start here after fetching.
 - `scripts/filter_flights.py` — Optional convenience filter/rank/cluster-analyze for the common case
@@ -255,9 +264,12 @@ Your saved preferences:
 For this trip:
   Ride FROM the airport at IND/ORD  → yes (preset default)
   Ride TO the airport at EWR        → no  (no shuttle configured there)
+  Flying                            → 1 adult (also pricing 2, per preset)
 
 Still right? (yes / change <field>)
 ```
+
+**The party line and the shuttle line are never folded into a general "yes".** Both get called out as their own items, for the same reason: a wrong value on either produces no error, just a correct-looking table costed for the wrong trip.
 
 **The shuttle line is never folded into a general "yes".** Call it out as its own item every run, even when the preset default has been correct twenty times running. The user might be getting a ride, driving, or stopping somewhere on the way, and none of those show up as an error later — they just quietly skew the ranking around a cost that was never real.
 
@@ -299,8 +311,9 @@ Send TWO batches:
 
 **After the strength-paired preferences, ask the remaining non-strength questions** (these don't need a strength companion). One at a time, or one final batch — match the user's chosen pacing:
 
-6. **SerpAPI key** — "Do you have a SerpAPI key? (yes — paste it / no — explain how to get one / skip — use WebSearch fallback)". See the SerpAPI walkthrough section below.
-7. **Optional fields** — "Want to save a home airport so we suggest it next time? (IATA code or 'no')". Same for `frequent_destinations`.
+6. **Usual party** — "Who normally flies with you? (just me / 2 adults / 2 adults and 2 kids / something else)". Saves as `default_party`. A solo traveller answers once and never thinks about it again; a family gets family pricing on every search without restating it. If the answer is genuinely variable ("depends, sometimes just me"), offer `compare_parties` instead so both sizes get priced side by side.
+7. **SerpAPI key** — "Do you have a SerpAPI key? (yes — paste it / no — explain how to get one / skip — use WebSearch fallback)". See the SerpAPI walkthrough section below.
+8. **Optional fields** — "Want to save a home airport so we suggest it next time? (IATA code or 'no')". Same for `frequent_destinations`.
 8. **Optional shuttle service** — "Do you use a ground shuttle between your town and an airport? (yes / no)". If yes, ask for:
    - company name(s) — more than one company serving the same airport is fine and supported
    - schedule URL(s)
@@ -329,12 +342,17 @@ If the user has a SerpAPI key:
 ```bash
 python scripts/fetch_flights.py \
   --dates 2026-05-09,2026-05-10 \
-  --routes IND-EWR,ORD-LGA \
+  --routes "IND,ORD-EWR,LGA,JFK" \
+  --parties 1a,2a \
   --airlines UA,DL \
   --stops 1
 ```
 
 Pass `--airlines` only if the user has airline preferences. Pass `--stops 1` only if `nonstop_preference` is `required` or `preferred` with `hard` strength. Omit both for "any airline, any stops".
+
+**Collapse routes before you fetch.** `departure_id` and `arrival_id` both take comma-separated airport lists, so `"IND,ORD-EWR,LGA,JFK"` is **one** API call covering all six pairs, not six calls. On a 100-call-a-month free tier that is the difference between one search and six. Use `;` between genuinely separate routes.
+
+**`--parties` sets who is flying**, as one or more specs (`1a`, `2a`, `2a3c`, `1a1l`). Each spec is its own API call, so `--parties 1a,2a` doubles the quota a search costs — pass a second one only when `compare_parties` is set or the user actually asked. `--adults`/`--children` are the shorthand for a single party. Filenames carry a `_p<spec>` token so `load_flights.py` can read the party back off them; a file without one is read as a single adult.
 
 The script reads `SERPAPI_KEY` from the environment or accepts `--api-key`. Saves raw JSON to a temp directory and prints the directory path on stdout — capture this for the next step.
 
@@ -481,7 +499,7 @@ United, verified 2026-08-10 against [this breakdown of united.com's search deep 
 https://www.united.com/en/us/fsr/choose-flights?f=<DEP>&t=<ARR>&d=<YYYY-MM-DD>&tt=0&sc=7&px=1&taxng=1&clm=7&st=bestmatches
 ```
 
-`tt=0` is one-way and `tt=1` is round-trip (backwards from what you'd guess). `taxng=1` shows all-in pricing; without it the fare reads low. `clm=7` is economy. Airport must be an IATA code. The old `/en/us/flight-search/book-a-flight` path no longer serves this.
+`tt=0` is one-way and `tt=1` is round-trip (backwards from what you'd guess). `taxng=1` shows all-in pricing; without it the fare reads low. `clm=7` is economy. **`px` is the passenger count — set it to the party's seats, not left at `1`**, or the user opens a page priced for a trip they aren't taking. Airport must be an IATA code. The old `/en/us/flight-search/book-a-flight` path no longer serves this.
 
 **Flag a restricted fare before the user buys.** If the itinerary is a basic/no-frills fare brand, say so and name what it costs them in practice: baggage limits, no seat selection, no changes or refunds. That last one matters most when the trip is pinned to a fixed date (a lease start, a first day of work) where a slip makes the ticket worthless rather than movable. Do not assert a specific airline's current baggage rule from memory — point the user at the checkout screen, where the real number appears.
 
