@@ -1,6 +1,6 @@
 ---
 name: estack-read-agent-history
-version: 4.1.1
+version: 4.1.2
 description: >-
   (read-agent-history) Invoke for ANY task involving local AI coding-agent
   session history — Claude Code AND Codex (OpenAI codex-cli) transcripts or
@@ -11,7 +11,8 @@ description: >-
   none does. Never use the Read tool on a raw .jsonl. Use for: recovering
   context after /compact, advisor responses, subagent outputs, cross-project
   keyword search, session listing and triage, UUID/title lookup, resume
-  commands, file-edit and tool-call forensics, tool/skill-usage tallies, session
+  commands, batch-checking whether saved session IDs are still resumable across
+  live and every backup root, file-edit and tool-call forensics, tool/skill-usage tallies, session
   diffs, work journal, day timeline of activity and idle gaps across BOTH
   agents, attention-time accounting (active vs elapsed, parallel-chat-safe,
   Claude+Codex merged), .claude-backups recovery, and reading the last message
@@ -20,7 +21,9 @@ description: >-
   "search my sessions", "find that session", "list my sessions", "session
   journal", "resume previous", "what did I do yesterday", "where did my day go",
   "timeline of my day", "how much time on", "active time", "codex sessions",
-  "codex history".
+  "codex history", "is this session still there", "did this session get
+  deleted", "which of these session ids still work", "session id not found",
+  "resume failed".
 ---
 
 # Read Agent Session History
