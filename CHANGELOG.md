@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.71] - 2026-08-23
+
 ### Added
 - `estack-notify` skill and `estack-statusline` hook. `/estack-notify` arms a desktop toast for the end of every turn in the current session, and `/estack-notify off` disarms it. Arming is keyed by session id, so one chat never pings for another, and a session stays armed across `/resume`. The statusline shows model, a context-usage bar, the project folder, rate limits, and a bell for as long as the current session is armed. Both are installed and wired on every run like any other skill or hook, so local edits are backed up to `~/.estack-backup/` and then overwritten with the shipped version. Armed-session flags live in `~/.e-stack/estack-notify/`. Windows only.
 - Statusline opt-out. Run the installer with `--no-statusline` to remove the script and its `settings.json` entry, or `--statusline` to restore it; the choice is remembered in `~/.e-stack/.env` so auto-updates honor it. `ESTACK_NO_STATUSLINE=1` does the same for a single run without persisting. The installer also leaves a statusline pointing at anything other than E-Stack's alone.
@@ -670,7 +674,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.69...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.71...HEAD
+[1.0.71]: https://github.com/ElliotDrel/e-stack/compare/v1.0.70...v1.0.71
+[1.0.70]: https://github.com/ElliotDrel/e-stack/compare/v1.0.69...v1.0.70
 [1.0.69]: https://github.com/ElliotDrel/e-stack/compare/v1.0.68...v1.0.69
 [1.0.68]: https://github.com/ElliotDrel/e-stack/compare/v1.0.67...v1.0.68
 [1.0.67]: https://github.com/ElliotDrel/e-stack/compare/v1.0.66...v1.0.67
