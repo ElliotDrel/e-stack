@@ -28,18 +28,9 @@ Edit the skill files in `skills/estack-*/` as needed. Conventions are in the mai
 
 ### Renaming or removing a skill
 
-If this edit **renames** a skill (e.g. `estack-foo` → `estack-foo-coach`) or **removes** one entirely, the new/renamed folder alone is not enough — the installer only adds and updates, it never deletes. Without the step below, every existing user keeps the old folder *and* gets the new one (a duplicate).
+If this edit **renames** a skill (e.g. `estack-foo` → `estack-foo-coach`) or **removes** one entirely, deleting the old folder from `skills/` is all the installer needs. On the next install (any mode) it compares its checksum manifest against what the package ships and retires anything it recorded installing that is gone — removing the folder from both `~/.agents/skills/` and `~/.claude/skills/` (real dir or symlink) and dropping the manifest entry. Because the manifest lists only what the installer itself put on disk, a skill the user added never matches.
 
-Add the old folder name to the `DEPRECATED_SKILLS` array in `bin/install.cjs`:
-
-```js
-const DEPRECATED_SKILLS = [
-  'estack-prompt-builder', // renamed to estack-prompt-builder-coach
-  'estack-foo',            // renamed to estack-foo-coach   ← your new entry
-];
-```
-
-On the next install (any mode), the installer deletes each listed folder from both `~/.agents/skills/` and `~/.claude/skills/` (real dir or symlink) and drops its checksum entry. Leave entries in the list permanently — they're cheap and protect users who update infrequently.
+**Do NOT add to `DEPRECATED_SKILLS` in `bin/install.cjs`.** That array is legacy-only. It holds two names retired before manifest pruning existed, where an install old enough may have no manifest entry to prune. A hand-maintained list is exactly how `read-transcript-v1` stayed orphaned in every user's manifest unnoticed.
 
 A rename/remove also requires updating the docs: fix the skill's row in the README.md Skills table and the AGENTS.md "Skills in the pack" line, then verify with `node scripts/check-docs.cjs` — it flags both missing and stale entries, and the publish workflow runs it as a hard gate.
 

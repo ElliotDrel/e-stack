@@ -31,6 +31,7 @@ This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/sk
 | **GitHub Issue Tracker** | `/estack-github-issue-tracker` | Tracks and manages GitHub issues across repos |
 | **Leadership Coach** | `/estack-leadership-coach` | Coaches real leadership decisions through the lens of responsibility-centered leadership (Lencioni's *The Motive*): reads the motive behind every request, catches abdication dressed up as delegation, and coaches six areas — delegation, developing your team, managing your people, difficult conversations, running meetings, and repetitive communication — each ending in a concrete artifact |
 | **Migrate Claude Session History** | `/estack-migrate-claude-session-history` | Moves a Claude Code session (transcript + subagent sidecars) from one project to another with full path-encoding rewrite, migration note, and end-to-end verification so `/resume` works under the new project |
+| **Notify** | `/estack-notify` | Arms a desktop toast at the end of every turn for the current session, per-session so one chat never pings for another, with a bell in the statusline while it is armed |
 | **PR Description Writer** | `/estack-pr-description` | Rewrites a PR description for a maintainer who reviews product logic and risk — decisions with tradeoffs, real verification, and DB/migration/operational status, sourced from the actual diff, not the old description |
 | **Productivity Prioritization Coach** | `/estack-productivity-prioritization-coach` | Coaches you through outcome-focused planning using RPM (Result, Purpose, Massive Action Plan) and five leverage filters — including an MVP anchor and a speed-to-outcome cut — to find the fastest path to a shippable result, plus a high-agency momentum engine for when you're stuck on execution, not choice |
 | **PDF to Markdown** | `/estack-pdf-to-md` | Converts PDFs to Markdown or plain text using the RunPulse API — parallel page batching, cost-saving blank-page filter, scanned-PDF OCR support, and encrypted-PDF handling |
@@ -45,6 +46,7 @@ This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/sk
 
 | Hook | Purpose |
 |------|---------|
+| **estack-statusline** | Statusline showing model, context bar, project, rate limits, and an `estack-notify` bell |
 | **repo-search-nudge** | Suggests `estack-repo-search` when WebFetch/WebSearch hits GitHub |
 | **estack-startup-update-core** | Shared utility that updates the installed E-Stack package |
 | **estack-claude-startup** | Claude Code adapter for the shared SessionStart updater |
@@ -71,6 +73,31 @@ Skills update automatically on session start in Claude Code and Codex. To force 
 ```bash
 npx elliot-stack@latest
 ```
+
+## Configuration
+
+Everything you configure lives in one file, `~/.e-stack/.env` — the same file every skill in the pack reads its API keys from. Format is `KEY=value`, one per line:
+
+```
+# ~/.e-stack/.env
+SERPAPI_KEY=abc123
+ESTACK_SKILLS_DIR=/opt/agents/skills
+ESTACK_NO_STATUSLINE=1
+```
+
+| Variable | Default | What it does |
+|---|---|---|
+| `ESTACK_SKILLS_DIR` | `~/.agents/skills` | Where skill files are installed |
+| `ESTACK_HOOKS_DIR` | `~/.claude/hooks` | Where Claude hook scripts are installed |
+| `ESTACK_BACKUP_DIR` | `~/.estack-backup` | Where your local changes are backed up |
+| `ESTACK_NO_STATUSLINE` | unset | Set to `1` to remove the statusline |
+| `ESTACK_HOME` | `~/.e-stack` | Where this file itself lives (env-only) |
+
+Resolution order is the one every skill uses: the live process environment first, then the file. So exporting a variable overrides it for a single run without editing anything. Path values must be absolute; a relative one is ignored and the default applies. The installer only ever replaces or appends its own line, so your API keys are never disturbed.
+
+**Statusline.** E-Stack ships a statusline showing the model, a context-usage bar, the project folder, rate limits, and an `estack-notify` bell. A first install claims the `statusLine` slot even if you already have one configured, so you can see what it does; your previous value is saved to `~/.estack-backup/statusLine.json`. From then on it is only updated while it is still E-Stack's. Switch back to your own or clear it, and no later update touches it again. `--no-statusline` removes it outright and `--statusline` brings it back.
+
+**Installer flags.** `--install` applies changes (the installer previews by default when run from a clone). `--yes` answers the locally-modified prompt with "back up my changes, install the latest" and `--skip-modified` answers it with "keep my versions" — pass one of them from any script or CI job, since the prompt otherwise reads EOF on a non-interactive stdin and aborts. `--statusline` / `--no-statusline` turn the statusline on or off and remember the choice.
 
 ## Requirements
 

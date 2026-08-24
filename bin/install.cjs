@@ -7,26 +7,179 @@ const crypto = require('crypto');
 const os = require('os');
 const readline = require('readline');
 
-// ── Paths ──────────────────────────────────────────────────────────────────
+// ── Settings ───────────────────────────────────────────────────────────────
+// The pack already has exactly one place a user configures things:
+// ~/.e-stack/.env, KEY=value, shared by every skill. Installer settings live
+// there too, under the same names as their environment variables, and follow
+// the same resolution order every skill uses: the live process environment
+// first, then the file.
+//
+// ESTACK_HOME is the one exception, env-only by necessity — it decides where
+// the .env file itself lives, so it cannot be read from that file.
 const HOME = os.homedir();
+const ESTACK_DIR = process.env.ESTACK_HOME || path.join(HOME, '.e-stack');
+const ENV_FILE = path.join(ESTACK_DIR, '.env');
+
+// Same parse rules the skills document: blank lines and # comments ignored,
+// surrounding quotes stripped, first = splits key from value.
+function readEnvFile() {
+  const values = {};
+  let raw;
+  try {
+    raw = fs.readFileSync(ENV_FILE, 'utf8');
+  } catch (_) {
+    return values;                       // absent or unreadable — no settings
+  }
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq < 1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    if (value.length > 1 && /^(".*"|'.*')$/.test(value)) value = value.slice(1, -1);
+    values[key] = value;
+  }
+  return values;
+}
+
+const ENV_FILE_VALUES = readEnvFile();
+
+// Live environment wins, so a one-off override works without editing the file.
+function setting(name) {
+  return process.env[name] || ENV_FILE_VALUES[name] || null;
+}
+
+// Path settings are absolute-only; anything else falls back to the default
+// rather than resolving somewhere surprising relative to the cwd.
+function settingPath(name, fallback) {
+  const value = setting(name);
+  return value && path.isAbsolute(value) ? value : fallback;
+}
+
+// Writes one KEY=value into ~/.e-stack/.env, replacing that key's line if it is
+// already there and appending otherwise. Never rewrites the rest of the file —
+// it is shared, and other skills keep their credentials in it.
+// The file holds API keys, so it is owner-only and its directory is
+// owner-traversable. chmod is a near-no-op on Windows and can throw on exotic
+// filesystems; failing to tighten must never fail an install.
+function secureEnvFile() {
+  try { fs.chmodSync(ENV_FILE, 0o600); } catch (_) {}
+  try { fs.chmodSync(ESTACK_DIR, 0o700); } catch (_) {}
+}
+
+function writeSetting(name, value) {
+  fs.mkdirSync(ESTACK_DIR, { recursive: true, mode: 0o700 });
+  let lines = [];
+  try {
+    lines = fs.readFileSync(ENV_FILE, 'utf8').split(/\r?\n/);
+  } catch (_) { /* new file */ }
+  const pattern = new RegExp('^\\s*' + name + '\\s*=');
+  const index = lines.findIndex((l) => pattern.test(l));
+  if (value === null) {
+    if (index === -1) return;
+    lines.splice(index, 1);
+  } else if (index === -1) {
+    if (lines.length && lines[lines.length - 1].trim() !== '') lines.push('');
+    lines.push(name + '=' + value);
+    lines.push('');
+  } else {
+    lines[index] = name + '=' + value;
+  }
+  fs.writeFileSync(ENV_FILE, lines.join('\n').replace(/\n{3,}$/, '\n\n'), { mode: 0o600 });
+  secureEnvFile();
+  if (value === null) delete ENV_FILE_VALUES[name];
+  else ENV_FILE_VALUES[name] = value;
+}
+
+// Existing installs created this file before it was owner-only, and most runs
+// never write a setting, so tighten it on every run rather than only on write.
+if (fs.existsSync(ENV_FILE)) secureEnvFile();
+
+// Fold the two short-lived predecessors of this file into it.
+(function migrateLegacySettings() {
+  const marker = path.join(ESTACK_DIR, 'no-statusline');
+  const configFile = path.join(ESTACK_DIR, 'config.json');
+  try {
+    if (fs.existsSync(marker)) {
+      writeSetting('ESTACK_NO_STATUSLINE', '1');
+      fs.rmSync(marker, { force: true });
+    }
+    if (fs.existsSync(configFile)) {
+      const cfg = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+      if (cfg.statusline && cfg.statusline.enabled === false) {
+        writeSetting('ESTACK_NO_STATUSLINE', '1');
+      }
+      for (const [key, name] of [['skills', 'ESTACK_SKILLS_DIR'],
+                                 ['hooks', 'ESTACK_HOOKS_DIR'],
+                                 ['backup', 'ESTACK_BACKUP_DIR']]) {
+        const value = cfg.paths && cfg.paths[key];
+        if (value) writeSetting(name, value);
+      }
+      fs.rmSync(configFile, { force: true });
+    }
+  } catch (_) { /* not worth failing an install over */ }
+})();
+
+// ── Paths ──────────────────────────────────────────────────────────────────
 const CLAUDE_DIR = path.join(HOME, '.claude');
 const CODEX_DIR = path.join(HOME, '.codex');
 const SKILLS_DIR = path.join(CLAUDE_DIR, 'skills');
 const AGENTS_ROOT = path.join(HOME, '.agents');
-const AGENTS_DIR = path.join(AGENTS_ROOT, 'skills');
+const AGENTS_DIR = settingPath('ESTACK_SKILLS_DIR', path.join(AGENTS_ROOT, 'skills'));
 const AGENTS_HOOKS_DIR = path.join(AGENTS_ROOT, 'hooks');
-const BACKUP_DIR = path.join(HOME, '.estack-backup');
+const BACKUP_DIR = settingPath('ESTACK_BACKUP_DIR', path.join(HOME, '.estack-backup'));
 const CHECKSUMS_FILE = path.join(CLAUDE_DIR, '.estack-checksums.json');
 const SETTINGS_FILE = path.join(CLAUDE_DIR, 'settings.json');
 const CODEX_HOOKS_FILE = path.join(CODEX_DIR, 'hooks.json');
 const PACKAGE_SKILLS_DIR = path.join(__dirname, '..', 'skills');
-const HOOKS_DIR = path.join(CLAUDE_DIR, 'hooks');
+const HOOKS_DIR = settingPath('ESTACK_HOOKS_DIR', path.join(CLAUDE_DIR, 'hooks'));
 const PACKAGE_HOOKS_DIR = path.join(__dirname, '..', 'hooks');
 const STARTUP_HOOK_FILENAMES = [
   'estack-startup-update-core.js',
   'estack-claude-startup.js',
   'estack-codex-startup.js',
 ];
+
+const STATUSLINE_FILENAME = 'estack-statusline.js';
+
+// ── Non-interactive install ────────────────────────────────────────────────
+// The modified-items prompt reads EOF on a piped or redirected stdin and
+// aborts the whole install, so scripted and CI runs answer it up front.
+//   --yes             back up local changes, install the latest (same as --startup)
+//   --skip-modified   leave locally modified items alone, install everything else
+const NON_INTERACTIVE = process.argv.includes('--yes') ||
+  process.argv.includes('--skip-modified');
+const NON_INTERACTIVE_ACTION = process.argv.includes('--skip-modified')
+  ? 'skip'
+  : 'merge';
+
+//   --statusline           install it and claim the slot again
+//   --no-statusline        remove it, and write ESTACK_NO_STATUSLINE=1
+//   ESTACK_NO_STATUSLINE=1 skip it for this run without editing the file
+function statuslineOptedOut() {
+  if (process.argv.includes('--statusline')) return false;
+  if (process.argv.includes('--no-statusline')) return true;
+  return setting('ESTACK_NO_STATUSLINE') === '1';
+}
+
+// Whether the installer has ever taken the statusLine slot. Derived, not
+// stored: the checksum manifest already records every artifact this installer
+// has put on disk, and "have we installed the statusline before" is exactly
+// that question. Captured from the manifest as read at startup, before this
+// run writes to it. --statusline forces a fresh claim on request.
+let STATUSLINE_CLAIMED = false;
+
+// Persists an explicit --no-statusline / --statusline choice so every later
+// auto-update honors it. A bare env var is deliberately not persisted.
+function persistStatuslineChoice(dryRun) {
+  const optOut = process.argv.includes('--no-statusline');
+  const optIn = process.argv.includes('--statusline');
+  if (!optOut && !optIn) return;
+  if (dryRun) return;
+  writeSetting('ESTACK_NO_STATUSLINE', optOut ? '1' : null);
+  if (optIn) STATUSLINE_CLAIMED = false;
+}
 
 // ── Migrate backup dir from old location (inside .claude) to user root ──────
 (function migrateBackupDir() {
@@ -195,6 +348,11 @@ const DRY_RUN = process.argv.includes('--dry-run') ||
 // ── Deprecated skills ──────────────────────────────────────────────────────
 // Skills that were renamed or removed. The installer removes these on every
 // run so users don't end up with both the old and new name installed.
+// LEGACY ONLY — do not add to this list. Removing a skill from the package is
+// enough: step 3b retires anything the checksum manifest records installing
+// that the package no longer ships, on disk and in the manifest. These two
+// names stay because they were removed before that existed, so an install old
+// enough to still have them may have no manifest entry to prune.
 const DEPRECATED_SKILLS = [
   'estack-prompt-builder', // renamed to estack-prompt-builder-coach
   'estack-read-claude-session-history', // renamed to estack-read-agent-history
@@ -611,6 +769,126 @@ function setupRepoSearchNudgeHook(dryRun) {
   return true;
 }
 
+// Registers the estack-notify Stop hook. The script ships inside the skill
+// (it is PowerShell, and hooks/ is flat .js only), so it is wired from the
+// skill's installed location rather than from HOOKS_DIR.
+function setupNotifyStopHook(dryRun) {
+  const script = path.join(AGENTS_DIR, 'estack-notify', 'scripts', 'estack-notify-stop.ps1')
+    .replace(/\\/g, '/');
+  // The args form avoids quoting a Windows path inside a command string, and it
+  // is the shape Claude Code writes itself.
+  const args = ['-NoProfile', '-File', script];
+
+  let settings = {};
+  if (fs.existsSync(SETTINGS_FILE)) {
+    try {
+      settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+    } catch (_) {
+      settings = {};
+    }
+  }
+
+  // A hook can carry its script either inside `command` or split across
+  // `args`, so match on both. Checking only `command` appends a duplicate
+  // entry next to an args-style hook and leaves the stale one firing.
+  const NAMES = ['estack-notify-stop.ps1', 'stop-notify.ps1'];
+  const mentionsScript = (hook) => {
+    const parts = [hook.command].concat(Array.isArray(hook.args) ? hook.args : []);
+    return parts.some((p) => typeof p === 'string' && NAMES.some((n) => p.includes(n)));
+  };
+
+  if (settings.hooks && settings.hooks.Stop) {
+    for (const group of settings.hooks.Stop) {
+      if (!group.hooks) continue;
+      for (const hook of group.hooks) {
+        if (!mentionsScript(hook)) continue;
+        const current = Array.isArray(hook.args) ? hook.args : [];
+        if (hook.command === 'powershell.exe' &&
+            current.length === args.length &&
+            current.every((v, i) => v === args[i])) {
+          return false;                       // already correct
+        }
+        if (dryRun) return true;
+        // Repoint in place — a pre-rename or pre-skill install keeps its
+        // group and timeout, and never gains a second entry.
+        hook.type = 'command';
+        hook.command = 'powershell.exe';
+        hook.args = args.slice();
+        fs.mkdirSync(CLAUDE_DIR, { recursive: true });
+        fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+        return true;
+      }
+    }
+  }
+
+  if (dryRun) return true;
+
+  if (!settings.hooks) settings.hooks = {};
+  if (!settings.hooks.Stop) settings.hooks.Stop = [];
+  settings.hooks.Stop.push({
+    hooks: [{ type: 'command', command: 'powershell.exe', args: args.slice(), timeout: 30 }],
+  });
+
+  fs.mkdirSync(CLAUDE_DIR, { recursive: true });
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+  return true;
+}
+
+// Registers (or removes) the estack statusline. Opt-out is honored here so a
+// user who declined it never gets it re-registered by an auto-update.
+function setupStatuslineHook(dryRun) {
+  const script = path.join(HOOKS_DIR, STATUSLINE_FILENAME).replace(/\\/g, '/');
+  const command = `node "${script}"`;
+
+  let settings = {};
+  if (fs.existsSync(SETTINGS_FILE)) {
+    try {
+      settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+    } catch (_) {
+      settings = {};
+    }
+  }
+
+  const current = settings.statusLine;
+  const isOurs = !!(current && typeof current.command === 'string' &&
+    current.command.includes(STATUSLINE_FILENAME));
+
+  if (statuslineOptedOut()) {
+    if (!isOurs) return false;            // nothing of ours to remove
+    if (dryRun) return true;
+    delete settings.statusLine;
+    fs.mkdirSync(CLAUDE_DIR, { recursive: true });
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+    return true;
+  }
+
+  // Claim the slot exactly once. A first install takes it even if another
+  // statusline is configured, so the user actually sees what it does, and
+  // their old one is saved next to the other backups. After that the slot is
+  // only touched while it is still ours: a user who switches back, or clears
+  // it entirely, has said what they want and an update must not re-argue.
+  if (!isOurs && STATUSLINE_CLAIMED) return false;
+
+  if (isOurs && current.command === command && current.type === 'command') return false;
+
+  if (dryRun) return true;
+
+  if (!isOurs && current) {
+    // Save whatever we are displacing, so it can be restored by hand.
+    try {
+      fs.mkdirSync(BACKUP_DIR, { recursive: true });
+      fs.writeFileSync(path.join(BACKUP_DIR, 'statusLine.json'),
+        JSON.stringify(current, null, 2) + '\n');
+    } catch (_) { /* backup is best-effort; never block the install */ }
+  }
+
+  settings.statusLine = { type: 'command', command };
+  fs.mkdirSync(CLAUDE_DIR, { recursive: true });
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+  STATUSLINE_CLAIMED = true;
+  return true;
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -676,9 +954,18 @@ async function main() {
   }
 
   // 2b. Scan package hooks
+  persistStatuslineChoice(DRY_RUN);
+  const skipStatusline = statuslineOptedOut();
   const hookFilenames = (fs.existsSync(PACKAGE_HOOKS_DIR)
     ? fs.readdirSync(PACKAGE_HOOKS_DIR).filter((f) => f.endsWith('.js')).sort()
-    : []).filter((filename) => !STARTUP_HOOK_FILENAMES.includes(filename));
+    : []).filter((filename) => !STARTUP_HOOK_FILENAMES.includes(filename))
+      .filter((filename) => !(skipStatusline && filename === STATUSLINE_FILENAME));
+
+  // Opting out uninstalls: drop the script and let setupStatuslineHook strip
+  // the settings entry, so "off" means gone rather than dormant.
+  if (skipStatusline && !DRY_RUN) {
+    try { fs.rmSync(path.join(HOOKS_DIR, STATUSLINE_FILENAME), { force: true }); } catch (_) {}
+  }
 
   const packageHookHashes = {};
   for (const filename of hookFilenames) {
@@ -695,6 +982,53 @@ async function main() {
     } catch (_) {
       storedChecksums = {};
     }
+  }
+
+  // The manifest as it stood before this run. A statusline entry means a
+  // previous install already took the slot. --statusline is an explicit
+  // request for it back, so it overrides the record and re-claims.
+  STATUSLINE_CLAIMED = !process.argv.includes('--statusline') &&
+    !!storedChecksums['hook:' + STATUSLINE_FILENAME];
+
+  // 3b. Prune anything the manifest records installing that the package no
+  // longer ships. The manifest lists only what this installer put on disk, so
+  // removing by it can never touch a skill the user added themselves. This is
+  // what actually retires a removed skill — DEPRECATED_SKILLS below only still
+  // exists for old installs that predate the manifest recording their names.
+  //
+  // Hooks are checked against every hook in the package, not the filtered
+  // worklist, so opting out of the statusline does not read as a removal and
+  // discard the entry the claim check depends on.
+  const packagedHooks = fs.existsSync(PACKAGE_HOOKS_DIR)
+    ? fs.readdirSync(PACKAGE_HOOKS_DIR)
+        .filter((f) => f.endsWith('.js') && !STARTUP_HOOK_FILENAMES.includes(f))
+    : [];
+  const orphans = Object.keys(storedChecksums).filter((key) => (
+    key.startsWith('hook:')
+      ? !packagedHooks.includes(key.slice(5))
+      : !skillNames.includes(key)
+  ));
+
+  for (const key of orphans) {
+    const isHook = key.startsWith('hook:');
+    const targets = isHook
+      ? [path.join(HOOKS_DIR, key.slice(5))]
+      : [path.join(AGENTS_DIR, key), path.join(SKILLS_DIR, key)];
+    if (!DRY_RUN) {
+      for (const target of targets) {
+        if (!fs.existsSync(target) && !isSymlink(target)) continue;
+        try { fs.rmSync(target, { recursive: true, force: true }); } catch (_) {}
+      }
+      delete storedChecksums[key];
+    }
+    if (!SILENT && !STARTUP) {
+      console.log((DRY_RUN ? '  [dry run] Would retire: ' : '  Retired: ') +
+        (isHook ? 'hook ' + key.slice(5) : key) + ' (no longer in the package)');
+    }
+  }
+  if (orphans.length > 0 && !DRY_RUN) {
+    fs.mkdirSync(CLAUDE_DIR, { recursive: true });
+    fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(storedChecksums, null, 2));
   }
 
   // 4. Detect local modifications and needed updates
@@ -848,6 +1182,8 @@ async function main() {
     }
 
     setupRepoSearchNudgeHook();
+    setupNotifyStopHook();
+    setupStatuslineHook();
 
     fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums, null, 2));
 
@@ -927,6 +1263,14 @@ async function main() {
       console.log('\n[dry run] Would prompt: overwrite / skip / merge / abort');
       console.log('[dry run] Showing what would happen with default overwrite...');
       modifiedAction = 'overwrite';
+    } else if (NON_INTERACTIVE) {
+      // Same treatment --startup gives a modified item: keep a copy, take the
+      // shipped version. Without this the prompt reads EOF from a piped or
+      // redirected stdin and aborts the whole install.
+      modifiedAction = NON_INTERACTIVE_ACTION;
+      console.log('\n' + (modifiedAction === 'skip'
+        ? 'Keeping local versions (--skip-modified).'
+        : 'Backing up local changes, then installing the latest (--yes).'));
     } else {
       console.log('\nChoose an action:');
       console.log('  [o] Overwrite all (replace with latest)');
@@ -1043,6 +1387,8 @@ async function main() {
   const hookInstalled = setupStartupHook(DRY_RUN);
   const codexHookInstalled = setupCodexStartupHook(DRY_RUN);
   const nudgeHookInstalled = setupRepoSearchNudgeHook(DRY_RUN);
+  const notifyHookInstalled = setupNotifyStopHook(DRY_RUN);
+  const statuslineInstalled = setupStatuslineHook(DRY_RUN);
 
   // 11. Summary output
   if (DRY_RUN) {

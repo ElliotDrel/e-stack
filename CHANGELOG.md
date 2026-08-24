@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-notify` skill and `estack-statusline` hook. `/estack-notify` arms a desktop toast for the end of every turn in the current session, and `/estack-notify off` disarms it. Arming is keyed by session id, so one chat never pings for another, and a session stays armed across `/resume`. The statusline shows model, a context-usage bar, the project folder, rate limits, and a bell for as long as the current session is armed. Both are installed and wired on every run like any other skill or hook, so local edits are backed up to `~/.estack-backup/` and then overwritten with the shipped version. Armed-session flags live in `~/.e-stack/estack-notify/`. Windows only.
+- Statusline opt-out. Run the installer with `--no-statusline` to remove the script and its `settings.json` entry, or `--statusline` to restore it; the choice is remembered in `~/.e-stack/.env` so auto-updates honor it. `ESTACK_NO_STATUSLINE=1` does the same for a single run without persisting. The installer also leaves a statusline pointing at anything other than E-Stack's alone.
+- The statusline is claimed exactly once. A first install takes the `statusLine` slot even when another statusline is already configured, so the user sees what it does, and the displaced value is saved to `~/.estack-backup/statusLine.json`. After that the slot is only updated while it is still E-Stack's: switching back to your own statusline, or clearing it, is remembered and no later update overwrites it again. `--statusline` re-claims it on request. The claim is derived from the installer's own checksum manifest rather than stored separately, so an existing install is already recognised as having claimed the slot and never gets a second overwrite.
+
+### Changed
+- Installer settings moved into `~/.e-stack/.env`, the file the pack already uses for every skill's API keys, so there is one place to configure anything. `ESTACK_SKILLS_DIR`, `ESTACK_HOOKS_DIR`, and `ESTACK_BACKUP_DIR` override where the installer writes (absolute paths only; a relative value is ignored and the default applies), `ESTACK_NO_STATUSLINE=1` removes the statusline, and `ESTACK_HOME` relocates the file itself. Resolution order matches every skill: the live environment first, then the file. Writing a setting replaces or appends only that one line, so existing keys are never disturbed.
+- Removing a skill or hook from the package now retires it automatically. The installer compares its checksum manifest against what the package ships and deletes anything it recorded installing that is no longer there, from disk and from the manifest. Because the manifest lists only what the installer itself put on disk, this can never touch a skill or hook you added yourself. Previously removals depended on a hand-maintained list in `bin/install.cjs`, and a missed entry left a stale manifest record (and any leftover files) on every machine indefinitely — `read-transcript-v1` had been orphaned that way and is cleaned up on the next run.
+
+### Fixed
+- The installer appended a duplicate `settings.json` hook entry next to one that stored its script path in an `args` array. It matched on the `command` string alone, so `powershell.exe` plus `args` never matched, leaving a stale entry firing at a path that no longer exists. It now matches on both.
+- Non-interactive install. `node bin/install.cjs --install --yes` answers the locally-modified prompt with "back up, then install the latest" instead of waiting on a keypress, and `--skip-modified` answers it with "keep my versions". Before this the prompt read EOF on a piped or redirected stdin and aborted the whole install, so scripted and CI runs silently installed nothing.
+
+### Security
+- `~/.e-stack/.env` is now created and maintained owner-only (`0600`, in a `0700` directory). It holds API keys and was previously written with the default mode, leaving it group- and world-readable on Linux and macOS. Existing installs are tightened on the next run, not only when a setting is written. Windows is unaffected, since NTFS ACLs already scope the user's home directory.
+
 ---
 
 ## [1.0.70] - 2026-08-23

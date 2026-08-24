@@ -114,7 +114,13 @@ SERPAPI_KEY=def456
 ```
 
 **Resolution order, always:** the live process environment first, then
-`~/.e-stack/.env`. A real environment variable wins so a one-off override works
+`~/.e-stack/.env`.
+
+The installer follows the same rule for its own settings — `ESTACK_SKILLS_DIR`,
+`ESTACK_HOOKS_DIR`, `ESTACK_BACKUP_DIR`, `ESTACK_NO_STATUSLINE`, and `ESTACK_HOME`
+all live in this file too. It is the pack's single settings file, not just its
+credential file, so a new persistent setting belongs here under an `ESTACK_*`
+name rather than in a new JSON sidecar or marker file. A real environment variable wins so a one-off override works
 without editing the file.
 
 **An environment variable is an override, never a home.** Never tell a user to
