@@ -46,7 +46,7 @@ This installs skills to `~/.agents/skills/` and symlinks them into `~/.claude/sk
 
 | Hook | Purpose |
 |------|---------|
-| **estack-statusline** | Statusline showing model, context bar, project, rate limits, and an `estack-notify` bell |
+| **estack-statusline** | Statusline showing model, context tokens used, project, rate limits, and an `estack-notify` bell |
 | **repo-search-nudge** | Suggests `estack-repo-search` when WebFetch/WebSearch hits GitHub |
 | **estack-startup-update-core** | Shared utility that updates the installed E-Stack package |
 | **estack-claude-startup** | Claude Code adapter for the shared SessionStart updater |
@@ -95,7 +95,7 @@ ESTACK_NO_STATUSLINE=1
 
 Resolution order is the one every skill uses: the live process environment first, then the file. So exporting a variable overrides it for a single run without editing anything. Path values must be absolute; a relative one is ignored and the default applies. The installer only ever replaces or appends its own line, so your API keys are never disturbed.
 
-**Statusline.** E-Stack ships a statusline showing the model, a context-usage bar, the project folder, rate limits, and an `estack-notify` bell. A first install claims the `statusLine` slot even if you already have one configured, so you can see what it does; your previous value is saved to `~/.estack-backup/statusLine.json`. From then on it is only updated while it is still E-Stack's. Switch back to your own or clear it, and no later update touches it again. `--no-statusline` removes it outright and `--statusline` brings it back.
+**Statusline.** E-Stack ships a statusline showing the model, tokens used in the current context window, the project folder, rate limits, and an `estack-notify` bell. A first install claims the `statusLine` slot even if you already have one configured, so you can see what it does; your previous value is saved to `~/.estack-backup/statusLine.json`. From then on it is only updated while it is still E-Stack's. Switch back to your own or clear it, and no later update touches it again. `--no-statusline` removes it outright and `--statusline` brings it back.
 
 **Installer flags.** `--install` applies changes (the installer previews by default when run from a clone). `--yes` answers the locally-modified prompt with "back up my changes, install the latest" and `--skip-modified` answers it with "keep my versions" — pass one of them from any script or CI job, since the prompt otherwise reads EOF on a non-interactive stdin and aborts. `--statusline` / `--no-statusline` turn the statusline on or off and remember the choice.
 

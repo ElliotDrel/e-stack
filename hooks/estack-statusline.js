@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// @version 1.0.0
+// @version 1.1.0
 // Claude Code Statusline - estack Edition
-// model (window) | context bar | dirname | rate limits
+// model (window) | context used | dirname | rate limits
 
 const path = require('path');
 const fs = require('fs');
@@ -51,9 +51,7 @@ function render(data) {
   let ctx = '';
   if (total && used != null) {
     const pct = Math.max(0, Math.round((used / total) * 100));
-    const filled = Math.min(5, Math.floor(pct / 20));
-    const bar = '█'.repeat(filled) + '░'.repeat(5 - filled);
-    ctx = ` │ ${color(pct)}${pct >= 80 ? '💀 ' : ''}${bar} ${pct}%${RESET}`;
+    ctx = ` │ ${color(pct)}${pct >= 80 ? '💀 ' : ''}${compact(used)}${RESET}`;
   }
 
   const rate = [

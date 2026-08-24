@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `estack-statusline` now shows the actual context tokens used (e.g. `43k`) instead of the usage bar and percentage. The model segment already shows the total window size, so the two together read as "used / window" at a glance.
+
 ---
 
 ## [1.0.71] - 2026-08-23
