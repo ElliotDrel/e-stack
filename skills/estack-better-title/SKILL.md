@@ -1,6 +1,6 @@
 ---
 name: estack-better-title
-version: 1.2.0
+version: 1.3.0
 description: (better-title) Suggest better chat session titles and rename the session
 disable-model-invocation: true
 allowed-tools:
@@ -26,7 +26,7 @@ DIR="${CLAUDE_SKILL_DIR}"
 bash "$DIR/scripts/current-title.sh" "$SID"
 ```
 
-If the output above shows a current title, factor it into your suggestions — keep whatever part of it still fits, refine the parts that don't, and don't propose something that just re-describes what it already says. If it says no title is set, draft from scratch.
+If the output above shows a current title, follow **Re-titling an existing session** below — it has the decision procedure for what to keep and what to replace. If it says no title is set, draft from scratch.
 
 If you need to re-check the title later — e.g. the user paused mid-flow and asked you to finish the rename on a later turn — run the same lookup manually (it's pre-approved in this skill's `allowed-tools`):
 
@@ -36,36 +36,113 @@ bash "${CLAUDE_SKILL_DIR}/scripts/current-title.sh" "${CLAUDE_SESSION_ID}"
 
 ## Your task
 
-Suggest **3 descriptive titles** for this chat session based on the conversation so far. The goal is to make sessions easy to find later.
+Suggest **3 titles** for this chat session based on the conversation so far. A title has **three zones separated by a spaced hyphen (` - `)**, and each zone has a different job:
 
-### Before drafting, do this quick mental pass
+```
+<Subject> - <Locator> - <keywords>
+```
 
-Ask yourself:
-1. What were the **goals** going in?
-2. What **got built / decided / fixed** that the user might reference later?
-3. What was **noise** — mistakes, abandoned approaches, things they had to redirect you on, dead ends? (These do NOT belong in the title.)
-4. What's **temporary** vs. **lasting**? Temporary states should be mentioned briefly, not led with.
-5. If there's a current title: does it still hold up, or has the conversation moved past what it describes?
+| Zone | Job | Budget |
+|---|---|---|
+| 1. Subject | The one thing you'd read to decide "is this the session I want to resume?" | ≤40 chars |
+| 2. Locator | Where the work lives: project/repo, sub-scope, PR and issue numbers | ≤25 chars |
+| 3. Keywords | Bare search terms for grep and Ctrl-F | ≤60 chars |
 
-Write the title from those answers, NOT from a chronological recap of the chat.
+Zone 1 is the only zone that has to stand alone — it's what survives truncation in `/resume` and the session list. Zones 2 and 3 exist so that a future search finds this session at all.
 
-### Good titles
+### Before drafting: reduce the session to three things
 
-- Summarize **what was accomplished**, not what was attempted
-- **Title the outputs, not the journey** — exclude mistakes, dead ends, and abandoned approaches. They're not searchable and not useful context for future-you.
-- **Use plain language a future-you would search for.** Avoid jargon like "passthrough," "edge cases," "toggle logic," "auto-cd," "refactored," "overhaul." Say what it does in normal words.
-- **Weight by long-term reference value.** If something will stop mattering in weeks or months (temporary fixes, current-state notes, "until X is available" workarounds), mention it briefly but don't lead with it.
-- List key outputs separated by dashes, commas, or similar (e.g. "Reverse-Engineering /rename, PR #33165 Comment, and Building /estack-better-title Skill")
-- Cover 2-4 main outputs. Resist cramming everything in — first-pass attempts tend to over-include.
-- Are detailed enough that someone skimming a session list can tell exactly what they'd find inside
-- Typically 8-20 words — longer is fine if it adds useful detail
+Silently answer these, then title from the answers — never from a chronological recap of the chat:
+
+- **Subject:** What system, feature, or problem is this really about?
+- **Outcome:** What did the user ultimately want to understand or change?
+- **Incidental instructions:** What only describes *how* the agent should do the work?
+
+Title the subject and outcome. Discard the incidental instructions entirely.
+
+### Zone 1 — Subject (≤40 chars)
+
+- Use a compact noun phrase or a clear action phrase, in Title Case.
+- Capture the **umbrella goal** when the session covered several symptoms or steps.
+- Name the **product change**, not the mock, plan, report, branch, or PR used to produce it.
+- Models, subagents, tools, output formats, and monitoring instructions do not belong here unless they are themselves the topic.
+- For reviews, name what was reviewed and the relevant concern. Never a generic "Review PR 123" when the conversation reveals the actual subject.
+- For research, name the question domain, not the requested research process.
+- Do not claim the work is complete.
+- Do not copy and truncate the user's message.
+- No project or repo name — zone 2 owns that, and zone 1 has no characters to spare.
+- No numbers, quotes, labels, filler, or trailing punctuation.
+- Use attached images as primary context for UI issues.
+
+### Zone 2 — Locator (≤25 chars)
+
+Plain text, no brackets. Project or repo name, a sub-scope when the repo alone is uninformative, then PR and issue numbers:
+
+- `gbrain PR #127`
+- `e-stack/manage-e-stack`
+- `e-stack`
+
+This zone deliberately keeps the numbers and project names zone 1 bans. Zone 1 is a label; zone 2 is context and a grep target. `#127` is one of the highest-value search strings a title can carry.
+
+**Omit zone 2 entirely** when there's no repo and no PR. Never invent a scope to fill the slot.
+
+### Zone 3 — Keywords (≤60 chars)
+
+An index, not a sentence. Lowercase, comma-separated, no connective words, no "and":
+
+- File names, function names, flags, env vars, error strings
+- Tool, skill, and package names; version numbers
+- Secondary outputs that don't fit under the zone 1 umbrella
+
+Rules:
+- Never repeat a word already in zone 1 or 2 — it wastes the budget.
+- No dead ends, abandoned approaches, or mistakes. You won't search for them.
+- **Omit zone 3 entirely** for a short single-output session. Padding to hit the format adds noise.
+
+### Shortening
+
+Use `&` and `+` anywhere they make a zone shorter and clearer — especially in zone 1, where the budget is tight. `Ship npx Installer & Change Detection` beats `Ship the npx Installer and Change Detection`. Never use them as zone separators; that's the hyphen's job.
+
+### The hyphen gotcha
+
+The zone separator is a **spaced** hyphen (` - `). Hyphens inside content must stay **unspaced**, or the zones become unparseable by eye and by script. `google-tools-mcp`, `30-day`, and `.claude-backups` are all fine. `google - tools - mcp` is not.
+
+### Worked examples
+
+```
+Consolidate Google Recipes into One MCP - gbrain PR #127 - google-tools-mcp, issue #126, cross-link #124
+Ship npx Installer & Change Detection - e-stack - install.cjs, checksum drift, SessionStart hook, merge backup
+Recover Lost Claude Transcripts - 3629 sessions, 30-day retention disabled, .claude-backups, restore docs
+```
+
+The third drops zone 2: no repo, no PR, nothing real to put there.
+
+### Re-titling an existing session
+
+When a title already exists, decide in this order:
+
+1. Read the **user's** messages first. Identify the latest explicit durable goal. The original subject stays the subject until the user clearly changes what the session is about.
+2. Use your own earlier messages only to resolve vague references and unnamed code. Do not promote one finding of yours into the subject unless the user adopted it as a new goal.
+3. Compare that subject to the current title. **Preserve** accurate scope words. **Replace** the title when it is generic, names an artifact instead of the product, is a stale completion update, or is contradicted by where the session actually went.
+4. Title the durable subject and desired outcome, not the current workflow state.
+
+A session that moved through research, planning, implementation, review, CI, merge, and monitoring has usually **not** changed subjects. Treat final cleanup, commits, and wrap-up summaries as weak evidence of what the session was about — they're the most recent thing that happened, not the point of it.
+
+Return a meaningfully improved title, not a cosmetic paraphrase.
+
+Examples of the distinction:
+- A skill-audit session that ends in a merge stays `Audit Better-Title Skill`, not `Merge PR #41`.
+- A subagent-monitoring review that turns up a roster bug stays `Review Subagent Monitoring Risks`, not `Fix Codex Roster Bug`.
+- A vague "tests are failing" request later pinned to a thread-feed mismatch becomes `Fix Lazy Thread Feed Test`, not `Prevent Mobile Feed Regressions`.
 
 ## Format
 
 Present the 3 options using `AskUserQuestion` with a single-select question (`multiSelect: false`):
-- Each option's `label` is the full title text
-- Each option's `description` is a brief rationale for why it's a good title
+- Each option's `label` is **zone 1 only** — the subject. Option labels render short, and a full three-zone title is far too long to read there.
+- Each option's `description` is the **full title**, all zones, exactly as it will be written. The user picks on the subject and confirms on the whole string.
 - The user can also select "Other" (provided automatically) to give feedback
+
+Because the label is only zone 1, two options whose subjects are near-identical look like the same choice. Make the three subjects meaningfully different from each other, not three phrasings of one idea.
 
 ## Interaction loop
 

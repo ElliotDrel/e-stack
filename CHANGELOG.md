@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `estack-better-title` now writes titles in three zones separated by a spaced hyphen: a ≤40-character subject, a locator carrying the project/repo and PR/issue numbers, and a lowercase keyword list. Each zone has one job. The subject is the only part that has to stand alone, so it survives truncation in `/resume` and the session list; the locator and keywords exist so a later grep or Ctrl-F finds the session at all. Zones 2 and 3 are dropped rather than padded when a session has no repo, no PR, or no secondary outputs. Titles were previously one prose run of 90-140 characters, which read as a manifest of everything shipped and made the session list slow to skim.
+- `estack-better-title` now offers each suggestion with the subject as the option label and the full three-zone title as the description, so the picker stays readable — a whole title is too long to render as an option label. The three subjects must differ from each other rather than being three phrasings of one idea.
+- `estack-better-title` drafting is now a subject/outcome/incidental-instructions reduction instead of a five-question recap pass, and the "current title" step routes to a real re-titling procedure: keep the durable subject unless the existing title is generic, artifact-based, a stale completion update, or contradicted by the session. Final cleanup, commits, and wrap-up summaries are explicitly weak evidence of what a session was about. Adapted from T3 Code's thread-title prompts.
+
 ---
 
 ## [1.0.72] - 2026-08-24
