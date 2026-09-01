@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.73] - 2026-09-01
+
 ### Changed
 - `estack-better-title` now writes titles in three zones separated by a spaced hyphen: a ≤40-character subject, a locator carrying the project/repo and PR/issue numbers, and a lowercase keyword list. Each zone has one job. The subject is the only part that has to stand alone, so it survives truncation in `/resume` and the session list; the locator and keywords exist so a later grep or Ctrl-F finds the session at all. Zones 2 and 3 are dropped rather than padded when a session has no repo, no PR, or no secondary outputs. Titles were previously one prose run of 90-140 characters, which read as a manifest of everything shipped and made the session list slow to skim.
 - `estack-better-title` now offers each suggestion with the subject as the option label and the full three-zone title as the description, so the picker stays readable — a whole title is too long to render as an option label. The three subjects must differ from each other rather than being three phrasings of one idea.
@@ -686,7 +690,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.72...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.73...HEAD
+[1.0.73]: https://github.com/ElliotDrel/e-stack/compare/v1.0.72...v1.0.73
 [1.0.72]: https://github.com/ElliotDrel/e-stack/compare/v1.0.71...v1.0.72
 [1.0.71]: https://github.com/ElliotDrel/e-stack/compare/v1.0.70...v1.0.71
 [1.0.70]: https://github.com/ElliotDrel/e-stack/compare/v1.0.69...v1.0.70
