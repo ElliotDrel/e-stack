@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `estack-productivity-prioritization-coach` gains a "Staying on a choice already made (focus)" section covering the diagnostic split between a selection failure (wrong target) and a switching failure (right target, abandoned mid-commitment), the two-layer compounding-behaviors-vs-constraint model, commitment horizons on every RPM result, the switching filter (2x test, known-vs-unknown-hard, the emotion check), surface area of thinking, and witness-based accountability for self-set horizons. Backed by two new source files: `sources/04-alex-hormozi-focus-patience-frustration-tolerance.md` and `sources/05-goldratt-bottleneck-via-avital-drel.md`.
+
 ---
 
 ## [1.0.73] - 2026-09-01

@@ -1,6 +1,6 @@
 ---
 name: estack-productivity-prioritization-coach
-version: 1.2.1
+version: 1.3.0
 description: >-
   (productivity-prioritization-coach) Coaches the user through prioritization, productivity, and execution decisions using the RPM method (Result, Purpose, Massive Action Plan), leverage filters, and a momentum engine for building high agency. Use this skill whenever the user talks about prioritization, productivity, time management, planning their week or day, deciding what to work on, choosing between projects or tasks, feeling overwhelmed or behind, cutting down a to-do list, or asks things like "what should I focus on", "am I working on the right thing", or "how do I get more done" — even if they do not explicitly ask for a framework. Also use it when the user is stuck on execution rather than choice: a goal feels too big, they can't get started or keep going, they've lost momentum or motivation, they want to build discipline or "high agency", or they ask "how do I actually do this" / "how do I make myself follow through". Trigger broadly, since productivity, prioritization, and execution questions are the default home for this skill. Also use it when the user shares a new productivity or prioritization resource (video, article, book, podcast, framework) — offer to synthesize it and add it to the skill's sources.
 ---
@@ -93,6 +93,36 @@ RPM and the filters decide *what* to do. This section is for when the user knows
 
 **Outsource the curve when time is short.** The fail-and-iterate loop is slow. If the user is under a real time constraint, point them to people who already ran it — mentors, documented playbooks, courses, or buying the curated knowledge directly — instead of rediscovering it from scratch.
 
+## Staying on a choice already made (focus)
+
+Everything above decides *what* to do. This section is for the opposite failure: the user picked the right thing and then switched off it. That is a different problem with a different fix, and prescribing more prioritization for it makes it worse.
+
+**Run the diagnostic split first.** Before coaching prioritization at all, ask which failure this actually is:
+
+- **A selection failure** looks like: the week's work got done, and it moved nothing. Wrong target. Coach RPM and the filters.
+- **A switching failure** looks like: the right target was named, and something else took the time. Coach this section.
+
+The tell is whether the user can name what they should have been doing. If they can, and they weren't doing it, more prioritization is not the answer.
+
+**The two-layer model.** Repeat what compounds, change what constrains.
+
+- **Compounding behaviors** are 2 to 3 activities that stay valuable across years and get done whether or not the current goal needs them today. Publishing, building relationships, and shipping something are the usual shape. These change rarely.
+- **The constraint** is the one thing currently limiting the outcome. Everything else is load applied to a non-bottleneck, which does not speed the system up no matter how hard it is worked. This is what changes.
+
+The mistake is inverting it: treating the compounding behaviors as re-decidable every week and the constraint as fixed.
+
+**Always set a commitment horizon.** Every result decided through RPM gets a fourth field alongside Result, Purpose, and MAP: how long does this stay locked before the user is allowed to reconsider it? Without a stated horizon, every plan is re-openable every day, and it gets re-opened on the first bad afternoon. The horizon is what turns a decision into a commitment. Reconsidering happens on the review date, not on a feeling.
+
+**The switching filter.** When a new project, tool, company, or opportunity shows up mid-commitment, it does not get evaluated on its own merits. Run these three, from source 04:
+
+1. **The 2x test.** "Is there anything that logically stops the existing thing from doing twice as much, besides the fact that it's hard?" If nothing does, the new thing is not solving a real limit.
+2. **Known hard vs unknown hard.** The new thing looks easier only because it hasn't been done yet. It will also be hard. Take known hard.
+3. **The emotion check.** "Is the action you're taking here to make a feeling go away, or is it what the work actually needs?" Frustration produces a real urge to change direction, and acting on it genuinely relieves the frustration while being the wrong move. Emotions are weather.
+
+**Surface area of thinking.** Reframe patience as accumulating passes rather than waiting. Ask: "How many times have you come back to this problem, on different days, in different moods?" A problem abandoned at pass two never gets the pass-five answer. That is the concrete, nameable cost of switching, and it lands better than telling someone to be more disciplined.
+
+**Attach a witness when the horizon is self-set.** A deadline someone sets alone is a deadline they can move. If the user's record shows self-set rules decaying, the commitment horizon needs a named person who will ask about it, or it is decoration.
+
 ## How to coach
 
 - One question at a time. Wait for the answer before moving on.
@@ -121,6 +151,8 @@ The frameworks in this skill are synthesized from the files in `sources/`. Read 
 - `sources/01-tony-robbins-rpm.md` — the RPM method (Result, Purpose, Massive Action Plan) and the 80/20 cut.
 - `sources/02-justin-sung-task-prioritization.md` — the consequence-of-failure and compounding-return filters.
 - `sources/03-nick-tarmossin-high-agency.md` — the high-agency execution engine: ambition gut-check, top-down decomposition, the small-wins momentum spiral, failure-as-data iteration, and outsourcing the learning curve.
+- `sources/04-alex-hormozi-focus-patience-frustration-tolerance.md` — the persistence layer: the three traits, the switching filter (2x test, known vs unknown hard, the emotion check), the commitment horizon, and surface area of thinking.
+- `sources/05-goldratt-bottleneck-via-avital-drel.md` — the constraint lens: attack what limits the system, not what feels loudest. Secondary source summarizing Goldratt's *The Goal*; the book itself has not been read.
 
 Covey's Quadrant II is referenced as a widely known framework (from *The 7 Habits of Highly Effective People*) and does not yet have a dedicated source file. If the user wants it documented as a proper source, ask them for a specific resource to fetch and synthesize.
 ---
