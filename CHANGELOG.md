@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.74] - 2026-09-05
+
 ### Added
 - `estack-productivity-prioritization-coach` gains a "Staying on a choice already made (focus)" section covering the diagnostic split between a selection failure (wrong target) and a switching failure (right target, abandoned mid-commitment), the two-layer compounding-behaviors-vs-constraint model, commitment horizons on every RPM result, the switching filter (2x test, known-vs-unknown-hard, the emotion check), surface area of thinking, and witness-based accountability for self-set horizons. Backed by two new source files: `sources/04-alex-hormozi-focus-patience-frustration-tolerance.md` and `sources/05-goldratt-bottleneck-via-avital-drel.md`.
 
@@ -693,7 +697,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.73...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.74...HEAD
+[1.0.74]: https://github.com/ElliotDrel/e-stack/compare/v1.0.73...v1.0.74
 [1.0.73]: https://github.com/ElliotDrel/e-stack/compare/v1.0.72...v1.0.73
 [1.0.72]: https://github.com/ElliotDrel/e-stack/compare/v1.0.71...v1.0.72
 [1.0.71]: https://github.com/ElliotDrel/e-stack/compare/v1.0.70...v1.0.71
