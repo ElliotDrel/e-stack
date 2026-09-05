@@ -6,7 +6,7 @@ Follow each phase in order. There is one approval gate.
 
 ## Phase 1: Verify Release-Ready
 
-1. Run `git pull --rebase origin main` — pick up work prepped by other sessions.
+1. Run `git pull --rebase origin main` — pick up work prepped by other sessions. Then `git fetch --tags`: `check-versions.cjs` diffs against the newest local `v*` tag, and a stale tag list makes it compare against an older release and pass a skill that CI will fail (v1.0.75, 2026-09-05: local check said v1.0.73, CI said v1.0.74, productivity coach needed 1.3.1).
 2. Run `git status --short` and `git diff --stat`. Everything intended for this release must be committed on `main`. Uncommitted and untracked files do NOT ship (the tag only captures commits) — leave other sessions' in-flight work alone, but flag anything that looks like it was meant for this release and ask the user.
 3. Re-run the deterministic gates from `steps/prep.md` Phase 1 — always re-run them even if a prep pass already did. Any FAIL means the repo is not release-ready — fix per prep.md Phase 1 and commit before continuing.
 4. **Judgment reviews.** Every skill changed since the last release needs the skill-flow/UX review and prompting-rules audit in `steps/prep.md` Phase 2. Confirmation requires evidence: this session ran prep for that skill, or the user says it was prepped. Without either, treat the skill as unprepped and run that phase for it now.
