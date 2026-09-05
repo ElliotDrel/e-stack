@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.75] - 2026-09-05
+## [1.0.76] - 2026-09-05
 
 ### Changed
 - Every model-invocable skill description is now one to three sentences that name the moment the skill is needed, instead of a topic list plus a run of trigger phrases. Descriptions were 418 to 1,619 characters; they are now 151 to 371. The long form pushed the model to load a skill whenever the topic came up (any database work, any message to any person) rather than at the specific step the skill is for, and with 50-plus skills loaded the descriptions were competing for the same routing budget. Affects `estack-book-extractor`, `estack-chris-voss`, `estack-claude-md-optimizer`, `estack-cold-message-writer`, `estack-customer-discovery`, `estack-doc-review-viewer`, `estack-drive-cli-agent`, `estack-email-writer`, `estack-leadership-coach`, `estack-migrate-claude-session-history`, `estack-pdf-to-md`, `estack-pr-description`, `estack-productivity-prioritization-coach`, `estack-prompt-builder-coach`, `estack-purdue-stickers`, `estack-read-agent-history`, `estack-repo-search`, `estack-sponsorship-offer-builder`, and `estack-vscode-file-recovery`. Skill bodies are unchanged.
@@ -705,8 +705,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.75...HEAD
-[1.0.75]: https://github.com/ElliotDrel/e-stack/compare/v1.0.74...v1.0.75
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.76...HEAD
+[1.0.76]: https://github.com/ElliotDrel/e-stack/compare/v1.0.74...v1.0.76
 [1.0.74]: https://github.com/ElliotDrel/e-stack/compare/v1.0.73...v1.0.74
 [1.0.73]: https://github.com/ElliotDrel/e-stack/compare/v1.0.72...v1.0.73
 [1.0.72]: https://github.com/ElliotDrel/e-stack/compare/v1.0.71...v1.0.72

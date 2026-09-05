@@ -1,6 +1,6 @@
 ---
 name: estack-productivity-prioritization-coach
-version: 1.3.0
+version: 1.3.1
 description: >-
   (productivity-prioritization-coach) Coach prioritization and execution with
   RPM (Result, Purpose, Massive Action Plan), leverage filters, and a momentum
