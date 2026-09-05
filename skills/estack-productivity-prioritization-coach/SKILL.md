@@ -2,7 +2,11 @@
 name: estack-productivity-prioritization-coach
 version: 1.3.0
 description: >-
-  (productivity-prioritization-coach) Coaches the user through prioritization, productivity, and execution decisions using the RPM method (Result, Purpose, Massive Action Plan), leverage filters, and a momentum engine for building high agency. Use this skill whenever the user talks about prioritization, productivity, time management, planning their week or day, deciding what to work on, choosing between projects or tasks, feeling overwhelmed or behind, cutting down a to-do list, or asks things like "what should I focus on", "am I working on the right thing", or "how do I get more done" — even if they do not explicitly ask for a framework. Also use it when the user is stuck on execution rather than choice: a goal feels too big, they can't get started or keep going, they've lost momentum or motivation, they want to build discipline or "high agency", or they ask "how do I actually do this" / "how do I make myself follow through". Trigger broadly, since productivity, prioritization, and execution questions are the default home for this skill. Also use it when the user shares a new productivity or prioritization resource (video, article, book, podcast, framework) — offer to synthesize it and add it to the skill's sources.
+  (productivity-prioritization-coach) Coach prioritization and execution with
+  RPM (Result, Purpose, Massive Action Plan), leverage filters, and a momentum
+  engine. Use when the user is deciding what to work on, feels behind or
+  overwhelmed, can't start or keep going, or shares a productivity resource to
+  fold in. Putting the chosen work on the calendar is the akiflow skill.
 ---
 
 # Prioritization Coach

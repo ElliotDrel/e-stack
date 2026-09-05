@@ -1,16 +1,11 @@
 ---
 name: estack-book-extractor
-version: 1.0.0
+version: 1.0.1
 description: >-
-  (book-extractor) Turns a book, doc set, or reference material (PDF, EPUB,
-  DOCX, HTML, RTF, TXT/MD) into a standalone, on-demand Agent Skill — a
-  SKILL.md plus per-chapter reference files that a future session can load
-  instead of re-reading the whole book. Use when the user wants to "make a
-  skill out of this book", "turn this PDF into a skill", "extract this book
-  so I can reference it later", "build a reference skill from this doc",
-  or names a book/framework they want permanently searchable without
-  burning context every time. Not for one-off PDF-to-text conversions — use
-  estack-pdf-to-md for that.
+  (book-extractor) Turn a book or reference document (PDF, EPUB, DOCX, HTML,
+  TXT/MD) into an on-demand skill with per-chapter reference files. Use when
+  asked to make a skill out of a book or document. Plain PDF-to-text is
+  estack-pdf-to-md.
 ---
 
 Convert a book (or any doc set worth re-reading many times) into a standalone Agent Skill: a `SKILL.md` index plus per-chapter reference files, installed at the root of the skills directory — **not** namespaced under `estack-`, because the skill this produces belongs to the user's own reference library, not to the e-stack pack. Methodology adapted from [virgiliojr94/book-to-skill](https://github.com/virgiliojr94/book-to-skill): extract once with a deterministic script, synthesize once with the agent, then load only the relevant chapter on future asks instead of re-reading the source every session.

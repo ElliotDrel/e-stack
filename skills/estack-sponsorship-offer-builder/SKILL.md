@@ -1,18 +1,11 @@
 ---
 name: estack-sponsorship-offer-builder
-version: 1.0.0
+version: 1.0.1
 description: >-
-  (sponsorship-offer-builder) Coach the user through defining a clear, compelling
-  sponsorship offer — what a sponsor actually gets, what it costs, and why it beats
-  their alternatives — then optionally build the assets that sell it: a sponsorship
-  packet, a cold email chain, and a script for the meeting a sponsor books after
-  replying. Use whenever the user wants to get sponsors or partners for an event,
-  club, student org, accelerator, conference, podcast, team, or community. Triggers:
-  "sponsorship offer", "sponsorship packet", "sponsor deck", "sponsorship proposal",
-  "sponsorship tiers", "how much should we charge sponsors", "what do we offer
-  sponsors", "get companies to sponsor us", "partnership offer", "rewrite our
-  sponsor packet", "sponsor outreach". Also use when the user has a sponsorship
-  packet or proposal and asks whether it is any good.
+  (sponsorship-offer-builder) Define a sponsorship offer and build the packet,
+  cold email chain, and meeting script that sell it. Use when the user wants
+  sponsors or partners for an event, org, or community, or asks whether a
+  sponsorship packet is any good.
 ---
 
 # Sponsorship Offer Builder

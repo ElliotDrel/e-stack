@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Every model-invocable skill description is now one to three sentences that name the moment the skill is needed, instead of a topic list plus a run of trigger phrases. Descriptions were 418 to 1,619 characters; they are now 151 to 371. The long form pushed the model to load a skill whenever the topic came up (any database work, any message to any person) rather than at the specific step the skill is for, and with 50-plus skills loaded the descriptions were competing for the same routing budget. Affects `estack-book-extractor`, `estack-chris-voss`, `estack-claude-md-optimizer`, `estack-cold-message-writer`, `estack-customer-discovery`, `estack-doc-review-viewer`, `estack-drive-cli-agent`, `estack-email-writer`, `estack-leadership-coach`, `estack-migrate-claude-session-history`, `estack-pdf-to-md`, `estack-pr-description`, `estack-productivity-prioritization-coach`, `estack-prompt-builder-coach`, `estack-purdue-stickers`, `estack-read-agent-history`, `estack-repo-search`, `estack-sponsorship-offer-builder`, and `estack-vscode-file-recovery`. Skill bodies are unchanged.
+- Overlapping skills now carry a one-clause boundary so only one fires. `estack-cold-message-writer` is for a recipient who does not know the sender and `estack-email-writer` for one who does. `estack-chris-voss` covers how to approach a negotiation or hard conversation, and hands the message text to the two writers. `estack-productivity-prioritization-coach` decides what to work on and hands scheduling to the user's Akiflow skill. See issue #34 for the remaining overlap work.
+
 ---
 
 ## [1.0.74] - 2026-09-05

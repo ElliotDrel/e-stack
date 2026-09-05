@@ -1,14 +1,10 @@
 ---
 name: estack-pr-description
-version: 2.0.0
+version: 2.0.1
 description: >-
-  (pr-description) Rewrites a pull request description for a maintainer who
-  reviews product logic, risk, and alignment, not implementation detail. Use
-  when the user asks to "write a PR description," "rewrite this PR
-  description," "clean up my PR description," "draft the PR body," or
-  otherwise wants a PR's description authored or rewritten from its actual
-  diff, commits, tests, and state, not from the old description or commit
-  titles.
+  (pr-description) Rewrite a pull request description from its actual diff,
+  commits, and tests for a maintainer who reviews product logic and risk. Use
+  when asked to write, rewrite, or clean up a PR description.
 ---
 
 # PR description writer

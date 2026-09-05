@@ -1,7 +1,11 @@
 ---
 name: estack-doc-review-viewer
-version: 1.0.1
-description: (doc-review-viewer) Open a local live-reloading viewer for a markdown document so the user can read it, highlight passages, leave threaded comments, and push them back to the agent with one button. Use whenever you have written or rewritten a document they need to review, whenever they ask to "see the diff", "show me the changes", "let me comment on this", "open the viewer", "review this doc", or want to mark up a draft instead of describing edits in chat. Also use before pushing a rewritten Google Doc or any document back to its source, so they can approve the change visually first.
+version: 1.0.2
+description: >-
+  (doc-review-viewer) Open a local live-reloading viewer where the user reads
+  a markdown document, highlights, and sends threaded comments back to the
+  agent. Use after rewriting a document they need to review, or when they ask
+  to see the changes or mark up a draft.
 ---
 
 # estack-doc-review-viewer

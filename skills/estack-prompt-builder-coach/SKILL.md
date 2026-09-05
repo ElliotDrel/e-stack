@@ -1,7 +1,10 @@
 ---
 name: estack-prompt-builder-coach
-version: 1.0.5
-description: (prompt-builder-coach) Use whenever you or the user need to write, sharpen, audit, or scope a prompt or work request for an AI agent or model. This is a four-part kit covering shaping a fuzzy idea into a decided goal, building a prompt from scratch, auditing a draft request that feels vague, and defining what "done" looks like when the task is fuzzy. Trigger when the user says "help me write a prompt", "build me a prompt", "audit this prompt", "make this request better", "why is the AI giving me generic output", "I don't know what I want", "I have a rough idea", "what should done look like", or when handing a task to another agent and wanting it to land. Use it even when the user did not say the word "prompt" but is clearly trying to get an AI to do consequential work. Do not use for quick factual lookups or for executing an already well-defined task.
+version: 1.0.6
+description: >-
+  (prompt-builder-coach) Shape a fuzzy idea into a decided goal, a prompt, and
+  a definition of done. Use when asked to write, sharpen, audit, or scope a
+  prompt or work request for an AI agent.
 ---
 
 # Prompt Builder

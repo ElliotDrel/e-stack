@@ -1,7 +1,12 @@
 ---
 name: estack-cold-message-writer
-version: 1.1.0
-description: (cold-message-writer) Write cold outreach messages that actually get replies, on LinkedIn, in email, or in X (Twitter) DMs. Use this skill whenever the user wants to reach out cold to someone they don't know or barely know, including phrases like "write a cold DM," "cold email," "LinkedIn message to," "reach out to," "pitch [person]," "how do I get [person] to reply," "DM this investor/recruit/partner/podcast host," "email a founder/company I want to work for," "cold email for a job," "land a job at [company]," "reach out about a role," "follow up with someone who ghosted," or any request to draft a first-touch message to a stranger or near-stranger for fundraising, hiring, partnerships/BD, press/podcasts/speaking, or job-seeking. Trigger this even when the user just pastes a name, a role, and "help me reach out," and even when they don't say the word "cold."
+version: 1.1.1
+description: >-
+  (cold-message-writer) First-touch messages to someone who does not know the
+  sender, on LinkedIn, email, or X DMs, for fundraising, hiring, partnerships,
+  press, or job-seeking. Use when the recipient is a stranger or
+  near-stranger. Mail to someone who already knows the sender is
+  estack-email-writer.
 ---
 
 # Cold message writer

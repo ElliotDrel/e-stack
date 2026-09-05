@@ -1,18 +1,11 @@
 ---
 name: estack-email-writer
-version: 1.1.0
+version: 1.1.1
 description: >-
-  (email-writer) Write, edit, or review any email — outreach to an org or
-  person who already knows the sender, event and partner invitations,
-  scheduling and meeting requests, replies, follow-ups, internal email, and
-  coaching someone else's draft. Use for: drafting an email from scratch,
-  tightening or rewriting a draft, picking a subject line, structuring an ask,
-  proposing meeting times. Triggers: "write an email", "review my email",
-  "fix this email draft", "make this email better", "what should the subject
-  line be", "email [person] about", "reply to this", "help me ask for a
-  meeting". For a first-touch message to a stranger who has no idea who the
-  sender is, ALSO load estack-cold-message-writer — the two work in tandem
-  (that skill owns first-touch psychology, this one owns general email craft).
+  (email-writer) Write, edit, or review an email to someone who already knows
+  the sender: replies, follow-ups, invitations, scheduling, internal mail,
+  subject lines. Use when asked to draft or fix an email. A first-touch
+  message to a stranger is estack-cold-message-writer.
 ---
 
 # Email writer

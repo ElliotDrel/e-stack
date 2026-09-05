@@ -1,7 +1,10 @@
 ---
 name: estack-customer-discovery
-version: 1.0.2
-description: (customer-discovery) Guide users through customer discovery — validating business ideas, identifying target customers, crafting outreach, preparing interview questions, and analyzing interview results. Use this skill whenever the user mentions customer discovery, customer interviews, validating an idea, market research, finding product-market fit, talking to customers, outreach messages, interview guides, or analyzing customer feedback. Also use when someone says they have a business idea and want to test it, or when they're preparing to talk to potential customers.
+version: 1.0.3
+description: >-
+  (customer-discovery) Validate a business idea through customer interviews:
+  pick target customers, write outreach and interview guides, analyze results.
+  Use when the user is planning or debriefing customer discovery.
 ---
 
 # Customer Discovery

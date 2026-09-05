@@ -1,16 +1,10 @@
 ---
 name: estack-repo-search
-version: 1.2.0
+version: 1.2.1
 description: >-
-  (repo-search) Clone and search external GitHub repositories to answer questions about their
-  code. Use this skill whenever the user references a repo you don't have local
-  context for, asks about code in an external project, wants to compare
-  implementations across repos, or needs information from a codebase that isn't
-  in the current working directory. Also use when the user says things like
-  "check how X does it", "look at the source for Y", "search that repo",
-  "clone it and find...", or references a GitHub URL. If you're unsure whether
-  you have enough context about an external codebase to answer accurately,
-  use this skill to clone it and look.
+  (repo-search) Clone an external GitHub repository locally and search it. Use
+  when a question needs code from a repository that is not in the working
+  directory.
 ---
 
 # Repo Search

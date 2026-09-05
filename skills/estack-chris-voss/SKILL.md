@@ -1,13 +1,11 @@
 ---
 name: estack-chris-voss
-version: 1.0.2
-description: >
-  (chris-voss) Applies Chris Voss negotiation principles from *Never Split the Difference* to any situation
-  where understanding human psychology, persuasion, or influence would improve the output. Use
-  when the user is navigating a situation involving another person, drafting communication that
-  needs to land a certain way, or asking for advice on how to approach a difficult conversation —
-  even if they don't explicitly ask for negotiation help. Do not use for coding, math, or factual
-  lookups.
+version: 1.0.3
+description: >-
+  (chris-voss) Chris Voss negotiation tactics from Never Split the Difference.
+  Use when the user is preparing for a negotiation or a difficult conversation
+  and asks how to approach it. Writing the message itself is
+  estack-email-writer or estack-cold-message-writer.
 ---
 
 # Chris Voss Negotiation Skill

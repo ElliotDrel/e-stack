@@ -1,7 +1,10 @@
 ---
 name: estack-pdf-to-md
-version: 1.2.2
-description: (pdf-to-md) Convert a PDF file to Markdown or plain text using the RunPulse API. Use this skill whenever the user wants to extract text from a PDF, convert a PDF to .md or .txt, OCR a PDF, "turn this PDF into text/markdown", drops a .pdf path into chat asking for its contents, or asks to run the RunPulse / Pulse converter. Trigger even when the user only says "convert this PDF" without naming the tool.
+version: 1.2.3
+description: >-
+  (pdf-to-md) Convert a PDF to Markdown or plain text with the RunPulse API,
+  including OCR of scanned pages. Use when asked to extract text from or
+  convert a PDF.
 ---
 
 

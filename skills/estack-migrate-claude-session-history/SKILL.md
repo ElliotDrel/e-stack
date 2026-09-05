@@ -1,20 +1,11 @@
 ---
 name: estack-migrate-claude-session-history
-version: 1.0.2
+version: 1.0.3
 description: >-
-  (migrate-claude-session-history) Use whenever the user wants to move a Claude
-  Code session (the .jsonl transcript plus its subagent sidecar files) from one
-  project to another so that /resume picks it up under the new project. Triggers
-  on phrases like "migrate this session", "move this session to <project>",
-  "convert session X to be in project Y instead of Z", "transfer chat history
-  to another project", "this session belongs under <project>", or when the user
-  names a session UUID and a different target project. Handles the full
-  workflow: backup, sidecar-aware copying, rewriting all 9 path-encoding
-  variants in every entry, appending a visible user-message migration note, and
-  end-to-end verification. Use this even if the user only describes the intent
-  loosely (e.g. "this conversation should live under the personal-health
-  project") - do not try to do this by hand with raw file moves; subtle cwd /
-  encoded-path bugs will break /resume.
+  (migrate-claude-session-history) Move a Claude Code session transcript and
+  its subagent sidecar files to another project so /resume finds it there. Use
+  when asked to migrate or move a session between projects. Never do this with
+  raw file moves; the encoded paths break /resume.
 ---
 
 # Migrate Claude Session History

@@ -1,13 +1,10 @@
 ---
 name: estack-purdue-stickers
-version: 1.1.0
+version: 1.1.1
 description: >-
-  (purdue-stickers) End-to-end Purdue Knowledge Lab sticker production - take a
-  sticker idea (text/logo/concept), design it, render print-ready files, and
-  package everything for submission to the Knowledge Lab (free sticker printing
-  at Purdue Libraries). Use when the user wants to make or print stickers, mentions
-  the Knowledge Lab, sticker printing at Purdue, BuildPurdue stickers, or wants
-  files prepped for the Roland sticker printer.
+  (purdue-stickers) Design and package print-ready sticker files for the
+  Purdue Knowledge Lab's Roland printer. Use when asked to make or print
+  stickers.
 ---
 
 # Purdue Knowledge Lab Sticker Production

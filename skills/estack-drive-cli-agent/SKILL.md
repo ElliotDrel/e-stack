@@ -1,19 +1,10 @@
 ---
 name: estack-drive-cli-agent
-version: 1.0.0
+version: 1.0.1
 description: >-
-  (drive-cli-agent) Drive another AI coding agent CLI programmatically from the
-  command line — Codex CLI (`codex exec`) and Claude Code headless (`claude
-  -p`) — under existing logged-in subscriptions, not API keys. Use whenever the
-  task involves delegating work to Codex, getting a second opinion or
-  adversarial review from another model, running Claude Code non-interactively
-  from a script, orchestrating one agent from another, or scripting/automating
-  either CLI. Trigger phrases: "ask codex", "have codex do", "delegate to
-  codex", "codex exec", "second opinion from", "run claude headless", "claude
-  -p", "script claude code", "drive another agent", "spawn codex on this".
-  Prefer this skill over the openai-codex plugin's rescue/forwarder path for
-  anything that needs a custom working directory, sandbox mode, long runtime,
-  or reliable result retrieval.
+  (drive-cli-agent) Run Codex CLI (codex exec) or Claude Code headless (claude
+  -p) from a script under logged-in subscriptions. Use when delegating work to
+  Codex, getting a second-model review, or scripting either CLI.
 ---
 
 # Drive a CLI Agent

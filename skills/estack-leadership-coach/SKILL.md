@@ -1,7 +1,11 @@
 ---
 name: estack-leadership-coach
-version: 5.0.0
-description: (leadership-coach) A leadership coach built on responsibility-centered leadership — it reads every situation through the question "are you doing this because it's your job, or avoiding it because it isn't rewarding?" Coaches real decisions (delegation, developing your team, managing people, difficult conversations, meetings, repetitive communication), catches abdication in real time, and ends every session with a concrete artifact the user can act on. Use whenever the user is handing something off, avoiding something hard, or leading a team.
+version: 5.0.1
+description: >-
+  (leadership-coach) Responsibility-centered leadership coaching for
+  delegation, developing people, hard conversations, and meetings, ending in a
+  concrete artifact. Use when the user is handing something off, avoiding
+  something hard, or leading a team.
 metadata:
   disable_model_invocation: true
 ---

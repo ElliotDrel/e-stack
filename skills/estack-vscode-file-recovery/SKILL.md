@@ -1,10 +1,10 @@
 ---
 name: estack-vscode-file-recovery
-version: 1.2.1
-description: >
-  (vscode-file-recovery) Recover files that were permanently deleted (via rm, bash delete, or any method that bypasses the Recycle Bin) using VS Code's or Cursor's Local History snapshots, or from Claude session transcripts.
-  Use this skill immediately whenever: a file was deleted and git can't recover it (untracked or not committed), the user says "get it back", "restore that file", "I lost that file", "can you undo that delete", or any variation of wanting a deleted file recovered. Also use proactively after any rm or bash delete of files that weren't committed to git.
-  VS Code and Cursor silently save a snapshot every time you open or edit a file in the editor — this is often the only recovery path when git and Recycle Bin both fail.
+version: 1.2.2
+description: >-
+  (vscode-file-recovery) Recover a permanently deleted file from VS Code or
+  Cursor Local History snapshots or from Claude session transcripts. Use when
+  a file was deleted outside the Recycle Bin and git can't restore it.
 ---
 
 # VS Code / Cursor File Recovery

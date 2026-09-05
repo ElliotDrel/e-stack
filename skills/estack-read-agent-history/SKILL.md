@@ -1,29 +1,12 @@
 ---
 name: estack-read-agent-history
-version: 4.1.2
+version: 4.1.3
 description: >-
-  (read-agent-history) Invoke for ANY task involving local AI coding-agent
-  session history — Claude Code AND Codex (OpenAI codex-cli) transcripts or
-  .jsonl files. Documents where each agent's session data lives, the pitfalls,
-  and a CLI + Python library to build on — use the CLI when a mode fits
-  (cross-agent modes take --agent claude|codex|both, default both), post-process
-  its JSON when one almost fits, write a scratchpad script on the library when
-  none does. Never use the Read tool on a raw .jsonl. Use for: recovering
-  context after /compact, advisor responses, subagent outputs, cross-project
-  keyword search, session listing and triage, UUID/title lookup, resume
-  commands, batch-checking whether saved session IDs are still resumable across
-  live and every backup root, file-edit and tool-call forensics, tool/skill-usage tallies, session
-  diffs, work journal, day timeline of activity and idle gaps across BOTH
-  agents, attention-time accounting (active vs elapsed, parallel-chat-safe,
-  Claude+Codex merged), .claude-backups recovery, and reading the last message
-  before a crash. Trigger phrases: "session history", "chat history", "before
-  compact", "what did claude do", "what did codex do", "what did I work on",
-  "search my sessions", "find that session", "list my sessions", "session
-  journal", "resume previous", "what did I do yesterday", "where did my day go",
-  "timeline of my day", "how much time on", "active time", "codex sessions",
-  "codex history", "is this session still there", "did this session get
-  deleted", "which of these session ids still work", "session id not found",
-  "resume failed".
+  (read-agent-history) CLI and Python library over local Claude Code and Codex
+  session transcripts. Use for any question about past sessions: what was
+  done, when, for how long, which session IDs still resume, recovering context
+  after compaction, or reading the last message before a crash. Never Read a
+  raw .jsonl.
 ---
 
 # Read Agent Session History
