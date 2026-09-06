@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.77] - 2026-09-05
+
 ### Changed
 - `estack-chris-voss` and `estack-leadership-coach` descriptions now draw the line between them: chris-voss is negotiating with an outside counterpart, leadership-coach is hard conversations with your own team. Leadership-coach no longer lists meetings as a trigger. `estack-read-agent-history` and `estack-migrate-claude-session-history` descriptions drop body-level instructions ("Never Read a raw .jsonl", "Never do this with raw file moves"); those stay in the bodies. `estack-productivity-prioritization-coach` description names Elliot's `weekly-planning` and `daily-planning` project skills as the home of the planning rituals.
 - `estack-customer-discovery` drops the `<CRITICAL>`/MANDATORY framing around reading its step and reference files; the instruction is now a plain sentence. `estack-claude-md-optimizer` drops "no exceptions" from its hard-rules heading.
@@ -710,7 +714,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.76...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.0.77...HEAD
+[1.0.77]: https://github.com/ElliotDrel/e-stack/compare/v1.0.76...v1.0.77
 [1.0.76]: https://github.com/ElliotDrel/e-stack/compare/v1.0.74...v1.0.76
 [1.0.74]: https://github.com/ElliotDrel/e-stack/compare/v1.0.73...v1.0.74
 [1.0.73]: https://github.com/ElliotDrel/e-stack/compare/v1.0.72...v1.0.73
