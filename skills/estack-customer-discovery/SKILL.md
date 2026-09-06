@@ -1,6 +1,6 @@
 ---
 name: estack-customer-discovery
-version: 1.0.3
+version: 1.0.4
 description: >-
   (customer-discovery) Validate a business idea through customer interviews:
   pick target customers, write outreach and interview guides, analyze results.
@@ -32,13 +32,11 @@ If they describe their situation without picking a step, route them based on whe
 - Have interviews scheduled but need questions → **Step 3: Interview Execution**
 - Have done interviews and need to make sense of them → **Step 4: Analysis & Signals**
 
-### Step 2: Read the right step file — MANDATORY
+### Step 2: Read the right step file
 
-<CRITICAL>
-You MUST read the step file AND its corresponding reference file BEFORE responding to the user. Do NOT skip this. These files contain the actual frameworks and instructions — without reading them, your output will be generic and wrong.
-</CRITICAL>
+Read the step file and the reference file it points to before answering; the frameworks live there, and a reply written without them comes out generic.
 
-Each step has its own workflow file with detailed instructions. **Read the step file first, then read the reference file it points to.** Both reads are required — not optional, not "if you have time."
+Each step has its own workflow file with detailed instructions. Read the step file first, then the reference file it points to.
 
 | Step | Step file (read first) | Reference file (read second) |
 |---|---|---|

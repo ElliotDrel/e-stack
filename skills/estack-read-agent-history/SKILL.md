@@ -1,12 +1,11 @@
 ---
 name: estack-read-agent-history
-version: 4.1.3
+version: 4.1.4
 description: >-
   (read-agent-history) CLI and Python library over local Claude Code and Codex
   session transcripts. Use for any question about past sessions: what was
   done, when, for how long, which session IDs still resume, recovering context
-  after compaction, or reading the last message before a crash. Never Read a
-  raw .jsonl.
+  after compaction, or reading the last message before a crash.
 ---
 
 # Read Agent Session History

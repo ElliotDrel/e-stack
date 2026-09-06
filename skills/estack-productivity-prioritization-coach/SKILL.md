@@ -1,12 +1,14 @@
 ---
 name: estack-productivity-prioritization-coach
-version: 1.3.1
+version: 1.3.2
 description: >-
   (productivity-prioritization-coach) Coach prioritization and execution with
   RPM (Result, Purpose, Massive Action Plan), leverage filters, and a momentum
   engine. Use when the user is deciding what to work on, feels behind or
   overwhelmed, can't start or keep going, or shares a productivity resource to
-  fold in. Putting the chosen work on the calendar is the akiflow skill.
+  fold in. Putting the chosen work on the calendar is the akiflow skill;
+  Elliot's weekly and daily planning rituals are weekly-planning and
+  daily-planning.
 ---
 
 # Prioritization Coach

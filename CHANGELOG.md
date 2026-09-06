@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `estack-chris-voss` and `estack-leadership-coach` descriptions now draw the line between them: chris-voss is negotiating with an outside counterpart, leadership-coach is hard conversations with your own team. Leadership-coach no longer lists meetings as a trigger. `estack-read-agent-history` and `estack-migrate-claude-session-history` descriptions drop body-level instructions ("Never Read a raw .jsonl", "Never do this with raw file moves"); those stay in the bodies. `estack-productivity-prioritization-coach` description names Elliot's `weekly-planning` and `daily-planning` project skills as the home of the planning rituals.
+- `estack-customer-discovery` drops the `<CRITICAL>`/MANDATORY framing around reading its step and reference files; the instruction is now a plain sentence. `estack-claude-md-optimizer` drops "no exceptions" from its hard-rules heading.
+- `docs/skill-authoring.md` gains the description rule (one to three sentences naming the moment the skill is needed, no trigger-phrase lists, name the seam with a neighbouring skill) and a note that bodies are read by several models, so prefer intent plus boundaries over recipes.
+
 ---
 
 ## [1.0.76] - 2026-09-05

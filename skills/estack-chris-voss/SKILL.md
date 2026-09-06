@@ -1,11 +1,13 @@
 ---
 name: estack-chris-voss
-version: 1.0.3
+version: 1.0.4
 description: >-
   (chris-voss) Chris Voss negotiation tactics from Never Split the Difference.
-  Use when the user is preparing for a negotiation or a difficult conversation
-  and asks how to approach it. Writing the message itself is
-  estack-email-writer or estack-cold-message-writer.
+  Use when the user is preparing to negotiate with a counterpart (a deal, a
+  price, a landlord, a hiring offer) and asks how to approach it. Leading
+  their own team through a hard conversation is estack-leadership-coach;
+  writing the message itself is estack-email-writer or
+  estack-cold-message-writer.
 ---
 
 # Chris Voss Negotiation Skill

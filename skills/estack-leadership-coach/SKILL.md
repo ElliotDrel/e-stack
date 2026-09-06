@@ -1,11 +1,12 @@
 ---
 name: estack-leadership-coach
-version: 5.0.1
+version: 5.0.2
 description: >-
   (leadership-coach) Responsibility-centered leadership coaching for
-  delegation, developing people, hard conversations, and meetings, ending in a
-  concrete artifact. Use when the user is handing something off, avoiding
-  something hard, or leading a team.
+  delegating, developing people, and hard conversations with the user's own
+  team, ending in a concrete artifact. Use when the user is handing something
+  off, avoiding something hard with a report or teammate, or leading a team.
+  Negotiating with an outside counterpart is estack-chris-voss.
 metadata:
   disable_model_invocation: true
 ---

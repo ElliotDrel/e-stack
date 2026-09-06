@@ -1,6 +1,6 @@
 ---
 name: estack-claude-md-optimizer
-version: 1.2.1
+version: 1.2.2
 description: >-
   (claude-md-optimizer) Write and maintain CLAUDE.md or AGENTS.md as a short
   letter of intent. Use when asked to create, audit, trim, or update one, or
@@ -133,7 +133,7 @@ scale-check to judge whether its routing is even earned. If the ask spans routes
 (e.g. "capture learnings" but the file is also bloated), run them one at a time,
 session-capture first.
 
-## Hard rules — every route, no exceptions
+## Hard rules — every route
 
 1. **The user authors; you transcribe.** Never draft CLAUDE.md content from
    codebase analysis alone. Draft only from their answers, their corrections, and

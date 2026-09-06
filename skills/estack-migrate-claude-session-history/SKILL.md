@@ -1,11 +1,10 @@
 ---
 name: estack-migrate-claude-session-history
-version: 1.0.3
+version: 1.0.4
 description: >-
   (migrate-claude-session-history) Move a Claude Code session transcript and
   its subagent sidecar files to another project so /resume finds it there. Use
-  when asked to migrate or move a session between projects. Never do this with
-  raw file moves; the encoded paths break /resume.
+  when asked to migrate or move a session between projects.
 ---
 
 # Migrate Claude Session History
