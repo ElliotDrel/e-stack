@@ -1,48 +1,34 @@
 <!--
-  TIER 1 — LIGHTWEIGHT SOURCE FILE TEMPLATE
-  Copy to sources/0N-<short-name>.md (numbered in the order sources were added).
-  Fill every {{PLACEHOLDER}} from material you FETCHED THIS SESSION — never from
-  memory. Delete this comment when done.
-
-  Rules (from the global CLAUDE.md, non-negotiable):
-  - Live-fetch every fact (WebSearch / WebFetch / transcript tools).
-  - Cite real URLs only. A name without a same-session URL is a fabricated citation.
-  - Don't paraphrase inside quote marks — quotes must be verbatim.
-  - Record the capture date so the user knows how fresh the snapshot is.
-  - If you can't fetch it, say so. Don't fabricate to fill a gap.
+  LIGHTWEIGHT SOURCE TEMPLATE
+  Copy to sources/0N-<short-name>.md, replace placeholders, and remove this
+  comment. Base sourced claims on retrieved or user-supplied material.
 -->
 # Source 0N — {{Author / Speaker}}: {{Short Title}}
 
-## Metadata
+## Source record
 
 | Field | Value |
 |---|---|
-| Title | {{Full title of the work}} |
+| Title | {{Full title}} |
 | Author / speaker | {{Name}} |
-| Platform | {{YouTube / blog / book / podcast / etc.}} |
-| URL | {{https://… — fetched this session}} |
-| Published | {{YYYY-MM-DD if known}} |
-| Format | {{e.g. short-form clip, long-form talk, article, book chapter}} |
-| Captured | This session, via {{transcript / fetch / search}} |
-| Reliability note | {{What kind of source this is — first-party method, secondary summary, peer-reviewed, motivational content — so the coach weights it correctly.}} |
+| Format | {{article, book chapter, talk, supplied PDF, etc.}} |
+| Identifier | {{URL, or title/edition/file name}} |
+| Location | {{page, section, timestamp, or n/a}} |
+| Retrieved or supplied | {{date and method}} |
+| Reliability note | {{first-party, secondary, peer-reviewed, etc.}} |
 
-## What this source contributes to the skill
+## What this source contributes
 
-{{One or two sentences: which framework, step, or filter in SKILL.md this source
-backs. Be specific — this is why the file exists.}}
+{{Which framework, decision, or coaching move this source supports.}}
 
 ## Synthesized takeaways
 
-<!--
-  The substance. Organize as bolded mini-headers + explanation, drawn from the
-  fetched material. Use verbatim quotes (in quote marks) where the source's
-  language is sharp; synthesize where you're integrating. Every claim must be
-  defensible against the URL above.
--->
-**{{Takeaway 1 — the headline idea.}}** {{Explanation grounded in the source.}}
+{{Explain the useful ideas in your own words and identify the supporting source
+record. Use a short verbatim quotation only when the wording matters.}}
 
-**{{Takeaway 2.}}** {{Explanation. Quote verbatim where the wording matters:}}
-> "{{verbatim quote}}"
+> "{{short attributed quote, if needed}}"
+> — {{identifier and location}}
 
-**{{The failure mode this prevents / the move it unlocks.}}** {{Tie it back to how
-the coach should use it in a session.}}
+## Known limits
+
+{{What this source does not establish, or `None identified for this use`.}}

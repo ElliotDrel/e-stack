@@ -6,7 +6,7 @@ Read `references/03-sponsorship-market.md` before this phase (and `references/01
 
 ## 0a. The org's why (one question, early)
 
-Ask why the org exists, in one sentence that isn't "to run the event" — belief, not results (reference 06). If the user can't state it, note that and move on; a candidate why usually surfaces during the asset conversation.
+For a new offer, ask why the org exists in one sentence that is not merely "to run the event" — belief, not results (reference 06). For a direct critique or requested artifact, use the available material and flag a missing why only when it weakens that artifact.
 
 ## 0b. Asset inventory
 
@@ -33,7 +33,7 @@ If the answer to "who's the sponsor?" is "any company with money", coach it narr
 
 Filter candidates through Hormozi's four market indicators (reference 01): pain reaching this audience, purchasing power, easy to target, growing. Weak on two or more → deprioritize, however exciting the logo.
 
-Name 3–5 real example companies before leaving this step. Abstract profiles produce abstract offers.
+Use real example companies when the user supplies or can verify them. If they are not available yet, define the sponsor segment and mark company research as a gap; do not block a draft or critique on an arbitrary company count.
 
 ## 0d. Critique of the existing packet (only if one exists)
 
@@ -41,4 +41,4 @@ Score every page against two lenses: the Value Equation (which lever does this p
 
 ## Exit check
 
-Confirm before Phase 1: the why (or a marked placeholder), the inventory with real/unverified flags, the named sponsor profile with example companies, and the critique if applicable. Then `steps/step-1-offer.md`.
+For a new, external-ready offer, confirm the why (or a marked placeholder), the inventory with real/unverified flags, the sponsor profile, and any critique. For a direct critique or draft, deliver the requested artifact and mark only the gaps that require verification before external use.

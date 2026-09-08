@@ -1,6 +1,6 @@
 # Templates and situation playbooks
 
-Adapt every line to the real person and the real offer. These are starting points, not fill-in-the-blank scripts to send raw. Brackets are placeholders to replace with true specifics. Keep the lowercase first name.
+Adapt every line to the real person and the real offer. These are starting points, not fill-in-the-blank scripts to send raw. Brackets are placeholders to replace with true specifics. Match capitalization and register to the sender, recipient, and channel; lowercase is only one informal style option.
 
 ## Table of contents
 - Situation playbooks (investors, hiring, partnerships/BD, press/podcasts, job-seeking)
@@ -37,7 +37,7 @@ Lead with the specific overlap and the value to them. Connect a real detail abou
 - Avoid: a deck before a hello, "synergies," asking for a sponsorship/integration in line one.
 
 ### Press, podcasts, speaking
-The single best cold message in the source is a speaking pitch (see annotated example below). Make it about their audience and pre-empt the "this will be boring/salesy" objection out loud.
+The annotated speaking pitch below shows one effective approach. Make the message about their audience and, when relevant, pre-empt the "this will be boring/salesy" objection out loud.
 - Hook: genuine familiarity with their show/publication, a specific episode or piece.
 - Objection named first: "I promise this won't be a lame product pitch."
 - Proof: "the last one I did sold out / got [specific reaction]."
@@ -45,16 +45,16 @@ The single best cold message in the source is a speaking pitch (see annotated ex
 - Avoid: a press release, "I'd be a great guest," making them do the framing work.
 
 ### Job-seeking / landing a role at a company you'd work for
-You can email any company you'd like to work for, full stop. No posted job, "we only hire in [city]," "must have [degree]," none of it disqualifies you, because companies (especially startups) make exceptions for the right person who reaches out well. So the email is not an application, it's an introduction: who you are, why you're reaching out, why they should care. One caveat worth being honest with the user about: cold email lands jobs far more reliably when the sender is actually competent at something valuable and can point to having done it. If they can't, the fix is the proof, not the wording.
+Direct outreach can create conversations beyond posted openings, but it does not override location, work-authorization, credential, availability, or other genuine hiring requirements. Treat the email as an introduction: who the sender is, why they are reaching out, and why the company may care. Strong, relevant evidence helps; if it is thin, identify how to build or honestly frame the proof rather than promising that wording will overcome every constraint.
 
 This situation leans hardest on specific, laddered competence proof and the weightless ask. Skip the chosen-feeling theatrics ("you're one of 10") that fit a launch, because here they read false. Just be a real person who'd be useful.
 
 - **Format (the spine of the email):** who you are, one line. Why you're reaching out, one line. Why they should care, the proof. Then the ask.
 - **Hook:** something true about them or the company, no fabrication. "saw you just raised a seed round and want to help you build the product." It is completely fine to admit you found them because they raised, that's honest, and honest beats a fake "fan for years."
-- **Proof:** two or three bullets of relevant work, each laddered to a hard specific. "built [feature] at [company], a big driver of ARR." "shipped [side project], 100k active users." Pick the two most relevant, not your whole résumé.
+- **Proof:** use the amount of relevant evidence the role and channel warrant. Ladder each claim to a hard specific, and pick the strongest relevant examples rather than reproducing the whole résumé.
 - **Ask:** one specific next step, weightless. "worth a chat?" beats "are you hiring?" or a vague "let me know if there's a fit." Give them one clear thing to reply to.
 - **Length:** more room than a DM but still tight. Ceiling ~200 words; the strongest job emails run well under that (three bullets and a sign-off). Cut buzzwords first, then cut again.
-- **It's a numbers game.** Even a great email to the right person often gets no reply, for reasons outside the sender's control (bad timing, not a priority, lost in the inbox, spam folder). Tell the user this plainly: one email is not a strategy. The advice is to do this for 10, 20, 30 companies they'd genuinely want to work at, follow up once each, and expect a few to convert. Volume across good targets, not one perfect shot.
+- **Use a deliberate outreach set.** Even a strong email can get no reply for reasons outside the sender's control. Build a sustainable set of genuinely relevant targets, track responses, and follow up when appropriate. Adjust the volume to the user's time, target quality, and capacity instead of prescribing a quota or conversion expectation.
 - **Finding the person and the address:** email the person who'd actually hire for the role, the hiring manager, or the CEO if it's a small company or you're unsure. Addresses are usually `firstname@company.com` (guessable) or findable via tools like Nymeria, ContactOut, or Clay.
 - **Avoid:** waiting for a posted job, a life-story email, "executed on key initiatives" buzzword soup, no ask, more than one follow-up.
 
@@ -107,7 +107,7 @@ hey [firstname], this got buried back in [month], that's on me. still think [the
 
 ## The ghost follow-up sequence
 
-Most people won't reply to the first message. The follow-up decides everything. Never send "just bumping this." The trick across all of these is to hand them an easy no, which makes them stop bracing and actually answer. Space them a few days apart. Never beg, every message gives them an exit.
+Many first messages receive no reply. A thoughtful follow-up can be useful; never send "just bumping this." Give the recipient an easy no, space messages appropriately for the channel and context, and stop when further contact would be unwelcome. Every message should give them an exit.
 
 **Follow-up 1 (the workhorse):**
 ```
@@ -117,7 +117,7 @@ wanted to give you first dibs.
 no worries if it's not the right fit right now.
 [name]
 ```
-That last line is the whole trick. It looks far too soft to do anything, and it's the line that revives written-off deals.
+That last line gives the recipient a clear, low-pressure exit; keep it when it matches the sender's voice and the relationship.
 
 **Follow-up 2:**
 ```
@@ -133,7 +133,7 @@ hey [firstname], last note from me. we're keeping early access to about 10 peopl
 
 ## The best cold message ever received (annotated)
 
-A founder pitched the author a speaking slot. He said yes before finishing it. It used a subject line, but a lowercase, offhand one that reads like a text, not an ad. That's the only kind of subject that works on an InMail.
+A founder pitched the author a speaking slot, and the informal subject line made the message feel personal in that context. Use the example as a register choice to test, not as a universal InMail rule.
 
 Subject (lowercase, offhand): `i promise if you do this speaking engagement it won't be lame or boring`
 

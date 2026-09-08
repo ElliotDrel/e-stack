@@ -1,6 +1,6 @@
 ---
 name: estack-pdf-to-md
-version: 1.2.3
+version: 1.2.4
 description: >-
   (pdf-to-md) Convert a PDF to Markdown or plain text with the RunPulse API,
   including OCR of scanned pages. Use when asked to extract text from or
@@ -10,7 +10,10 @@ description: >-
 
 Convert a PDF (or several PDFs) to Markdown or plain text using the RunPulse API. The underlying script splits the PDF into page batches, fires all batches in parallel against the RunPulse `/extract` endpoint, polls each async job, and reassembles the markdown in correct page order.
 
-## API key check (runs on skill load)
+## API key check
+
+When the host executes fenced commands on skill load, use its output. Otherwise run this
+check before conversion; do not claim the key is available without its result.
 
 ```!
 # One credential file for the whole pack, not one per skill.
@@ -20,16 +23,23 @@ echo "=== PULSE_API_KEY status ==="
 # Older installs kept the key per-skill, including inside the installed skill
 # folder that the installer overwrites on every sync. Read those, but write to
 # the shared file.
-LEGACY_FILES="$HOME/.e-stack/estack-pdf-to-md/.env $HOME/.claude/skills/estack-pdf-to-md/.env $HOME/.claude/skills/pdf-to-md/.env"  # estack-path-ok: read-only legacy fallback
+LEGACY_FILES=(
+  "$HOME/.e-stack/estack-pdf-to-md/.env"  # estack-path-ok: read-only legacy credential fallback
+  "$HOME/.claude/skills/estack-pdf-to-md/.env"  # estack-path-ok: read-only legacy credential fallback
+  "$HOME/.claude/skills/pdf-to-md/.env"  # estack-path-ok: historical legacy path, read-only fallback
+)  # estack-path-ok: read-only legacy fallbacks
 
-ENV_KEY=""
-FOUND_IN="$ENV_FILE"
-for f in "$ENV_FILE" $LEGACY_FILES; do
-  if [ -f "$f" ]; then
-    ENV_KEY=$(grep -E '^PULSE_API_KEY=' "$f" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'" | tr -d '\r' | xargs)
-    if [ -n "$ENV_KEY" ]; then FOUND_IN="$f"; break; fi
-  fi
-done
+ENV_KEY="${PULSE_API_KEY:-}"
+FOUND_IN="the current process environment"
+if [ -z "$ENV_KEY" ]; then
+  FOUND_IN="$ENV_FILE"
+  for f in "$ENV_FILE" "${LEGACY_FILES[@]}"; do
+    if [ -f "$f" ]; then
+      ENV_KEY=$(grep -E '^PULSE_API_KEY=' "$f" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'" | tr -d '\r' | xargs)
+      if [ -n "$ENV_KEY" ]; then FOUND_IN="$f"; break; fi
+    fi
+  done
+fi
 
 USER_VAR=""
 if command -v powershell.exe >/dev/null 2>&1; then
@@ -37,25 +47,16 @@ if command -v powershell.exe >/dev/null 2>&1; then
 fi
 
 if [ -n "$ENV_KEY" ]; then
-  masked="${ENV_KEY:0:6}...${ENV_KEY: -4}"
-  echo "[OK] Key found in $FOUND_IN  -> $masked"
-  if [ "$FOUND_IN" != "$ENV_FILE" ]; then
-    echo "     !! That is an OLD per-skill location. Every e-stack skill now reads"
-    echo "        one shared file. Move the PULSE_API_KEY line into $ENV_FILE and"
-    echo "        delete the old file. Ask the user before touching a key file."
+  echo "[OK] PULSE_API_KEY is available from $FOUND_IN."
+  if [ "$FOUND_IN" != "the current process environment" ] && [ "$FOUND_IN" != "$ENV_FILE" ]; then
+    echo "     Move it privately to $ENV_FILE when convenient; that is the shared home."
   fi
   if [ -n "$USER_VAR" ]; then
-    echo "     !! The key is ALSO a Windows user env var. The .env wins, so that copy"
-    echo "        is a second place the key can drift out of date. Offer to delete it:"
-    echo "        [System.Environment]::SetEnvironmentVariable('PULSE_API_KEY',\$null,'User')"
+    echo "     A Windows user environment copy also exists. The live process value takes precedence; avoid keeping two persistent copies."
   fi
 elif [ -n "$USER_VAR" ]; then
-  masked="${USER_VAR:0:6}...${USER_VAR: -4}"
-  echo "[OK] Key found in Windows user env var PULSE_API_KEY  -> $masked"
-  echo "     !! That is the wrong home. No other e-stack skill can read it and it does"
-  echo "        not survive a move to a new machine. Move the line into $ENV_FILE,"
-  echo "        then clear the env var. Write the value straight to the file --"
-  echo "        never echo the key into the chat."
+  echo "[MISSING] A Windows user environment copy exists but is unavailable to this process."
+  echo "          Move it privately to $ENV_FILE, then clear the user-environment copy."
 else
   echo "[MISSING] No PULSE_API_KEY configured."
   echo "ACTION: Do not run the script yet. Walk the user through 'First-time setup' below."
@@ -73,19 +74,19 @@ If the check above said `[MISSING]`, the user has not configured a RunPulse API 
    ```
    PULSE_API_KEY=<paste-the-key-here>
    ```
-   **Append to that file, never overwrite it** — other skills keep their keys there too. Create it if it does not exist. Offer to do this via the Write tool once they paste the key in chat. That file is the only place the key belongs: not a Windows user env var, not a shell profile, not a per-skill `.env`, and never inside the installed skill folder, which the installer overwrites on every sync.
-5. **Re-run the startup check** by re-invoking the skill, and confirm it now reports `[OK]`.
+   **Append to that file, never overwrite it** — other skills keep their keys there too. Create it if it does not exist. Do not ask the user to paste a credential into chat or echo any part of it back. That file is the only persistent place the key belongs: not a Windows user env var, not a shell profile, not a per-skill `.env`, and never inside the installed skill folder, which the installer overwrites on every sync.
+5. **Re-run the startup check** above (or re-invoke the skill only when the host executes fenced commands), and confirm it now reports `[OK]`.
 
-**Never echo a real key back to the user in chat.** Confirm with a masked form (first 6 + last 4 chars) like the startup check does.
+**Never echo a real key back to the user in chat.** Report only whether the setup check found it.
 
 ## Required inputs
 
-Always confirm these two before running:
+Resolve these from the request before running:
 
 1. **Input PDF path** — e.g. `C:\Users\2supe\Downloads\foo.pdf`
 2. **Output directory** — where the resulting `.md` / `.txt` should be saved
 
-If the user gave one but not the other, ask. If they gave only a PDF path, default the output directory to the same folder as the PDF and confirm in one short sentence rather than assuming silently. The user explicitly asked that input and output be settable per run — do not skip the confirmation just because there's a sensible default.
+If the PDF path is missing or ambiguous, ask. If the output directory is omitted, use the PDF's folder and state that choice in the result. Check whether the resulting filename would overwrite an existing file; ask only when it would.
 
 ## Optional inputs
 
@@ -121,11 +122,11 @@ The script auto-loads `PULSE_API_KEY` from these sources, in order:
 So in either shell, just invoke directly — no need to pass the key explicitly:
 
 ```powershell
-python "$env:USERPROFILE\.claude\skills\estack-pdf-to-md\scripts\pdf_to_md.py" "<input-pdf>" --output-dir "<output-dir>"
+python "$env:USERPROFILE\.agents\skills\estack-pdf-to-md\scripts\pdf_to_md.py" "<input-pdf>" --output-dir "<output-dir>"  # estack-path-ok: execute installed converter; output is the requested deliverable
 ```
 
 ```bash
-python "$HOME/.claude/skills/estack-pdf-to-md/scripts/pdf_to_md.py" "<input-pdf>" --output-dir "<output-dir>"
+python "$HOME/.agents/skills/estack-pdf-to-md/scripts/pdf_to_md.py" "<input-pdf>" --output-dir "<output-dir>"
 ```
 
 If the script exits with `PULSE_API_KEY is not set`, the startup check missed something — re-run the skill to re-trigger the check, or inspect `~/.e-stack/.env` directly. Never echo the key value back to the user.
@@ -175,29 +176,21 @@ This was built on 2026-05-20 as a wrapper around a hand-written script, now bund
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-pdf-to-md:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-pdf-to-md: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-pdf-to-md: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

@@ -1,6 +1,6 @@
 ---
 name: estack-cold-message-writer
-version: 1.1.1
+version: 1.1.2
 description: >-
   (cold-message-writer) First-touch messages to someone who does not know the
   sender, on LinkedIn, email, or X DMs, for fundraising, hiring, partnerships,
@@ -13,7 +13,7 @@ description: >-
 
 The entire job of a cold message is to make one real person feel like you wrote it only for them. Get that right and the reply takes care of itself. Get it wrong, and it doesn't matter how polished the words are. Most cold outreach fails because it's about the sender (their title, their company, their CV) and reads like it was pasted into a list of 500 names. This skill writes the opposite of that.
 
-This skill owns first-touch psychology: making the reader feel chosen, hooks, weightless asks, ghost sequences. The general email craft — subject-line mechanics, body structure, the scheduling ask, and the full sound-like-a-human voice guide — lives in `estack-email-writer`. For a cold email, load both and let them work in tandem: this skill decides the strategy and the hook, that one polishes the craft. If the recipient already knows the sender or their org, use `estack-email-writer` alone.
+This skill owns first-touch psychology: making the reader feel chosen, hooks, weightless asks, and follow-ups. `estack-email-writer` has complementary advice on email craft and voice; consult it for a cold email when it will improve the requested draft. If the recipient already knows the sender or their org, use `estack-email-writer` alone.
 
 ## The one rule everything serves
 
@@ -21,8 +21,8 @@ The reader you're writing to gets dozens of these a day and filters ruthlessly. 
 
 ## Workflow
 
-1. **Get the missing context before drafting.** Never invent the specifics. To write a real message you need: who the recipient is (name, role, company), what the sender is offering or asking for, and ideally one true hook (a post they wrote, a launch they shipped, a mutual connection, a thing they're hiring for). If the user hasn't given you a genuine hook, ask for one or tell them the message will be weaker without it. Do not fabricate a fake "I loved your post about X."
-2. **Confirm channel and situation.** Channel changes the mechanics (see Channel rules). Situation changes the proof and the hook (see Situation playbooks in `references/templates.md`).
+1. **Use the context already provided.** Never invent a recipient detail or a hook. A good draft normally needs the recipient, the ask, and one true reason for reaching out. Ask only for a missing detail that would make the message unusable; otherwise draft with a clear placeholder or say what is absent.
+2. **Adapt to the channel and situation.** Channel changes the mechanics (see Channel rules). Situation changes the proof and the hook (see Situation playbooks in `references/templates.md`).
 3. **Draft one tight message** by default. Apply the tactics below. Then offer the follow-up sequence and alternate variants if they want them, but don't dump them unasked.
 4. **Self-check against the anti-patterns** before handing it over. If any are present, rewrite.
 
@@ -45,9 +45,9 @@ Apply these to every draft. They are not a checklist to cram in all at once; pic
 
 6. **Make it unmistakably about them.** Don't just name a detail, connect it to why you're reaching out. "you wrote about [problem] last week, this is the fix for exactly that." "saw you're hiring a [role], which usually means [pain], that's why I'm here." "Love what you're building" does none of this and should be deleted.
 
-7. **Use a lowercase first name.** Type "hey tom," not "hey Tom." Every automation auto-capitalizes the name, so a lowercase one is a quiet tell that a human typed this by hand.
+7. **Match the channel's native register.** A lowercase first name can work in an informal DM, but it is a style choice, not evidence of authenticity. Match the sender's actual voice and the relationship.
 
-8. **Keep it short.** Aim under 50 words for a DM. The agency version that fails runs 120. Short is not a constraint, it's the point.
+8. **Keep it short enough to be read quickly.** Cut context that does not earn the reply. The right length depends on the channel, audience, and ask.
 
 9. **One ask per message.** Two asks double the work to reply, so people do neither. Pick the single smallest yes and ask for that alone. The bigger favor (the intro, the call) waits for message two.
 
@@ -55,20 +55,20 @@ Apply these to every draft. They are not a checklist to cram in all at once; pic
 
 The principles are constant. The mechanics change by channel.
 
-**LinkedIn.** Send the connection request with no note (empty requests get accepted more, because a note triggers a second "clear this" notification). After they accept, wait a few days before the first message so it doesn't feel automated. If they haven't accepted in two weeks, send an InMail with no subject line, because LinkedIn bolds the subject and recipients now read a bold line as "ad." The one exception: a lowercase, offhand subject that reads like a text, not an ad (see the annotated best-message example in `references/templates.md`). The first line is the notification preview, so it carries the whole open.
+**LinkedIn.** Treat notes, timing, and InMail subjects as choices to test against the recipient and the current product experience. A low-friction connection request can be useful, but it is not a universal rule. Keep the first message personal and avoid making it look like an automated sequence. The first line often appears in the notification preview, so give it the reader's reason to care.
 
-**Email.** You get a subject line and slightly more room, but the discipline is the same. Subject should be short, lowercase or sentence case, and sound like a person, not a campaign ("quick one about [their thing]"). First line still can't be about you. A touch more context is allowed than a DM, but if it's over ~90 words it's too long. One ask, weightless.
+**Email.** You get a subject line and slightly more room, but the discipline is the same. The subject should sound like a person, not a campaign ("quick one about [their thing]"). First line still should give the reader a reason to care. Add only enough context to make the small ask credible.
 
-**X (Twitter) DMs.** The most casual and the shortest. No subject. Often there's existing context (they followed back, replied to a post), so lean on it. Lowercase throughout reads native here. Two to four lines max. The weightless ask matters most because the medium itself signals low commitment.
+**X (Twitter) DMs.** The most casual and often the shortest. No subject. Often there's existing context (they followed back, replied to a post), so lean on it. Use the register the sender would naturally use. The weightless ask matters most because the medium itself signals low commitment.
 
 ## Sound like a human, not a system
 
 This is the deepest version of the one rule, and the most common failure. A cold message that is tactically perfect but tonally polished still dies, because polish is the tell of a template, and a template is exactly what the reader filters out. The target is not "well written." The target is "a real person clearly typed this for me, probably between meetings." Slightly rough beats smooth.
 
-The full voice guide — grounding the draft in the sender's real voice, the AI tells to kill, what human writing looks like, and the read-aloud test — lives in `estack-email-writer` (the "Sound like a human" section). Run it on every draft before handing it over; it applies doubly here, because a cold reader is actively filtering for templates. Two cold-specific additions on top of that guide:
+`estack-email-writer` has complementary guidance on grounding a draft in the sender's voice and avoiding templated prose. Consult it when that added craft will help this draft. Cold-specific additions:
 
-- Lowercase throughout reads native in DMs, and the casual register of a text to a peer beats a pitch to a prospect.
-- When a draft reads clean and balanced, that is the signal to mess it up on purpose: cut a connective, break the parallelism, drop a word, let one line run short.
+- Let the channel and the sender's real voice set the register. Informal DMs often benefit from a casual tone; business contexts may not.
+- Do not manufacture roughness. Remove wording that feels templated, but keep the draft clear and natural.
 
 ## Anti-patterns (rewrite if any appear)
 
@@ -76,11 +76,10 @@ The full voice guide — grounding the draft in the sender's real voice, the AI 
 - "I noticed that..." (telegraphs the pitch)
 - Opening with the sender's title, company, past companies, or what they built before giving the reader a reason to care. This includes "we built X" or "we just shipped Y" as the first line. The first line and the subject are about the reader, full stop.
 - More than one ask
-- A wall over ~50 words (DM) or ~90 (email)
+- Unneeded length that obscures the reason for writing or the ask
 - Adjective-bragging ("amazing," "game-changing," "everyone loves it") instead of small specific proof
 - "Love what you're building" or any detail that isn't tied to why you're writing
 - Asking a stranger for 30 minutes up front
-- A capitalized auto-name in a DM
 - A bold InMail subject line
 
 ## When they ghost
@@ -95,29 +94,21 @@ By default, hand back one tight message, then a one-line offer to also write the
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-cold-message-writer:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-cold-message-writer: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-cold-message-writer: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

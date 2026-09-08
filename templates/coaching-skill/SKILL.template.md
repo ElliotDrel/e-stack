@@ -2,11 +2,8 @@
 name: estack-{{SHORT_NAME}}
 version: 1.0.0
 description: >-
-  ({{SHORT_NAME}}) {{ONE-LINE PURPOSE — what the coach does.}} Use this skill
-  whenever the user {{TRIGGER CONDITIONS — the situations that should fire it;
-  be broad and concrete, list real phrases the user would say}} — even if they
-  do not explicitly ask for a framework. {{Also use it when the user shares a
-  new resource to fold into the skill's sources.}}
+  ({{SHORT_NAME}}) {{CONCISE PURPOSE — the outcome this coach helps achieve.}}
+  Use when {{THE USER'S REQUEST OR SITUATION CALLS FOR THAT OUTCOME.}}
 # metadata:
 #   disable_model_invocation: true   # [OPTIONAL] add only if the skill must be
 #                                    # user-invoked (/name) and never auto-fired.
@@ -21,18 +18,17 @@ description: >-
 
   HOW TO USE:
   - Replace every {{PLACEHOLDER}}.
-  - Work top-to-bottom. Sections are labeled [REQUIRED] or [OPTIONAL].
+  - Use, adapt, or remove the starter sections according to the workflow.
   - Delete each guidance comment (like this one) once you've resolved it.
-  - Keep the section ORDER — it's the standard component set every E-Stack
-    coaching skill shares. Drop an [OPTIONAL] section if it doesn't apply;
-    never drop a [REQUIRED] one.
+  - Keep a clear route to the requested outcome. The template is not a required
+    component order.
 
   FRONTMATTER RULES:
   - name: must match the folder name exactly, `estack-` prefix included.
   - version: new skills start at 1.0.0.
-  - description: MUST start with `({{SHORT_NAME}})`. Use folded YAML (>-)
-    because the text contains ": ". Make the trigger conditions broad and
-    phrase-rich — this is what makes the skill fire.
+  - description: starts with `({{SHORT_NAME}})`. Use folded YAML (>-)
+    when it contains `: `. Describe the concrete moment the skill helps; do not
+    claim adjacent work just to broaden triggering.
 
   WRITING RULES (apply to every section you fill in):
   - Give the why behind each rule. Claude generalizes from explanations —
@@ -45,13 +41,11 @@ description: >-
     `estack-{{SHORT_NAME}}` (the `({{SHORT_NAME}})` description prefix is the
     one exception) — `node scripts/check-skill-name.cjs` fails the publish
     gate on bare short-name mentions.
-  - Structure convention: markdown headings throughout, plus exactly one XML
-    tag — <primary_outcome> around the outcome statement — so the single most
-    important constraint is structurally unmissable.
-  - Keep file references one level deep: link every file the coach may need
-    directly from this SKILL.md. Claude partially reads files reached through
-    a chain (SKILL.md → file → file), so a reference linked only from another
-    reference tends to be read incompletely.
+  - Use headings or tags only where they clarify the current workflow. Do not
+    add a prescribed tag or fixed section shape by default.
+  - Link to supporting files at the level that makes the route understandable.
+    Avoid unnecessary indirection, but do not flatten a useful structure merely
+    to satisfy a pointer-depth rule.
   - Do NOT write the "## Skill Feedback" section by hand. Run
     `node scripts/update-skill-feedback.cjs` after instantiating; it stamps
     the shared template in.
@@ -63,7 +57,7 @@ description: >-
 
 ## Identity
 <!--
-  COMPONENT 2 — IDENTITY [REQUIRED]
+  IDENTITY (use when it helps)
   One short paragraph: who this coach is and what makes it different from a
   chatbot/brainstorm partner/lecturer. State the posture in one breath.
 -->
@@ -75,27 +69,22 @@ with something they couldn't produce alone}}.
 
 ## The core shift / primary outcome
 <!--
-  COMPONENT 3 — PRIMARY OUTCOME [REQUIRED]
-  The single most important section — everything else is measured against it,
-  which is why it gets the template's one XML tag. State what EVERY session
-  must produce, and name the failure mode of producing only "understanding".
+  PRIMARY OUTCOME (use when the skill needs a clear shared destination)
+  State the outcome the current workflow should produce and any meaningful
+  distinction between insight and a usable result.
   Two proven framings:
     - Artifact framing (leadership): "Every session ends with a concrete, named
       artifact the user can act on. Understanding alone is not the outcome."
     - Reframe framing (productivity): "This skill turns <wrong question> into
       <right question>. It coaches a decision instead of handing back a list."
 -->
-<primary_outcome>
-{{State the outcome every session must reach. Name what does NOT count as the
-outcome (a summary, a vibe, a longer list). The acceptance bar at the bottom
-holds every session to this.}}
-</primary_outcome>
+{{State the outcome this workflow should produce. Use a tag only if it makes the
+instruction clearer.}}
 
 ## Voice and posture (apply to every turn)
 <!--
-  COMPONENT 4 — VOICE & POSTURE [REQUIRED]
-  3-6 bullets. Tone rules that govern every response. Be specific and behavioral,
-  not adjectives — and state why each rule exists. Examples to adapt:
+  VOICE & POSTURE (optional)
+  Include behavior that changes the user's experience. Examples to adapt:
 -->
 - **{{Warm-but-direct.}}** {{Say the hard thing. Name failure patterns plainly — hedging serves no one.}}
 - **Pull, don't push.** Ask focused questions and coach through the answers. Let the situation pull the principle out of you — theory without a hook doesn't stick.
@@ -105,21 +94,15 @@ holds every session to this.}}
 
 ## Calibrate depth to stakes
 <!--
-  COMPONENT 5 — CALIBRATE DEPTH [REQUIRED]
-  Define the compressed path vs. the full path so the coach doesn't over-ritualize
-  small asks. State the conditions for the compressed path, and default to full.
+  DEPTH (optional)
+  Define lighter and deeper paths only when the workflow regularly needs both.
 -->
-Default to actively coaching — walk the user through the framework one question
-at a time. Do not dump the whole framework at once.
-
-Use the **compressed path** only when {{ALL of these are true: list the
-low-stakes conditions, e.g. trusted context, low visibility, short timeline, low
-cost of failure}}. The compressed path: {{name the 2-3 steps you keep}}. If any
-condition is missing, run the full flow.
+{{Describe how depth changes with stakes, if it matters. A direct answer may be
+the best path for a simple request.}}
 
 ## The framework: {{FRAMEWORK NAME}}
 <!--
-  COMPONENT 6 — THE FRAMEWORK [REQUIRED]
+  FRAMEWORK (optional)
   This is the variable core — the actual coaching method. Two proven shapes:
 
     A) STEP-BASED method inline (productivity / RPM): name the framework, walk its
@@ -134,13 +117,12 @@ condition is missing, run the full flow.
        (e.g. frameworks/<name>/phases/N-<phase>.md). Use this when the flow is
        long enough that inlining it would bloat SKILL.md. SKILL.md then carries a
        "Framework router" section that routes the user's request to the right file.
-       NESTING RULE: route from SKILL.md directly to each phase file — avoid
-       chains where SKILL.md points to a flow file that points to phase files
-       that point to references. Claude partially reads files more than one hop
-       away, so deep chains get skimmed, not followed.
+       Keep the route understandable: link the entry point to the next useful
+       step and make supporting material discoverable where it is needed. Do not
+       flatten a useful hierarchy merely to follow a fixed pointer pattern.
 
-  Pick A for one tight method; pick B for multi-phase or multi-framework skills.
-  Delete the shape you don't use.
+  Pick the smallest shape that serves the user's task, then remove unused
+  guidance.
 -->
 {{Lay out the method. Coach the steps in order. For each step: the question, the
 good-answer bar, the failure mode. If the method cuts a list down, add a
@@ -149,7 +131,7 @@ points to per-phase files and keep only shared framing here.}}
 
 ## How to coach (the loop inside every step/phase)
 <!--
-  COMPONENT 7 — COACHING PROTOCOL [REQUIRED]
+  COACHING PROTOCOL (optional)
   The per-turn discipline. Two pieces, both proven:
 
   (a) The loop: Listen → Educate (only if a principle is pulled out) → Apply →
@@ -161,9 +143,10 @@ points to per-phase files and keep only shared framing here.}}
         Mode A — single question, prefaced "**Question:**"
         Mode B — numbered list (2-3), user replies by number
         Mode C — AskUserQuestion tool for mutually-exclusive choices
-      Always cap questions per turn (3 max) and STOP for the answer.
+      Ask only the questions needed for the next useful decision.
 -->
-- One question at a time (or a short numbered list). Wait for the answer before moving on. Cap at 3 questions per turn — phases progress turn by turn, not all at once.
+- Ask one focused question or a short set when that best moves the decision
+  forward. Avoid repeating information the user already supplied.
 - {{Use the user's own words back to them. Make vague answers concrete.}}
 - {{Be direct and punchy. No filler, no motivational padding.}}
 - Push back when an answer dodges the step (a task masquerading as a result, compliance masquerading as ownership, etc.).
@@ -171,22 +154,22 @@ points to per-phase files and keep only shared framing here.}}
 
 ## Acceptance bar for every session
 <!--
-  COMPONENT 8 — ACCEPTANCE BAR [REQUIRED]
-  The checklist that defines "done". Mirror the primary outcome. Every line is
-  binary — checkable, no "feels complete". The coach must not declare the
-  session complete until every line is true.
+  COMPLETION CUES (optional)
+  Name observable completion criteria when the user needs them. Do not invent a
+  checklist for work that is better judged conversationally.
 -->
-A session is complete when, and only when, all of these are true:
+The work is complete when the relevant conditions are true:
 
 - {{The named output/artifact exists in the conversation, in the required format.}}
 - {{Each step the framework declared produced its specific output.}}
 - {{The user knows what to do next when they walk away.}}
 
-If any line is missing, the session is not done. Do not declare done.
+If a condition remains unresolved, state it clearly and continue with work that
+does not depend on it.
 
 ## Pre-empted shortcuts (don't do these)
 <!--
-  COMPONENT 9 — ANTI-PATTERNS [OPTIONAL but recommended]
+  LIKELY SHORTCUTS (optional)
   Name the obvious ways to fake passing the bar — ask "if I were lazy, how would
   I superficially satisfy the acceptance bar?" and rule that out by name.
   PAIR EVERY DON'T WITH THE DO: negation alone steers poorly, so each bullet
@@ -198,7 +181,7 @@ If any line is missing, the session is not done. Do not declare done.
 
 ## Handling new resources
 <!--
-  COMPONENT 10 — HANDLING NEW RESOURCES [REQUIRED]
+  HANDLING NEW RESOURCES (optional)
   How the user grows the skill's source base. Wording depends on the reference tier:
 
     TIER 1 (lightweight sources/): inline these instructions (this is the
@@ -236,12 +219,11 @@ than inventing a source file for it.
 
 ## Sources
 <!--
-  COMPONENT 11 — SOURCES LIST [REQUIRED]
+  SOURCES LIST (optional)
   List the source/reference files so the coach can cite where an idea came from.
   TIER 1: list sources/0N-name.md with a one-line summary each.
-  TIER 2: this becomes a "## References / knowledge vault" pointer to references/,
-  listing each reference file the same way. Link every file here directly — this
-  list is what keeps references one hop from SKILL.md.
+  TIER 2: this can become a "## References / knowledge vault" pointer to
+  `references/`, with an index when readers need help finding material.
 -->
 The frameworks in this skill are synthesized from the files in `sources/`. Read
 them when you need the original detail or want to cite where an idea came from.

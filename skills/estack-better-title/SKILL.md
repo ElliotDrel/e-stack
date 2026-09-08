@@ -1,6 +1,6 @@
 ---
 name: estack-better-title
-version: 1.3.0
+version: 1.3.1
 description: (better-title) Suggest better chat session titles and rename the session
 disable-model-invocation: true
 allowed-tools:
@@ -36,7 +36,7 @@ bash "${CLAUDE_SKILL_DIR}/scripts/current-title.sh" "${CLAUDE_SESSION_ID}"
 
 ## Your task
 
-Suggest **3 titles** for this chat session based on the conversation so far. A title has **three zones separated by a spaced hyphen (` - `)**, and each zone has a different job:
+If the user supplied an exact title, use it. Otherwise suggest **3 titles** based on the conversation so far. A title has **three zones separated by a spaced hyphen (` - `)**, and each zone has a different job:
 
 ```
 <Subject> - <Locator> - <keywords>
@@ -137,12 +137,14 @@ Examples of the distinction:
 
 ## Format
 
-Present the 3 options using `AskUserQuestion` with a single-select question (`multiSelect: false`):
+When `AskUserQuestion` is available, present the 3 options with a single-select question (`multiSelect: false`):
 - Each option's `label` is **zone 1 only** — the subject. Option labels render short, and a full three-zone title is far too long to read there.
 - Each option's `description` is the **full title**, all zones, exactly as it will be written. The user picks on the subject and confirms on the whole string.
 - The user can also select "Other" (provided automatically) to give feedback
 
 Because the label is only zone 1, two options whose subjects are near-identical look like the same choice. Make the three subjects meaningfully different from each other, not three phrasings of one idea.
+
+When that tool is unavailable, list the three full titles in chat and let the user reply with a number or an exact title. Do not make a user who already supplied an exact title choose again.
 
 ## Interaction loop
 
@@ -182,29 +184,21 @@ This skill's `allowed-tools` frontmatter pre-approves the rename command (and th
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-better-title:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-better-title: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-better-title: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

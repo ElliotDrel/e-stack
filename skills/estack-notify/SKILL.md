@@ -1,6 +1,6 @@
 ---
 name: estack-notify
-version: 1.0.0
+version: 1.0.1
 description: (notify) Turn on desktop notifications at the end of every turn for the current session. Use when the user invokes /estack-notify or /estack-notify off, or asks to be pinged whenever a turn finishes.
 argument-hint: "[off]"
 disable-model-invocation: true
@@ -8,27 +8,13 @@ disable-model-invocation: true
 
 # estack-notify
 
-Notify mode is now ON for this session. The block below already ran and armed it:
+Turn the requested state on or off directly. Do not claim it already ran unless the host supplied a successful command result.
 
-```!
-powershell.exe -NoProfile -File "$USERPROFILE/.agents/skills/estack-notify/scripts/estack-notify.ps1" on 2>&1
+```powershell
+powershell.exe -NoProfile -File "$env:USERPROFILE\.agents\skills\estack-notify\scripts\estack-notify.ps1" <on|off>  # estack-path-ok: executes the installed skill script; it does not write in the skill folder
 ```
 
-## What to do
-
-**If this was invoked with the argument `off`**, run this one command and relay its output verbatim:
-
-```text
-powershell.exe -NoProfile -File "$USERPROFILE/.agents/skills/estack-notify/scripts/estack-notify.ps1" off
-```
-
-**Otherwise** relay the block output above verbatim and stop. Run nothing.
-
-Either way: no commentary, no explanation of what estack-notify does.
-
-## Why it is built this way
-
-`$ARGUMENTS` is not interpolated into a skill body, so the `!` block cannot see the argument. It always arms, which is the common case and costs no tool call. Turning it off is the only path that needs a command from you, and arming first is harmless since the flag is just deleted again before the turn ends.
+Use `off` only when the invocation explicitly includes that argument; otherwise use `on`. Relay the script's verified status concisely. If the host cannot run PowerShell, state that notifications were not changed and give the command above for the user to run.
 
 ## Requirements
 
@@ -40,29 +26,21 @@ Armed sessions are tracked as flag files in `~/.e-stack/estack-notify/`, keyed b
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-notify:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-notify: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-notify: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

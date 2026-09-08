@@ -1,6 +1,6 @@
 ---
 name: estack-doc-review-viewer
-version: 1.0.2
+version: 1.0.3
 description: >-
   (doc-review-viewer) Open a local live-reloading viewer where the user reads
   a markdown document, highlights, and sends threaded comments back to the
@@ -25,13 +25,13 @@ google/diff-match-patch (Apache-2.0), checked in rather than installed. No
 Two commands, then edit files. Everything else is the code's problem.
 
 ```bash
-R="node $HOME/.claude/skills/estack-doc-review-viewer/review.mjs"
+review() { node "$HOME/.agents/skills/estack-doc-review-viewer/review.mjs" "$@"; }
 
-$R open path/to/doc.md      # 1. before you edit anything
-$R claim                    # 2. when woken, this hands you the feedback
-#    ... edit the file ...
-$R reply <threadId> what you changed and why
-$R publish                  # 3. hand it back
+review open path/to/doc.md      # 1. before you edit anything
+review claim                    # 2. when feedback is ready, this hands it over
+#      ... edit the file ...
+review reply <threadId> what you changed and why
+review publish                  # 3. hand it back
 ```
 
 You never choose a port, a version number, a state directory, or a slug. You
@@ -40,16 +40,17 @@ v1 captures the original text.
 
 ## Getting woken
 
-`open` prints the slug, the URL, and the exact watcher command. Run that watcher
-through the **Monitor** tool with `persistent: true`:
+`open` prints the slug, the URL, and the exact watcher command. When the host has a
+persistent monitoring facility, run the watcher through it:
 
 ```bash
-node ~/.claude/skills/estack-doc-review-viewer/review.mjs watch --slug plan
+review watch --slug plan
 ```
 
-Each line it prints becomes a notification that wakes you. Waking is per session
-per slug: the daemon is shared, the watcher is yours, and Monitor only sees a
-process your own session launched.
+Each line it prints can wake the session. If the host cannot monitor persistently, tell
+the user how to return to the review and use `review pending` or `review status --slug <slug>`
+when the session next runs; claim only when the phase is `submitted`. Waking is per session
+per slug: the daemon is shared, and each session watches only the process it launched.
 
 ## The hand-off
 
@@ -66,7 +67,7 @@ The loop:
 1. `open` the document. v1 is snapshotted before you touch it.
 2. You edit. `publish`. That mints v2 and returns the document to the user.
 3. They comment and click **Send to Claude**. The phase becomes `submitted`.
-4. Your watcher prints one line. You wake.
+4. A watcher prints one line, or a later `pending`/`status` check finds `submitted`.
 5. `claim` prints the unread messages and flips to `editing`.
 6. You edit and reply in-thread. `publish` mints v3. Back to step 3.
 
@@ -183,29 +184,21 @@ any of them. Run `node selftest.mjs` and `node e2etest.mjs` after any edit.
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-doc-review-viewer:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-doc-review-viewer: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-doc-review-viewer: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

@@ -8,9 +8,9 @@ This is the first phase of the pre-delegation flow. Your job here is to understa
 
 ---
 
-## Ask 1–3 questions, then wait
+## Resolve only the missing intake facts
 
-Intake locks in four things before any phase can produce output: the task, the owner, the timeline, and the team mode (hierarchical vs flat/peer). Ask at the rate the user is moving — sometimes one question at a time, sometimes grouped if the user is comfortable.
+Intake uses the task, owner, timeline, and team mode (hierarchical vs flat/peer) already supplied. Ask at the rate the user is moving — sometimes one focused question, sometimes a small group — only when a missing fact changes the handoff. A sufficiently specific request can move directly into the filters and brief.
 
 1. What's the task or project being handed off? (push for specifics)
 2. Who is the person receiving it — and what's your working relationship with them (direct report, peer, co-founder, cross-functional)?
@@ -35,15 +35,11 @@ Don't ask all of these. Listen for whether each is satisfied. Raise a coaching n
 
 ### Filter 0 — Is the motive right, and is this even delegable? (the motive gate)
 
-This runs first because it can end the delegation before it starts. Two silent reads (the motive gate from `SKILL.md`):
+Use this as a check on accountability, not a veto on delegation. Two silent reads (the motive gate from `SKILL.md`):
 
-- **Is what they're handing off one of the five omissions?** Developing their leadership team, managing their people, a difficult conversation, running their meetings, or repeating the core message. These are not delegation candidates — handing them off is the definition of abdication. If the task is one of the five, stop the delegation and redirect:
+- **Does it touch one of the five omissions?** Developing their leadership team, managing their people, a difficult conversation, running their meetings, or repeating the core message. Identify the accountability the leader must retain. They may still delegate preparation, facilitation, or execution with clear ownership and follow-through. Route to the matching omission flow when it is the better way to define that retained responsibility.
 
-  > 🚩 That's one of the handful of things a leader can't hand off without abdicating. Let's not build a brief for it — let's build your plan to actually do it.
-
-  Then route to the matching omission flow (`../../developing-team/flow.md`, `../../managing-subordinates/flow.md`, `../../difficult-conversations/flow.md`, `../../running-meetings/flow.md`, or `../../repetitive-communication/flow.md`).
-
-- **Is the motive reward-centered?** Is the user reaching to offload this because it's tedious, uncomfortable, or unfun rather than because someone else should genuinely own it? If so, name it in one honest sentence before proceeding — a legitimate delegation can still be driven by the wrong motive, and saying so is the coaching. If the user is stuck or defensive about it, route to `../../motive-check/flow.md`.
+- **Could avoidance be influencing the handoff?** If so, state it as a concern rather than a fact, ask for the user's context, and revise the recommendation based on their answer. If the user wants to examine a recurring pattern, route to `../../motive-check/flow.md`.
 
 If the task is genuinely delegable and the motive is sound, continue to the filters below.
 

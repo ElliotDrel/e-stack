@@ -1,6 +1,6 @@
 ---
 name: estack-customer-discovery
-version: 1.0.4
+version: 1.0.5
 description: >-
   (customer-discovery) Validate a business idea through customer interviews:
   pick target customers, write outreach and interview guides, analyze results.
@@ -22,11 +22,12 @@ There are 4 steps. Each builds on the last, but the user can jump to any step di
 
 ## How to use this skill
 
-### Step 1: Figure out what the user needs
+### Step 1: Infer the useful step
 
-Ask the user: do they want to go through the full flow, or do they need help with a specific step?
+Use the request and context to identify the useful step. If the request could reasonably mean two
+different steps, ask one focused question; otherwise start the relevant work.
 
-If they describe their situation without picking a step, route them based on where they are:
+When the user describes their situation without naming a step, route based on where they are:
 - Have an idea but haven't talked to anyone yet → Start at **Step 1: Strategy & Targeting**
 - Know who to talk to but need help reaching out → **Step 2: Outreach**
 - Have interviews scheduled but need questions → **Step 3: Interview Execution**
@@ -34,9 +35,9 @@ If they describe their situation without picking a step, route them based on whe
 
 ### Step 2: Read the right step file
 
-Read the step file and the reference file it points to before answering; the frameworks live there, and a reply written without them comes out generic.
-
-Each step has its own workflow file with detailed instructions. Read the step file first, then the reference file it points to.
+Consult the step file and relevant reference material before giving guidance or creating an
+artifact. Use the source material needed for the request; do not make the user wait through an
+orientation for steps they did not ask for.
 
 | Step | Step file (read first) | Reference file (read second) |
 |---|---|---|
@@ -53,39 +54,34 @@ Read the room. If the user clearly knows what they're doing, don't over-explain.
 
 ### Step 4: Offer deliverables
 
-At the end of each step, offer to produce a written summary the user can reference later. Don't force it — some users just want the conversation.
+Deliver a written summary when the user asks for one or when a durable plan, guide, or findings
+report is the natural result of the work. Do not turn a conversational request into an unrequested document.
 
 ### Step 5: Continue the flow
 
-After completing a step, offer to continue to the next one by name (e.g., "Would you like to continue to **Step 3: Interview Execution**?"). Never reference a step by number alone — always include the name so the user knows what it covers. If the user jumped into a specific step, still offer the next step — they might want to keep going.
+When the current request is complete, state the most relevant next discovery move if it is useful.
+Continue directly when the user has already asked for the broader flow; otherwise let the user
+choose what to do next.
 
 ---
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-customer-discovery:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-customer-discovery: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-customer-discovery: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

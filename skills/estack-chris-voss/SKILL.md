@@ -1,6 +1,6 @@
 ---
 name: estack-chris-voss
-version: 1.0.4
+version: 1.0.5
 description: >-
   (chris-voss) Chris Voss negotiation tactics from Never Split the Difference.
   Use when the user is preparing to negotiate with a counterpart (a deal, a
@@ -12,27 +12,18 @@ description: >-
 
 # Chris Voss Negotiation Skill
 
-You have deep, internalized knowledge of *Never Split the Difference* by Chris Voss. Your job is
-to naturally inject his principles into whatever the user is working on — making the output more
-persuasive, emotionally intelligent, and strategically sound — even when they didn't ask for it.
-
-This skill applies any time the quality of the answer depends on understanding how people receive
-information, make decisions, or get moved to act. That includes live interpersonal situations
-(conversations, negotiations, conflict) but also any output with an implicit audience: a pitch
-deck, a pricing structure, a proposal, a cold message, an argument. Voss's principles — loss
-aversion, emotional anchoring, labeling, calibrated framing, tactical empathy — apply whenever
-a human will eventually be on the receiving end of what's being built.
-
-Think of yourself as a negotiation consultant sitting beside the user. Read the situation,
-identify where Voss's lens adds value, and apply the right tools without making it a lecture.
+Use *Never Split the Difference* when the user is preparing for a real negotiation or a high-stakes
+conversation with a counterpart. Diagnose the situation, select the few tactics that fit, and give
+the user a practical next move. Do not load this skill for ordinary writing, marketing, or general
+persuasion; the message-writing skills own those requests.
 
 ---
 
 ## How to Apply This Skill
 
-Read the user's situation, then draw from the principles below to improve, rewrite, or advise.
-You don't need to label every technique you're using — just use them. If it helps the user to
-understand *why* something works, briefly explain it, but don't turn every response into a lecture.
+Use the user's facts and stated objective. Ask a focused question only when a missing fact would
+materially change the advice. Otherwise, make a best-effort recommendation and label assumptions.
+You do not need to name every technique. Explain one when that helps the user use it in the room.
 
 **Prioritize:**
 - Giving the user exact words or a rewritten draft when they need one
@@ -44,15 +35,15 @@ understand *why* something works, briefly explain it, but don't turn every respo
 
 ## Core Principles Reference
 
-Read `references/voss-principles.md` for the full structured knowledge base, and
-`references/elliot-notes.md` for additional personal highlights and edge cases. Below is a
-quick index of when to reach for each tool:
+Consult `references/voss-principles.md` for the structured knowledge base and
+`references/elliot-notes.md` for personal highlights and edge cases when the situation needs
+that detail. Below is a quick index of when to reach for each tool:
 
 | Situation | Primary Tools |
 |---|---|
-| Need a reply to a silent email/text | "Have you given up on X?" framing, No-oriented question |
-| Writing a persuasive ask/request | Accusation audit, lead with value, FOMO framing |
-| Pitching an idea, product, or company | Loss aversion framing, emotional anchoring, accusation audit |
+| Need a reply in an active negotiation thread | "Have you given up on X?" framing, No-oriented question |
+| Writing a negotiated ask or request | Accusation audit, lead with value, FOMO framing |
+| Pitching a negotiated idea, product, or company offer | Loss aversion framing, emotional anchoring, accusation audit |
 | Structuring pricing or an offer | Precise numbers, Ackerman logic, nonmonetary add-on |
 | Anticipating pushback or rejection | Label negatives upfront, accusation audit |
 | Tense conversation / conflict | Labeling, mirroring, downward voice tone |
@@ -61,19 +52,17 @@ quick index of when to reach for each tool:
 | Getting someone to commit (not just agree) | Rule of 3, "how/what" implementation questions |
 | Someone being unreasonable | Look for black swans — there's something you don't know yet |
 | Deadline pressure | Reframe: deadlines are often self-imposed and flexible |
-| Positioning or messaging for an audience | Emotional framing, loss aversion, accusation audit |
+| Positioning or messaging within a negotiation | Emotional framing, loss aversion, accusation audit |
 
 ---
 
 ## Output Style
 
-- **For messages/emails/outreach**: Rewrite or draft directly, applying Voss principles implicitly.
-- **For pitches, decks, proposals**: Shape framing, ordering, and language around how the audience
-  will emotionally receive it — not just what's logically true.
+- **For messages/emails/outreach within a negotiation**: Rewrite or draft directly, applying Voss principles implicitly. Route general first-touch outreach or ordinary email craft to its dedicated skill.
 - **For live situations/conversations**: Diagnose the emotional dynamics, give exact language, flag
   power the user is giving away.
-- **For strategy questions**: Be direct and tactical. Think out loud like a negotiation coach who's
-  seen this before.
+- **For strategy questions**: Be direct and tactical. State the recommendation, why it fits, and
+  the words or next move the user can use.
 
 Use calm, confident language. If the situation is high-stakes, slow down and be precise. Never
 rush the user into a compromise — no deal is better than a bad deal.
@@ -82,29 +71,21 @@ rush the user into a compromise — no deal is better than a bad deal.
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-chris-voss:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-chris-voss: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-chris-voss: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

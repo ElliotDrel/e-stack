@@ -14,7 +14,7 @@ A single JSON array of entry objects. The file is created the first time the ski
 ]
 ```
 
-To append safely: read the array, push the new entry, write the file back. If the file is missing or corrupt, start a fresh array.
+To append safely: read the array, push the new entry, write the file back. If the file is missing, create a new array. If it is corrupt, preserve the original file unchanged, report the path and parse error, and keep this search's state only in a temporary result until the user chooses how to recover the log. Never overwrite or truncate corrupt history automatically.
 
 ## Entry types
 
@@ -22,7 +22,7 @@ There are two entry types. Each search produces one of each (under normal flow).
 
 ### `search_started`
 
-Written immediately after the user confirms Phase 2 preferences and before `fetch_flights.py` runs. Captures what they were looking for, even if they abandon the search before booking.
+Written after the search's preferences are resolved and before `fetch_flights.py` runs. Captures what they were looking for, even if they abandon the search before booking.
 
 ```json
 {

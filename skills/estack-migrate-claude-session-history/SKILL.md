@@ -1,6 +1,6 @@
 ---
 name: estack-migrate-claude-session-history
-version: 1.0.4
+version: 1.0.5
 description: >-
   (migrate-claude-session-history) Move a Claude Code session transcript and
   its subagent sidecar files to another project so /resume finds it there. Use
@@ -15,8 +15,8 @@ The user wants a specific session (or a handful of sessions) that currently live
 
 This is **not** the right skill for:
 
-- Listing / searching / reading sessions → use `read-claude-session-history`
-- Recovering deleted sessions from backups → use the `.claude-backups` snapshots via `read-claude-session-history`
+- Listing / searching / reading sessions → use `estack-read-agent-history`
+- Recovering deleted sessions from backups → use the `.claude-backups` snapshots via `estack-read-agent-history`
 - Renaming a project's working directory and moving **all** of its sessions at once → use `scripts/migrate-claude-history.js` directly without the `--session` flag (it has a full-project mode)
 - A brand-new conversation in a different folder → just start a fresh Claude Code session there
 
@@ -38,23 +38,23 @@ You need three things. Treat the conversation as the primary source — only ask
 
 | Input | How to resolve |
 |---|---|
-| **Session UUID** | If the user gave a UUID, use it. If they gave a session file path, take the basename without `.jsonl`. If they only described the session ("the one where we did X"), use `read-claude-session-history --mode search --all-projects --query "<keywords>"` to find candidates and confirm with the user. |
-| **Source project path** (the real cwd) | Run `python <read-claude-session-history>/scripts/read_transcript.py --mode lookup --uuid <prefix>` to get the source `.jsonl` path. Reverse the encoded folder name back into a real Windows path: drop the leading `C--` (becomes `C:\`) and convert each `-` between path segments back to `\`. Confirm by reading the `cwd` field of any entry in the file. |
+| **Session UUID** | If the user gave a UUID, use it. If they gave a session file path, take the basename without `.jsonl`. If they only described the session ("the one where we did X"), use `estack-read-agent-history` search mode across projects to find candidates and confirm only if several remain plausible. |
+| **Source project path** (the real cwd) | Use `estack-read-agent-history` lookup to locate the source `.jsonl`, then read its recorded `cwd` field. Do not reverse the hyphenated project-folder name: hyphens in a real path cannot be reconstructed reliably. If the transcript has no usable `cwd`, ask for or independently establish the source path. |
 | **Target project path** (where the session should live) | Ask the user, unless the conversation already named it (e.g. "move it to `~\Foo\Bar`"). The target project directory under `~/.claude/projects/` does **not** need to exist yet — the script creates it. The encoded folder name is derived from the path. |
 
 If the source and target encoded folder names are identical, the migration is a no-op — tell the user.
 
-### 2. Present the plan and confirm
+### 2. Resolve the plan
 
 Before touching anything, show the user a short plan with:
 
 - Source `.jsonl` path
 - Target `.jsonl` path
 - Old cwd → New cwd (the values that will be rewritten)
-- Backup location (default: `<source-real-path>\session-backups\<timestamp>-pre-migration\`, or a path the user prefers)
+- Backup location (default: `~/.e-stack/estack-migrate-claude-session-history/backups/<timestamp>-pre-migration/`, or a path the user prefers)
 - A note that the script will also append a visible user-message migration note to the migrated transcript (on by default; see step 6)
 
-Wait for explicit "go ahead." Migrations touch files Claude Code reads on every `/resume`; a wrong target is annoying to recover from. The backup is the safety net, but confirming first means we usually don't need to use it.
+Proceed once the source session and target path are unambiguous. Ask only if the target, source, or requested scope is still unclear; a session-migration request already authorizes this reversible copy-and-rewrite workflow.
 
 ### 3. Back up both project directories — full copies, both sides
 
@@ -62,10 +62,16 @@ Robocopy is the right tool on Windows — fast and resilient with large dirs:
 
 ```powershell
 $ts = Get-Date -Format "yyyy-MM-dd-HHmmss"
-$backupRoot = "<chosen-backup-root>\$ts-pre-migration"
+$backupRoot = "$HOME\.e-stack\estack-migrate-claude-session-history\backups\$ts-pre-migration"
 New-Item -ItemType Directory -Force -Path $backupRoot | Out-Null
 robocopy "<source-project-dir>" "$backupRoot\<source-folder-name>" /E /NFL /NDL /NJH /NJS /NP /MT:8 | Out-Null
-robocopy "<target-project-dir>" "$backupRoot\<target-folder-name>" /E /NFL /NDL /NJH /NJS /NP /MT:8 | Out-Null
+if ($LASTEXITCODE -ge 8) { throw "Source backup failed (robocopy exit $LASTEXITCODE)." }
+if (Test-Path "<target-project-dir>") {
+  robocopy "<target-project-dir>" "$backupRoot\<target-folder-name>" /E /NFL /NDL /NJH /NJS /NP /MT:8 | Out-Null
+  if ($LASTEXITCODE -ge 8) { throw "Target backup failed (robocopy exit $LASTEXITCODE)." }
+} else {
+  "Target project directory was absent before migration." | Set-Content -Encoding UTF8 "$backupRoot\target-absent.txt"
+}
 ```
 
 Back up the **entire** source project dir **and** the **entire** target project dir, even if the target only has one or two unrelated sessions. These backups serve two purposes, and the second one is the one people forget:
@@ -73,7 +79,7 @@ Back up the **entire** source project dir **and** the **entire** target project 
 1. **Rollback safety net.** If anything in the migration goes wrong, you can restore both sides to their pre-migration state in one command.
 2. **Ground truth for validation.** The backup of the source dir is the only authoritative record of what the original transcript looked like — every entry, every path string, every sidecar file. After migration, step 7 will diff the migrated content against the backup to prove that **every** old-path occurrence was rewritten (no encoding variant was missed) and **no** entries were lost, duplicated, or reordered. The backup of the target dir proves you only **added** files to it — you didn't accidentally overwrite anything that was already there. Without both backups, "the migration worked" is hope, not verification.
 
-Robocopy's exit codes are non-standard — exit 1 means "files copied successfully," not an error. After it finishes, report the file counts and sizes from `Get-ChildItem ... -Recurse | Measure-Object` so the user sees the backup actually contains something.
+Robocopy's exit codes are non-standard — 0–7 are successful outcomes with varying copy/extra-file states, while 8 or greater is failure. After it finishes, report the file counts and sizes from `Get-ChildItem ... -Recurse | Measure-Object` so the user sees the backup actually contains something. If the target directory was absent, retain `target-absent.txt` as that pre-migration evidence.
 
 ### 4. Dry-run, then execute
 
@@ -91,6 +97,8 @@ The dry-run prints:
 - Replacement counts per path-encoding variant (most sessions hit only pattern A — JSON-escaped backslash, upper-drive — because that's what `cwd` fields use)
 
 If the dry-run output looks wrong (zero sidecar files when there should be subagents, wildly different replacement counts than expected, or zero replacements at all), stop and investigate before running for real. See `references/troubleshooting.md`.
+
+Before running without `--dry-run`, inspect the target session path and `<uuid>/` sidecar path. If either already exists, stop rather than overwriting it. Also check the source transcript's modification time before and after preflight; if it changes, an active Claude writer may be appending and the migration should wait until that session is idle.
 
 Then run without `--dry-run` to execute. The script:
 
@@ -130,6 +138,10 @@ python <skill-dir>/scripts/validate-migration.py \
   --target-backup-dir "<backup-root>/<target-folder-name>"
 ```
 
+When `target-absent.txt` records that the target directory did not exist, omit
+`--target-backup-dir`: there are no pre-existing target files to compare. The source-backup
+cross-validation still runs and the marker remains evidence of that condition.
+
 The script runs these checks in order — most of them require no flags, the path checks need `--old-repo` and `--new-repo`, and the cross-validation checks need `--source-backup` (with `--target-backup-dir` enabling the "target untouched" sub-check):
 
 | Check | What it validates | Needs flags |
@@ -148,7 +160,7 @@ If anything fails, stop. Read the failed check's detail line — it points at th
 
 All checks must pass before declaring success. The script's final line is the summary you report back to the user.
 
-### 8. Tell the user what's next, and tear down the safety net
+### 8. Tell the user what's next, and retain the safety net
 
 After verification, the user still has work to do. Walk them through these in order — each one unlocks the next.
 
@@ -168,17 +180,9 @@ After verification, the user still has work to do. Walk them through these in or
    Remove-Item -Recurse "<source-project-encoded-dir>\<uuid>"  # sidecar dir
    ```
 
-### 9. Clean up the backups — the final step
+### 9. Retain or remove the backup
 
-Once both of the above are done, **the migration is locked in** and the pre-migration backup folder created in step 3 is just bloat. Robocopy backups of `.claude/projects/` directories run hundreds of megabytes; do not let them accumulate. Delete the entire backup folder created for this migration:
-
-```powershell
-Remove-Item -Recurse -Force "<backup-root>"
-```
-
-Confirm with the user before deleting and report the freed size. Do **not** skip this step or default to "keep it for a few days" — if `/resume` worked and the source copy is gone, the backup has done its job. Keeping it costs disk and clutters the workspace.
-
-The only reason to keep a backup is if you have not yet verified `/resume` works **or** you have not yet deleted the source copy. In either of those cases, you are still in steps 1-2, not step 9.
+Keep the pre-migration backup by default. It is the recovery handoff for a transcript the user may later discover was incomplete. If the user expressly asks to remove that exact backup after `/resume` works and the source copy is intentionally deleted, first show the resolved backup path and measured size, then remove only that folder and report the result.
 
 ## Common pitfalls
 
@@ -202,29 +206,21 @@ These are the failure modes that have actually happened — read `references/tro
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-migrate-claude-session-history:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-migrate-claude-session-history: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-migrate-claude-session-history: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

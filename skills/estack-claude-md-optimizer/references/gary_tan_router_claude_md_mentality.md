@@ -2,6 +2,10 @@
 
 *A synthesis of Gary's article "Resolvers: The Routing Table for Intelligence" (Resolver), plus the AI guidance layered on top of it. Gary's own positions are prioritized throughout; the AI synthesis layer is flagged where it diverges or extends.*
 
+> Historical reference note: use this file to understand a design perspective,
+> not as current platform guidance. Fetch the original source before repeating a
+> quote, statistic, or factual claim as verified.
+
 ---
 
 ## TL;DR

@@ -1,10 +1,8 @@
 # Step 3: Interview Execution
 
-## Before anything else — BLOCKING REQUIREMENT
+## Use the interview reference proportionately
 
-<CRITICAL>
-You MUST read `references/03-interview-execution.md` BEFORE responding to the user. Do NOT skip this. This file contains the actual frameworks and instructions — without reading it, your output will be generic and wrong.
-</CRITICAL>
+Consult `references/03-interview-execution.md` when building an interview guide or assessing interview quality. For a direct question review or a supplied guide, use only the source material needed to make the requested improvement.
 
 ## What this step accomplishes
 
@@ -14,7 +12,7 @@ Help the user build a tailored interview guide with the right questions and prot
 
 ### Clarify what they're testing
 
-Ask what assumptions or questions they want to answer through these interviews. If they did **Step 1: Strategy & Targeting**, pull from their high-priority assumptions. If they didn't, help them articulate what they need to learn before building anything.
+Use the assumptions or questions the user has already supplied. If the learning goal is unclear, ask for it. Pull from **Step 1: Strategy & Targeting** when it exists; otherwise help the user articulate only what they need to learn for the requested guide or question.
 
 Remind them: don't try to learn everything in one interview. Pick 2-3 areas to go deep on.
 
@@ -68,9 +66,9 @@ Before they go into interviews, remind them:
 - If possible, bring a note-taker. Interviewers filter for what they believe.
 - In-person is best, video is second, phone is last resort. Never text or email.
 
-## Deliverable
+## Durable deliverable
 
-Offer to produce an **Interview Guide** — a document the user can print or pull up on their phone during interviews.
+When the user asks for a guide, or a complete guide is the natural result of the work, produce an **Interview Guide** — a document they can print or pull up on their phone during interviews.
 
 The guide should include:
 - **Bias checklist at the top:** A short list of reminders to read before every interview — don't pitch, don't lead, try to kill the idea, listen more than you talk.
@@ -86,4 +84,4 @@ Format it so it's scannable at a glance — the user shouldn't have to read para
 
 ## Next step
 
-When this step is done, offer to continue to **Step 4: Analysis & Signals** — making sense of what they hear in the interviews.
+When the user asked for the broader flow, continue to **Step 4: Analysis & Signals**. Otherwise, mention it only when it is the useful next move.

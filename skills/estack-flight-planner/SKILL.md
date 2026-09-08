@@ -1,6 +1,6 @@
 ---
 name: estack-flight-planner
-version: 1.5.0
+version: 1.5.1
 description: >-
   (flight-planner) Find and rank flights between any two airports. Handles the
   parts worth automating (fetching every route, parsing SerpAPI's nested shape,
@@ -15,7 +15,7 @@ disable-model-invocation: true
 
 A deterministic flight search and ranking pipeline. The user supplies their trip (dates + origin + destination) every run; everything else (budget, airlines, time windows, duration cap, optional shuttle) comes from a saved preferences config so repeat searches are fast.
 
-The math (filtering, pricing, ranking, shuttle buffer calculation) runs in Python scripts — never eyeballed by the LLM — so results are reproducible. The LLM's job is orchestration and presentation.
+The scripts normalize source data and calculate prices, ranking scores, and shuttle buffers so the result is reproducible. Choose criteria and weights from the user's request, use the scripts for the corresponding computation, then explain the result.
 
 ## What the scripts own, and what you decide
 
@@ -27,7 +27,7 @@ The scripts exist to do the work that is **repetitive, unavoidable, and expensiv
 | Parsing SerpAPI's nested shape | Full of traps: arrival time is on the *last* leg, the delay flag is per-leg, a "UA" itinerary can have an AA second leg. Wrong here poisons everything downstream. |
 | Shuttle buffer math | Timezones, overnight rollover, day-of-week schedules. Fiddly, and a silent hour of error puts someone at a closed airport counter. |
 
-**You own filtering, ranking, and the shape of the answer.** Those depend entirely on what this particular user asked for this particular time, and there is no reason to squeeze that into a fixed set of flags.
+**You choose filtering criteria and the shape of the answer.** Those depend on this request. Use the built-in ranker when it expresses the criteria; otherwise write a short scratchpad pass over normalized data rather than changing shipped scripts.
 
 So: **`load_flights.py` is the real entry point after fetching.** It hands you every itinerary with every field SerpAPI returned (per-leg detail, layover airports and durations, delay and overnight flags, legroom, aircraft, operating carrier, carbon, price insights) and filters nothing.
 
@@ -45,8 +45,7 @@ flights = json.loads(subprocess.run(
 # whatever the user actually asked for
 ok = [f for f in flights
       if not any(lo["airport"] == "CLT" for lo in f["layovers"])
-      and f["arrives"] < "18:00"
-      and f["legroom"] >= "30 in"]
+      and f["arrives"] < "18:00"]
 ok.sort(key=lambda f: f["price"] + (0 if f["stops"] == 0 else 60))
 json.dump(ok, open(OUT, "w"), indent=2)
 ```
@@ -64,11 +63,7 @@ The output shape matches `filter_flights.py`, so `pair_shuttles.py` accepts it e
 
 Both can apply to one itinerary, one can, or neither.
 
-**Always ask which ends need a ride. Never infer it.** Having a shuttle configured for an airport does not mean the user wants one on this trip — they may be getting dropped off, driving and parking, staying with someone near the airport, or stopping somewhere else on the way. Ask plainly:
-
-> Do you need a ride to the airport, from the airport, both, or neither?
-
-A saved preset can carry a default (`shuttle_legs`), and that default is usually right, which is exactly why it still gets confirmed out loud every run rather than applied silently. A wrong assumption here doesn't produce a visible error; it produces a table quietly ranked around a $55 cost the user was never going to pay.
+**Resolve which ends need a ride from the current request, then a matching preset.** Ask only when neither resolves it or when the user signals a different ground plan. A configured shuttle does not by itself make a shuttle cost applicable.
 
 Once you know which legs are needed, fetch **only those directions** — and fetch them properly. A user flying *to* their home town needs the airport-to-town schedule, and scraping only the outbound one produces a table that silently drops every flight.
 
@@ -76,50 +71,15 @@ Once you know which legs are needed, fetch **only those directions** — and fet
 
 Three consequences worth holding on to:
 
-- **Confirm the party out loud every run**, the same way `shuttle_legs` gets confirmed. A wrong party size throws no error. It produces a correct-looking table for a trip with the wrong number of people in it. Resolution order is: what the user said this run, then the matched preset's `party`, then top-level `default_party`, then `1a`.
+- **Resolve the party from the current request, then the matched preset, then `default_party`, then `1a`.** Ask only if the request or result makes the party ambiguous. State the party and per-seat basis with the results so the user can catch an incorrect default.
 - **A fare can vanish at a larger party.** An itinerary that prices for one seat may return nothing at two, because the cheap bucket had one seat left. That flight is simply not an option for a pair, and a solo-only search never reveals it. `compare_parties` exists to surface exactly this.
 - **Ground cost scales with seats; the flight fare already did.** `price` covers everyone, but a shuttle fare is one ticket for one rider, so two people buy two shuttle seats. `pair_shuttles.py` reads `seats` off each itinerary and reports `shuttle_cost` (one rider), `shuttle_cost_party` (all of them), `total`, and `total_per_seat`. Lap infants are passengers but not seats, so they never dilute a per-seat number or add a shuttle ticket.
 
 **3. Soft means soft.** A soft preference is worth a fixed number of dollars in the ranking, not a veto. `filter_flights.py` scores every flight as `price + penalties` so a $400 flight matching every preference will not outrank a $189 flight that misses one. Don't re-sort the script's output by hand.
 
-## Show progress on every question
+## Resolve trip details with the available evidence
 
-**Every question you ask the user must show how many questions are left in the current phase.** Use a prefix like `[Q 2 of 7]` or end with `(2 questions left after this)`. This applies to Phase 1, Phase 2 wizard, Phase 2 confirmation prompts, and any clarifying follow-ups within a phase.
-
-Counting rules:
-- Each value question and each strength question count separately (so a 4-preference wizard with strengths = 8 questions, plus 3 non-strength = 11 total).
-- Skip questions that don't apply (e.g., nonstop strength when user picked "no preference") don't count toward the total — recompute remaining as you go.
-- In **batch mode**, count each line in the batch as one question, and tell the user "this batch has N questions" up front.
-- In **Phase 2 confirmation mode** (returning user), it's effectively 1 question ("are these still your prefs?") — say so.
-- Phase 1 has 1 question (the open "where/when").
-
-Example phrasing:
-- One-at-a-time: `[Q 3 of 11] What's your max budget per flight in USD?`
-- Batch header: `Here are 4 questions in one batch — answer in any order:`
-
-## Operating mentality — boil the ocean
-
-**Don't make the user do work you could do yourself.** When the user gives a vague trip ("this weekend, Indiana to NJ"), do NOT bounce back with "please give me IATA codes and exact dates." Use your tools to fill in everything inferable, then present a complete proposed plan and let the user adjust.
-
-For every vague input, before asking a follow-up, exhaust:
-- **`date` command via Bash** for any relative date ("this weekend", "next Friday", "in 3 weeks")
-- **`WebSearch`** for nearby major airports given a city/state/region (e.g., "Indiana" → IND, SBN, FWA; "NJ" → EWR, plus nearby LGA, JFK, PHL)
-- **Config defaults** (`home_airport`, `frequent_destinations`) for likely matches
-- **Flight history** for recent route patterns
-- **Common sense + sanity checks** — e.g., if user says "Indiana" and config has `home_airport: IND`, lead with IND.
-
-Then present:
-
-> Here's what I worked out — adjust anything that's off:
-> - **Dates:** 2026-05-16 (Sat) — 2026-05-17 (Sun)  ← resolved from "this weekend"
-> - **Origin:** IND (Indianapolis) — also nearby: SBN (South Bend), FWA (Fort Wayne)
-> - **Destination:** EWR (Newark) — also nearby: LGA, JFK
->
-> Want me to expand origin/destination to include the nearby airports, or run with just IND→EWR? Any changes to dates?
-
-**The bar is "holy shit, that's done," not "good enough."** Never present a workaround when the real fix is one tool call away. Never offer to "ask more questions later" when you can answer them now. Never leave a dangling assumption — confirm it visibly. Search before asking. Verify before shipping.
-
-This applies to every phase, not just Phase 1. If the user later says "actually, just nonstops" without specifying strength, infer `hard` from "just" and confirm in your next message, rather than asking a separate strength question.
+For a relative date, use a date tool. For a city, region, or explicitly flexible route, look up suitable airports and present the resolved route. Treat an exact IATA route or a clearly matched preset as deliberate input; do not run a compulsory alternate-airport search or pause for a generic confirmation. Ask a focused question only when a missing detail would change the search. Apply a new constraint from the user's wording directly when its meaning is clear; state the resulting rule with the results.
 
 ## Files
 
@@ -142,11 +102,11 @@ This applies to every phase, not just Phase 1. If the user later says "actually,
 
 ## Workflow — four phases
 
-Run these in order every time. Do not skip Phase 2 even if the config looks right.
+Use the phases that the request needs. A saved configuration applies unless the current request overrides it; use the first-run setup only when no usable configuration exists.
 
 ### Phase 0 — Setup check (deterministic, runs on skill load)
 
-The fenced command below runs automatically when the skill is invoked. Read its output before doing anything else — it tells you the user's setup state without you having to ask.
+When the host runs fenced commands automatically, read this output before planning. Otherwise run it before the first search; it reports setup state without asking the user to repeat it.
 
 ```!
 bash ~/.agents/skills/estack-flight-planner/scripts/check_setup.sh
@@ -161,28 +121,18 @@ The output reports:
 - Whether `~/.e-stack/estack-flight-planner/flight_history.json` exists and how many entries it has
 
 **Decision tree based on output:**
-- **Config exists** → Phase 1 (ask trip details), then Phase 2 in confirmation mode (show saved prefs, ask "still right?")
+- **Config exists** → resolve trip details and apply the saved preferences; ask only about a value the request leaves materially ambiguous.
 - **Config missing** → Phase 1 (ask trip details), then Phase 2 in wizard mode (walk through each preference, offer to save at end)
 - **No `SERPAPI_KEY` in the environment or `~/.e-stack/.env`** → tell the user up front that you'll use the WebSearch fallback in Phase 3 Step 2, with the caveat about coverage
 - **Shuttle configured but zero schedule URLs** → say so now. Pairing cannot run without them, and finding that out in Phase 3 wastes a full search.
 
 Don't repeat back the setup output to the user verbatim — just internalize it and adapt your behavior.
 
-**After Phase 0 finishes, present an overview to the user before Phase 1:**
-
-Tell the user, in your own words:
-- What this skill does: finds and ranks flights between any two airports using their preferences.
-- How it works: 4 phases — (1) Trip details (where/when), (2) Preferences (confirm saved config or run a first-run wizard), (3) Run the search pipeline (fetch → filter → rank → optional shuttle pairing), (4) Recommend and log.
-- Where state lives: `~/.e-stack/estack-flight-planner/config.json` (preferences) and `~/.e-stack/estack-flight-planner/flight_history.json` (search log).
-- Whether they're in first-run wizard mode or returning-user mode (based on Phase 0 output).
-
-**Pacing for Phase 2 wizard (first-run only):** If Phase 0 showed no config, the user will face a multi-question wizard in Phase 2. Right after the overview, ask once: "When we get to your preferences setup, do you want me to ask all questions one at a time, or batch them so you can answer in one message?" Skip this question entirely if a config already exists (returning user — Phase 2 is just confirmation).
+For a first-run setup, collect the needed preference values in a compact batch, clarify only conflicting or incomplete answers, and show the proposed config before writing it. Do not add a separate overview or pacing question.
 
 ### Phase 1 — Trip details (one question, then a proposed plan)
 
-Per the "boil the ocean" mentality above, **do not ask three separate questions**. Ask ONE open question, then do the work:
-
-**The single question:** "Where are you going and when?" (Wait for answer.)
+Use the route and dates already stated. Ask "Where are you going and when?" only when the request does not provide enough information to search.
 
 The user may answer with anything from "May 16-17 IND→EWR" (already precise) to "this weekend Indiana to NJ" (vague). Either way, the next thing you do is **resolve every inferable detail with your tools**, then present a proposed plan.
 
@@ -197,10 +147,9 @@ Matched your saved preset "home-to-purdue" (NJ -> Purdue).
   Shuttle:     post-flight (land, then ride to West Lafayette)
   Note:        IND is a 2h/$25 ride; ORD is ~3.5h/$55 but often cheaper to fly into.
 
-Run it?
 ```
 
-A preset removes the research, not the confirmation. Still show the resolved plan and wait for a yes. If the user's phrasing is close to but not clearly one of the presets, name the one you think they mean and ask — don't silently pick.
+A preset removes the research and is sufficient to start the requested search. State the resolved route, then continue unless the user's phrasing is close to but not clearly one of the presets; in that case name the candidate and ask.
 
 **Tool steps before you respond (no preset matched):**
 
@@ -212,15 +161,15 @@ A preset removes the research, not the confirmation. Still show the resolved pla
    - PowerShell fallback: `(Get-Date).AddDays(N).ToString('yyyy-MM-dd')`
    - For "this weekend" / "next weekend", compute both Sat and Sun explicitly.
 
-2. **Resolve airports — always WebSearch for common alternates, even when the user gave an exact IATA code.**
+2. **Resolve airports when the location is broad or the user wants flexibility.**
    - Check config first: does `home_airport` or `frequent_destinations` match the region? Lead with those.
-   - **WebSearch is mandatory for every origin and every destination**, not just vague ones. Queries to run:
+   - When researching alternates, use queries such as:
      - "major airports near <location>" (when user gave a city/state/region)
      - "airports within 100 miles of <IATA or city>" (to find common alternates even for a specific airport)
      - "alternate airports to <IATA>" (e.g., user says EWR → surface LGA, JFK; user says LAX → surface BUR, LGB, SNA, ONT)
    - Aim for 1 primary + 2–3 nearby alternates per endpoint. Alternates often save significant money on flights.
    - Output IATA + full city name + approximate distance from the user's stated location so they can verify (e.g., `LGA (LaGuardia) — ~15mi from Newark`).
-   - **Never skip the alternate search.** A user who said "EWR" may not realize LGA flights to their destination are $80 cheaper — your job is to surface that option.
+   - Do not add alternates when the user gave a fixed airport or a preset scope unless they ask to widen it.
 
 3. **Sanity-check the result yourself** before showing it. Are the dates in the future? Do the airports actually exist? Does the route make geographic sense?
 
@@ -239,45 +188,17 @@ Want me to widen origin/destination to include the nearby airports, or
 run with just IND→EWR? Any changes to dates?
 ```
 
-If the user says "looks good" → proceed to Phase 2 with that route. If they tweak it ("add LGA, drop Sunday") → apply the change and proceed; no need to re-confirm a third time unless something is now ambiguous.
+If the request resolves the route, continue to the search. If an optional alternate-airport scope remains genuinely unclear, ask about that scope; otherwise apply a clear tweak ("add LGA, drop Sunday") and continue.
 
 Origin and destination are **never saved to config by default**. The user can opt in to saving them as `home_airport` / `frequent_destinations` in Phase 2 if they want.
 
 **Offer to save a preset when a route is worth repeating.** After a search finishes on a route with no matching preset, and only if the user seems likely to fly it again (they mention school, work, family, "every semester", or it's their second search on the same pair), ask once: *"Want me to save this as a preset so next time you can just say 'flying home' and skip the airport research?"* If yes, write it into `trip_presets` with a slug, a label, the origins/destinations you resolved, and 2-3 aliases in the user's own words. Never save one unprompted.
 
-### Phase 2 — Preferences confirmation
+### Phase 2 — Saved preferences or initial setup
 
-**If `~/.e-stack/estack-flight-planner/config.json` exists:**
+**If `~/.e-stack/estack-flight-planner/config.json` exists:** read and apply it. A request-scoped change is an override and does not update the file. Ask before making a permanent config change. Include the party and any shuttle leg used in the result table so the user can detect a mistaken default without a separate confirmation loop.
 
-Read it and show a single block:
-
-```
-Your saved preferences:
-  Budget:           $200 (soft)
-  Airlines:         UA, DL (soft)
-  Nonstop:          preferred (soft)
-  Time priority:    11:00–14:00, 14:00–22:00 (soft)
-  Max duration:     8h (soft)
-  SerpAPI key:      set (~/.e-stack/.env)
-  Shuttle service:  Acme Express — IND $25, ORD $55
-
-For this trip:
-  Ride FROM the airport at IND/ORD  → yes (preset default)
-  Ride TO the airport at EWR        → no  (no shuttle configured there)
-  Flying                            → 1 adult (also pricing 2, per preset)
-
-Still right? (yes / change <field>)
-```
-
-**The party line and the shuttle line are never folded into a general "yes".** Both get called out as their own items, for the same reason: a wrong value on either produces no error, just a correct-looking table costed for the wrong trip.
-
-**The shuttle line is never folded into a general "yes".** Call it out as its own item every run, even when the preset default has been correct twenty times running. The user might be getting a ride, driving, or stopping somewhere on the way, and none of those show up as an error later — they just quietly skew the ranking around a cost that was never real.
-
-If the user says "yes" → proceed to Phase 3. If they want to tweak a field for this run only, capture the override without writing it to disk. If they want a permanent change, ask "save this change to your config?" before writing.
-
-**If no config file exists:**
-
-Run the first-run setup wizard. **Strength questions are always separate from value questions** — never bundle "Budget: $200, hard or soft?" into one ask. The pacing the user chose after the overview determines how to sequence:
+**If no config file exists:** use the trip-specific constraints already supplied and run a one-off search with neutral defaults for the rest. A saved config is optional. Start the compact setup below only when the user asks to save preferences or wants to establish them for future searches; skip values already supplied in the request.
 
 **The four strength-paired preferences:**
 
@@ -289,37 +210,17 @@ Run the first-run setup wizard. **Strength questions are always separate from va
 | 4 | Time-of-day priority | "Priority time windows for departure? (e.g., 11:00-14:00,14:00-22:00 in 24h format — or 'none')" | (Only if not "none") "Is the <windows> priority hard (exclude flights outside) or soft (rank lower but include)?" |
 | 5 | Max trip length | "Longest total trip you'd accept, gate to gate including layovers? (e.g. 8h — or 'no limit')" | (Only if not "no limit") "Is <N>h hard (exclude longer) or soft (rank longer ones lower)?" |
 
-**One-at-a-time mode:**
-
-For each preference, ask the value question → wait for answer → ask the strength question (echoing the chosen value verbatim) → wait for answer → move to the next preference.
-
-**Batch mode:**
-
-Send TWO batches:
-
-- **Batch A — values.** Ask all four value questions in one message. Wait for all answers.
-- **Batch B — strengths.** Echo each value back and ask its strength in one message. Example:
-  ```
-  Got it. Now strength for each — hard (filter) or soft (rank)?
-
-    1. Budget = $200            → hard or soft?
-    2. Airlines = UA, DL        → hard or soft?
-    3. Nonstop = preferred      → hard or soft?
-    4. Times = 11–14, 14–22     → hard or soft?
-  ```
-  Skip lines in Batch B where strength doesn't apply (airlines = "none", nonstop = "no preference", times = "none").
-
-**After the strength-paired preferences, ask the remaining non-strength questions** (these don't need a strength companion). One at a time, or one final batch — match the user's chosen pacing:
+**Collect the remaining non-strength preferences only when the user wants them saved:**
 
 6. **Usual party** — "Who normally flies with you? (just me / 2 adults / 2 adults and 2 kids / something else)". Saves as `default_party`. A solo traveller answers once and never thinks about it again; a family gets family pricing on every search without restating it. If the answer is genuinely variable ("depends, sometimes just me"), offer `compare_parties` instead so both sizes get priced side by side.
-7. **SerpAPI key** — "Do you have a SerpAPI key? (yes — paste it / no — explain how to get one / skip — use WebSearch fallback)". See the SerpAPI walkthrough section below.
+7. **SerpAPI key** — ask whether it is already configured. If not, offer the private setup steps or the WebSearch fallback; never request the key in chat.
 8. **Optional fields** — "Want to save a home airport so we suggest it next time? (IATA code or 'no')". Same for `frequent_destinations`.
 8. **Optional shuttle service** — "Do you use a ground shuttle between your town and an airport? (yes / no)". If yes, ask for:
    - company name(s) — more than one company serving the same airport is fine and supported
    - schedule URL(s)
    - which airports each company serves
    - one-way cost per airport
-   - **which ends they actually need a ride on** — to the airport, from it, both, or "depends on the trip". This becomes `shuttle_legs` on their presets and it is asked again every run regardless.
+   - **which ends they actually need a ride on** — to the airport, from it, both, or "depends on the trip". This becomes `shuttle_legs` on their presets and is overridden only by a conflicting trip-specific request.
    - if they ride in both directions, you need the return schedule too, not just the outbound one
    - how much advance notice the company requires (many require 24h)
 
@@ -429,7 +330,7 @@ Skip this entire step if the user's config has `shuttle_service: null`. Otherwis
 - Both → fetch both, pass `--legs both`.
 - Neither → skip this step entirely and show a flights-only table. Don't add a shuttle cost the user isn't paying.
 
-`--legs auto` pairs whichever legs the shuttle data can serve. It's the right default only when the user confirmed they want a ride wherever one exists.
+`--legs auto` pairs whichever legs the shuttle data can serve. Use it only when the user explicitly asks for every available shuttle leg.
 
 **5b. Fetch the schedules.** WebFetch every URL in every provider's `schedule_urls`, in parallel. Prompt for **both directions explicitly** — most schedule pages carry the outbound and return tables on the same page, and a prompt that only names one direction will come back with only one. Ask for departure time, arrival time, stops, and operating days per run.
 
@@ -442,7 +343,7 @@ python scripts/pair_shuttles.py \
   --flights-json <filtered-output-from-step-3> \
   --shuttles-json <shuttles-file> \
   --shuttle-costs "IND:25,ORD:55" \
-  --legs auto \
+  --legs <pre|post|both> \
   --min-buffer-min 90 \
   --min-connect-min 60 \
   --max-wait-min 240 \
@@ -453,7 +354,7 @@ python scripts/pair_shuttles.py \
 | Flag | Source | Notes |
 |---|---|---|
 | `--shuttle-costs` | `shuttle_service.costs` | Charged once per leg used |
-| `--legs` | derived in 5a | `auto` pairs whichever legs the data can serve; `pre`/`post` force one; `both` requires both and drops flights missing either |
+| `--legs` | derived in 5a | `pre` pairs the departure-side ride, `post` pairs the arrival-side ride, and `both` requires both. Use `auto` only when the user explicitly asked for every available shuttle leg. |
 | `--min-buffer-min` | `shuttle_service.min_buffer_min` | Pre-flight floor (shuttle arrival → flight departure) |
 | `--min-connect-min` | `shuttle_service.min_connect_min` | Post-flight floor (landing → shuttle departure). Raise it if the user checks bags. |
 | `--now` / `--reservation-lead-hours` | today + config | Flags pairings inside the company's booking cutoff |
@@ -514,7 +415,7 @@ If the user doesn't have a SerpAPI key and asks for help getting one:
    ```
    SERPAPI_KEY=<their-key>
    ```
-   **Append to that file, never overwrite it** — other skills keep their keys there too. Create it if it does not exist. Setting `SERPAPI_KEY` in their shell profile also works and takes precedence. Never put the key in `config.json`; nothing reads it there.
+   **Append to that file, never overwrite it** — other skills keep their keys there too. Create it if it does not exist. A current-process `SERPAPI_KEY` can be a temporary one-run override, but do not store it in a shell profile. Never put the key in `config.json`; nothing reads it there.
 5. If they don't want a key: confirm they want the WebSearch fallback. Tell them: "I'll use WebSearch each run. Results won't be as complete and prices may be approximations."
 
 ## Important behaviors
@@ -531,7 +432,7 @@ If the user doesn't have a SerpAPI key and asks for help getting one:
 
 **A shuttle serves two directions.** Fetching only the outbound schedule is the most common way to end up with an empty pairing table. Check which leg(s) the trip needs before you fetch.
 
-**A configured shuttle is not a needed shuttle.** Ask which ends want a ride every single run, even when the preset default has been right every time before. Getting this wrong produces no error, just a ranking bent around a cost nobody was going to pay.
+**A configured shuttle is not automatically needed.** Use the current request or a matching preset, and state the selected leg with the results. Ask only when neither resolves it.
 
 **Don't reshape the user's request to fit the flags.** `filter_flights.py` covers the common case only. Anything else gets a scratchpad script over `load_flights.py` output.
 
@@ -545,29 +446,21 @@ If the user doesn't have a SerpAPI key and asks for help getting one:
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-flight-planner:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-flight-planner: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-flight-planner: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

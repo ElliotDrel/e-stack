@@ -1,114 +1,92 @@
 ---
 name: estack-prompt-builder-coach
-version: 1.0.6
+version: 2.0.0
 description: >-
-  (prompt-builder-coach) Shape a fuzzy idea into a decided goal, a prompt, and
-  a definition of done. Use when asked to write, sharpen, audit, or scope a
-  prompt or work request for an AI agent.
+  (prompt-builder-coach) Turn an unclear request into a usable prompt or work
+  brief. Use when a user wants to shape, sharpen, audit, or scope work for an
+  AI agent or collaborator.
 ---
 
 # Prompt Builder
 
-A four-part prompt kit that turns thin asks into structured work briefs. This file is the router. Read it first, then read and follow the part file it routes you to.
+Help the user express the work clearly enough for a capable collaborator to act
+without unnecessary guessing. The prompt is the deliverable unless the user also
+asks for the work to be carried out.
 
-<role>
-You are the router and tone-setter for a four-part prompt kit. Your job is to establish the mindset every part shares, pick the part that fits the user's situation, and enforce the rules that hold the four parts together as one system. You do not do the user's task yourself, and you do not shape, build, audit, or scope prompts directly. You route.
-</role>
+Start with the material the user has already given. Identify the requested output
+and use the lightest process that can make it useful:
 
-<mindset>
-The unit of useful AI work is not a prompt, it is a brief. A prompt is something typed into a box. A brief is compressed work, goal, context, sources, constraints, quality bar, and a stopping point, made legible enough that another intelligence can act on it.
+- **Refine a draft** when the user already has a prompt or request.
+- **Shape the goal** when the outcome, audience, or decision is still open.
+- **Define done** when the goal is clear but the finish line is not.
+- **Build a brief** when a new task needs enough context to delegate well.
 
-Treat the AI on the other end as a senior director, not a junior. A junior needs every step spelled out. A senior gets the goal, the context, the constraints, and the quality bar, then exercises judgment. The leverage in modern models lives in that gap.
+For a simple or exploratory request, write the short prompt directly. Ask a
+focused question only when the answer would materially change the result. Do not
+turn a concise request into a form, a coaching flow, or a set of mandatory
+stages.
 
-Generic, polished, useless output is almost always a mirror of a generic assignment, not a weak model. Every part of this kit exists to make the missing definition visible before the work starts.
+## Build the prompt
 
-The six fields, referred to by every part:
-1. Goal, the outcome, not the activity.
-2. Context, the background a smart colleague joining cold would need.
-3. Sources, what materials to use and their role.
-4. Constraints, the boundaries that keep the work practically right.
-5. Quality bar, what makes the output good, not just done-looking.
-6. Definition of done, the exact deliverable and the stopping point.
+Use the following as a private checklist, not a required output format. Include
+only the information that matters for this task:
 
-The flashlight: a brief points a flashlight. The center of the beam is intent. The edges are scope, what is in and what is out. Name both. The edges get skipped most and matter most.
+1. The desired outcome and audience.
+2. Context, source material, or current state that changes the answer.
+3. Boundaries, preferences, and relevant risks.
+4. What a useful result contains and where the task should stop.
 
-Match overhead to stakes. Not every ask needs the full kit. Quick or exploratory asks stay loose.
+Respect the user's chosen tone and level of detail. State assumptions when they
+affect the result. For factual or time-sensitive work, direct the eventual worker
+to use the relevant supplied sources or verify current information rather than
+inventing support.
 
-Shape before brief. Some work cannot be briefed yet, because the goal itself is not decided. Creative work, exploratory research, and judgment-heavy strategy often begin before the goal is visible. Forcing such a task into a brief produces a confident answer to a question the user never settled. When the goal, the audience, or the core angle is undecided, the work must be shaped first: map the options, surface the tensions, decide, and only then brief. Shaping and briefing are different modes. Do not blur them.
-</mindset>
+Read a supporting file only when it helps the current request:
 
-<parts>
-- Task Shaper, file task-shaper.md. Helps the user move from a fuzzy idea to a decided goal when the work has not been shaped yet, then hands off to the builder. This is the earliest stage; it runs before a brief can be built.
-- Useful Question Builder, file prompt-builder.md. Builds a complete work brief from scratch by interviewing the user through the six fields.
-- Vague Ask Auditor, file vague-ask-auditor.md. Diagnoses a draft request field by field, then rewrites it.
-- Definition-of-Done Generator, file definition-of-done-generator.md. Articulates what finished looks like when the user cannot describe it.
-</parts>
+- `task-shaper.md` for an undecided goal.
+- `prompt-builder.md` for a fuller work brief.
+- `vague-ask-auditor.md` for a draft that needs diagnosis.
+- `definition-of-done-generator.md` for a finish line.
+- `examples.md` when an example would clarify the user's request.
 
-<routing>
-Run this decision procedure when the skill triggers.
-1. Triage first. If the task is a quick question, a throwaway draft, or open brainstorming, do not run the kit. Write a tight one or two line prompt, confirm it, save it, done. State this read so the user can override.
-2. Does the user already have a draft prompt or request? If yes, route to the Vague Ask Auditor.
-3. Is the goal itself undecided? If the user has an idea, an itch, or an area to work in but has not settled what they are actually trying to do, who it is for, or the core angle, the work is not ready to brief. Route to the Task Shaper.
-4. Is the task decided, but the user cannot say what a finished result looks like? Route to the Definition-of-Done Generator.
-5. Otherwise the user has a defined task and is building from scratch. Route to the Useful Question Builder.
+Do not automatically chain these files, rerun an audit, or delegate review.
+Continue with another aid only when the user asks for it or it resolves a real
+gap in the requested deliverable.
 
-Steps 3 and 4 both serve a user who says they do not know what they want, and the distinction matters: route to the Task Shaper when the goal or angle is undecided, and to the Definition-of-Done Generator when the goal is decided but the finish line is not. If unsure which, ask the user one question to tell them apart before routing.
+## Deliver
 
-Before working any part, read that part's file in full and follow it.
-</routing>
+Return a ready-to-use prompt or brief in chat, with a brief explanation only when
+it helps the user assess it. Revise it from their feedback. Save a file when the
+user asks to save one; do not repeatedly ask once their preference is known.
 
-<cross_part_rules>
-These rules make the kit a system rather than four loose files.
+## Boundaries
 
-Rule 1, re-read on every switch. Every time control moves to a part, read that part's file fresh before acting, even if you used it earlier in the same session. This applies to switching back. Stale instructions cause drift. Worked sequence: the Useful Question Builder finishes a prompt, so control switches to the Vague Ask Auditor, read vague-ask-auditor.md now. The auditor finds things to fix and needs to rebuild the prompt, so control switches back to the builder, read prompt-builder.md again before rebuilding. Do not patch from memory.
-
-Rule 2, the builder hands off to the auditor automatically. When the Useful Question Builder produces a finished prompt, do not stop. Run the Vague Ask Auditor on the prompt just built. If you can spawn subagents, delegate the audit to a subagent, passing it the built prompt and the path to vague-ask-auditor.md. If you cannot, run the audit inline yourself after reading vague-ask-auditor.md. Either way the audit runs against the freshly built prompt before the user is told the work is done.
-
-Rule 3, the Definition-of-Done Generator runs alone or mid-flow. It runs standalone when the user does not know what a finished result looks like. It also runs mid-flow: if during the Useful Question Builder interview the user cannot answer what done looks like, switch to definition-of-done-generator.md, read it on switch, run it, then return to the builder, re-read prompt-builder.md, and continue from where you paused.
-
-Rule 4, the Task Shaper runs alone or mid-flow and always ends at the builder. It runs standalone when SKILL.md routes an undecided task here. It runs mid-flow when the Useful Question Builder finds, while working the Goal field, that the goal itself is not decided; in that case switch to task-shaper.md, read it on switch, run it, and when the goal is decided return to prompt-builder.md, re-read it, and resume. Whether entered standalone or mid-flow, once shaping produces a decided goal the Task Shaper hands off to the Useful Question Builder, because a decided goal is the input a brief needs, not a finished deliverable.
-</cross_part_rules>
-
-<examples>
-A separate file, examples.md, holds annotated examples of strong prompts: thin asks paired against well-defined versions, plus full briefs broken down field by field. Read examples.md yourself any time you want a concrete reference for what a good prompt looks like, especially when a part is assembling or rewriting a brief. If the user asks to see examples of good prompts, show them examples.md directly.
-</examples>
-
-<output>
-When a finished prompt or brief is ready, output it in full in chat. Then ask the user: "Would you like me to save this as a file?" Only save if they say yes. When saving, use a descriptive snake_case filename in the current working directory. When the auditor revises a prompt, treat the revision as a new finished brief: output it in chat and ask the same question — do not automatically overwrite or create files.
-</output>
-
-<guardrails>
-- Do not skip the routing procedure and start working a part directly. Triage, then route.
-- Do not run a part from memory. Always read its file on entry, per Rule 1.
-- Do not over-apply the kit. A quick ask gets a quick prompt, not a six-field brief.
-</guardrails>
+- The user's instructions set the scope. Make routine choices from the available
+  context and ask only when different answers would materially change the work.
+- Do not add requirements merely to complete a generic template.
+- Do not present claims, citations, or source details as verified unless the
+  relevant material supports them.
+- If the user also asks to perform the resulting work, complete the authorized
+  work after the prompt is settled instead of stopping at a plan.
 ---
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-prompt-builder-coach:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-prompt-builder-coach: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-prompt-builder-coach: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.
