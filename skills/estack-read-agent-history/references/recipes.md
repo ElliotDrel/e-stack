@@ -8,7 +8,7 @@ These recipes use the CLI where a mode fits the step exactly. When a step needs 
 
 In all examples, `$PY` refers to:
 ```
-~/.claude/skills/estack-read-agent-history/scripts/read_transcript.py
+~/.agents/skills/estack-read-agent-history/scripts/read_transcript.py
 ```
 
 ---
@@ -358,7 +358,7 @@ Most real questions don't map to a canned mode ("which sessions edited files und
 # <scratchpad>/query.py
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path.home() / ".claude/skills/estack-read-agent-history/scripts"))
+sys.path.insert(0, str(Path.home() / ".agents/skills/estack-read-agent-history/scripts"))
 from lib import parser, paths, search, subagents, tools, codex
 
 since = paths.parse_timespec("7d")

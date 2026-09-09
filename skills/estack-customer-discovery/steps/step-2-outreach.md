@@ -1,10 +1,8 @@
 # Step 2: Outreach
 
-## Before anything else — BLOCKING REQUIREMENT
+## Use the outreach reference proportionately
 
-<CRITICAL>
-You MUST read `references/02-outreach.md` BEFORE responding to the user. Do NOT skip this. This file contains the actual frameworks and instructions — without reading it, your output will be generic and wrong.
-</CRITICAL>
+Consult `references/02-outreach.md` for a full outreach strategy, message sequence, or an unfamiliar outreach problem. For a supplied draft or direct message request, use the relevant framework without making the user wait through the full playbook.
 
 ## What this step accomplishes
 
@@ -14,13 +12,13 @@ Help the user craft outreach messages that actually get responses. By the end, t
 
 ### Start with warm intros
 
-Before touching cold outreach, ask: who do they already know that could introduce them to their target customer? A mutual connection asking on their behalf will always outperform cold. Help them think through their network — friends, classmates, coworkers, LinkedIn connections, advisors.
+Prefer a warm introduction when it is available and relevant. Do not delay a requested cold draft to inventory the user's network; ask about warm paths only when choosing the outreach channel or sequence.
 
-If they're hesitant, name it: hesitation to reach out is usually fear of rejection in disguise. The fix is sending more messages, faster.
+If they are hesitant, treat the cause as unknown. Ask what is making outreach hard only when that answer changes the help they need; they may need a clearer target, a safer channel, more confidence in the ask, or simply a draft to revise. Recommend a pace they can sustain rather than diagnosing fear of rejection or pushing volume.
 
 ### Understand their context
 
-Before writing messages, ask:
+Use the context already supplied. Ask only for a missing detail that would make the requested message unusable:
 - Who specifically are they reaching out to? (title, company type, context)
 - What's the problem they want to discuss? (from **Step 1: Strategy & Targeting** if they did it)
 - What's their angle? (student, founder, researcher — this shapes how they position themselves)
@@ -34,11 +32,11 @@ Build messages using the formula from the reference:
 
 Apply the relevant tricks from the reference (no-oriented close, scarcity, specific time, tiny ask, etc.) — but don't force all 12 into every message. Pick what fits naturally.
 
-Generate 2-3 variants so the user can pick and test.
+Draft one strong variant by default. Generate 2-3 genuinely different variants when the user asks to test alternatives or needs a sequence.
 
 ### LinkedIn version
 
-If they're using LinkedIn, create a version under 300 characters. Every word counts.
+If they are using LinkedIn, adapt the format to the current product constraint and the recipient; verify a specific character limit when it matters.
 
 ### Review together
 
@@ -53,9 +51,9 @@ If the user's draft or instinct includes any of these, flag it:
 - Anything that looks like sales
 - Multiple value props crammed in
 
-## Deliverable
+## Durable deliverable
 
-Offer to produce an **Outreach Playbook** — a ready-to-use document with every message the user needs to start booking interviews.
+When the user asks for a sequence or playbook, produce an **Outreach Playbook** — a ready-to-use document with every message they need to start booking interviews.
 
 The playbook should include:
 - **Warm intro request template:** A message the user can send to mutual connections asking for an introduction. Should explain who they want to talk to and why, making it easy for the connector to forward.
@@ -68,4 +66,4 @@ Write the messages ready to copy-paste — the user should be able to send them 
 
 ## Next step
 
-When this step is done, offer to continue to **Step 3: Interview Execution** — building a tailored interview guide with the right questions.
+When the user asked for the broader flow, continue to **Step 3: Interview Execution**. Otherwise, mention it only when it is the useful next move.

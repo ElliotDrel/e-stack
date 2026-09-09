@@ -1,10 +1,8 @@
 # Step 1: Strategy & Targeting
 
-## Before anything else — BLOCKING REQUIREMENT
+## Use the strategy reference proportionately
 
-<CRITICAL>
-You MUST read `references/01-strategy-and-targeting.md` BEFORE responding to the user. Do NOT skip this. This file contains the actual frameworks and instructions — without reading it, your output will be generic and wrong.
-</CRITICAL>
+Consult `references/01-strategy-and-targeting.md` when the request needs its assumptions, segment, or job-to-be-done framework. A supplied strategy brief or narrow question can be assessed directly; load the source detail needed to ground the answer without turning it into an orientation.
 
 ## What this step accomplishes
 
@@ -14,13 +12,13 @@ Help the user get clear on who they're talking to, what they're testing, and wha
 
 ### Understand their idea
 
-Start by asking the user to describe their business idea or problem in plain language. Don't let them pitch you — ask them to tell you who has the problem and why it matters. Listen for whether they're talking about a real person or a vague abstraction.
+Use the business idea or problem already supplied. If the problem, customer, or stakes are missing, ask for the missing detail in plain language. Listen for whether the user is talking about a real person or a vague abstraction.
 
 If they say something like "everyone could use this" or "any business would want this," that's your signal to push for specificity. Help them narrow down.
 
 ### Map assumptions
 
-Walk the user through the assumption-mapping questions from the reference doc. These are the big ones:
+For a full strategy brief, work through the assumption-mapping questions from the reference doc. For a narrower request, use only the questions that change the requested answer:
 
 - Who is your target customer?
 - What problem do they want to solve?
@@ -32,13 +30,13 @@ Walk the user through the assumption-mapping questions from the reference doc. T
 - Who is your primary competition and why will you beat them?
 - What assumption, if proven wrong, would kill this?
 
-Help them answer each one. When they're done, flag which assumptions are both high-impact AND highly uncertain — those become interview priorities.
+Help them answer the relevant questions. Flag assumptions that are both high-impact and highly uncertain; those become interview priorities.
 
 ### Define the customer segment
 
 Push them to get specific. Not "marketing managers" — try "marketing managers at 50-200 person B2B SaaS companies who own the content pipeline and report to the VP of Marketing."
 
-Help them define three audiences:
+When relevant, distinguish these audiences:
 1. Typical customer at scale
 2. Early adopter (feels the pain acutely, interview first)
 3. Critical distribution or fulfillment partners
@@ -61,9 +59,9 @@ Run the problem through the three-part test:
 
 If any of these fail, flag it honestly. Also identify what the customer does today instead — existing alternatives and DIY workarounds are strong signals.
 
-## Deliverable
+## Durable deliverable
 
-Offer to produce a **Discovery Strategy Brief** — a single document the user can reference throughout their entire discovery process. This is the foundation everything else builds on.
+When the user asks for a strategy brief, or when a durable plan is the natural result of a full strategy pass, produce a **Discovery Strategy Brief** — a single document the user can reference throughout their discovery process.
 
 The brief should include:
 - **Assumption map:** All 9 questions answered, with each marked as confirmed / uncertain / high-risk. Highlight the high-impact + high-uncertainty ones — these drive the interviews.
@@ -77,4 +75,4 @@ Write this as a clean, scannable document the user can share with teammates or r
 
 ## Next step
 
-When this step is done, offer to continue to **Step 2: Outreach** — crafting messages to reach the people they've just identified.
+When the user asked for the broader flow, continue to **Step 2: Outreach**. Otherwise, mention it only when it is the useful next move.

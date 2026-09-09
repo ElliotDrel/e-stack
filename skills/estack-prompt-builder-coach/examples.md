@@ -1,8 +1,10 @@
 # Examples of Good Prompts
 
-Reference material for the prompt-builder skill. Read this any time you want a concrete picture of what a strong prompt looks like, and show it to the user if they ask to see examples.
+Reference material for the prompt-builder skill. Read it when an example would
+help clarify the user's task, and show it when they ask for examples.
 
-The pattern to notice: the good version is longer, but length is not the point. It is longer because it contains the actual shape of the work, the goal, the context, the sources, the constraints, the quality bar, and the stopping point.
+The pattern to notice: a useful request includes the details that change the
+work. It may be longer or shorter than the original; length is not the goal.
 
 ## Part 1: Thin ask vs good prompt
 
@@ -60,7 +62,8 @@ The better version states the outcome, not the activity.
 
 ## Part 2: Full briefs
 
-These are complete prompts that name every field. They are the target output of the Useful Question Builder.
+These are fuller prompts for work where the extra context changes the result.
+They are examples, not a required format.
 
 ### Research brief for an article
 
@@ -98,4 +101,5 @@ Field by field:
 
 ## The takeaway
 
-Across all of these, the good prompt is not a clever phrasing trick. It is the work made legible: the goal stated as an outcome, the context that changes the answer, the sources named, the constraints drawn, the quality bar shown, and the stopping point set. Build toward that shape.
+Across all of these, the useful prompt makes the work legible: it states the
+outcome and adds the context, sources, boundaries, and finish line that matter.

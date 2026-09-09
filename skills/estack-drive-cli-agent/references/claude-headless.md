@@ -22,6 +22,7 @@ Note on framing: Anthropic now documents `claude -p` as the CLI form of the Agen
 | `--json-schema '<schema>'` | With `--output-format json`: validated result in `.structured_output`. Invalid schema → immediate exit with `Error: --json-schema is not a valid JSON Schema` |
 | `--allowedTools "<list>"` | Auto-approve tools/rules — `"Bash,Read,Edit"` or scoped `Bash(git diff *)` (note the space before `*`) |
 | `--disallowedTools "<list>"` | Bare name removes the tool from context entirely; scoped rule denies matching calls only |
+| `--tools "<list>"` | Selects the built-in tool set available to the run (`""` disables all). This is tool availability, not automatic approval; use `--allowedTools` to pre-approve allowed actions. |
 | `--permission-mode <mode>` | `default` (alias `manual`), `acceptEdits`, `plan`, `auto`, `dontAsk`, `bypassPermissions` |
 | `--dangerously-skip-permissions` | = `bypassPermissions`; refuses root/sudo outside a sandbox |
 | `--continue, -c` / `--resume, -r <id>` / `--session-id <uuid>` / `--fork-session` | Session continuation |
@@ -32,7 +33,7 @@ Note on framing: Anthropic now documents `claude -p` as the CLI form of the Agen
 | `--max-turns <n>` | Turn cap, print mode only; exits with error at limit |
 | `--max-budget-usd <x>` | Spend cap, print mode only |
 
-**There is no `--tools` flag.** Skills work in `-p` (put `/skill-name` in the prompt); interactive-only commands like `/login` don't.
+Skills work in `-p` (put `/skill-name` in the prompt); interactive-only commands like `/login` don't. Verify exact tool names with the installed `claude -p --help` output because the built-in set evolves independently of permission rules.
 
 ## Auth — subscription-only rules
 
@@ -61,7 +62,7 @@ Note on framing: Anthropic now documents `claude -p` as the CLI form of the Agen
 
 ## Timeouts / process behavior
 
-- No whole-process timeout — enforce externally (Bash-tool `timeout` or `run_in_background`). Signal-kill behavior on partial output/session state is undocumented.
+- The caller owns the whole-process deadline. Use the foreground timeout or the host's asynchronous task facility as appropriate. Signal-kill behavior on partial output/session state is undocumented.
 - Internal knobs: `BASH_DEFAULT_TIMEOUT_MS` (2 min), `BASH_MAX_TIMEOUT_MS` (10 min), `API_TIMEOUT_MS` (10 min). Background Bash tasks are killed ~5s after the final result; background subagents get `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS` (10 min default, `0` = unlimited).
 - Piped stdin is capped at 10 MB — for larger input, write a file and reference the path in the prompt.
 

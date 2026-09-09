@@ -1,86 +1,97 @@
-## Publishing
+# Publishing
 
-e-stack publishes to npm via GitHub Actions when a git tag matching `v*` is pushed (`.github/workflows/publish.yml`).
-
-The shared startup updater is the exception to the Claude-only hook location: its core and Claude/Codex adapters install to `~/.agents/hooks/`, while `bin/install.cjs` registers the appropriate adapter in `~/.claude/settings.json` and `~/.codex/hooks.json`. Neither host auto-discovers hooks from `~/.agents/`; the explicit host registrations remain required.
-
-The package ships both `skills/` and `hooks/` (whitelisted in `package.json`'s `files` field). Skills install to `~/.agents/skills/estack-*/` (symlinked from `~/.claude/skills/estack-*/`). Any agent that reads `~/.agents/skills/` — including OpenClaw, Codex, ChatGPT, and Cursor — will pick up skills automatically with no extra config. Hooks are Claude Code-only: they install to `~/.claude/hooks/` and get registered in `~/.claude/settings.json` by `bin/install.cjs`. Do not try to route hooks through `~/.agents/`.
-
-### How to publish
+E-Stack publishes through `.github/workflows/publish.yml` when a `v*` tag is
+pushed. A regular commit or PR does not publish a package.
 
 ```bash
-npm version patch        # bumps package.json, makes a commit, creates v1.0.x tag
-git push --follow-tags   # pushes commit + tag — the tag triggers publish
+npm version patch
+git push origin HEAD refs/tags/vX.Y.Z
 ```
 
-Use `npm version minor` or `npm version major` for non-patch bumps.
+Use `minor` or `major` when the release warrants it. `npm version` changes
+`package.json`, creates a commit, and creates the tag; pushing the intended tag
+starts the release. Replace `vX.Y.Z` with the created version. Do not run either
+command until the release is ready and the user has explicitly approved
+publication.
 
-### How it works
+## Release checks
 
-1. `npm version patch` updates `package.json`, makes a commit (e.g. `1.0.16`), and creates a matching `v1.0.16` tag locally.
-2. `git push --follow-tags` pushes both the commit (to `main`) and the tag.
-3. The tag push triggers the workflow.
-4. Workflow verifies the tag matches `package.json` version, verifies per-skill/hook versions were bumped for any content that changed since the previous release (`node scripts/check-versions.cjs` — run it locally with `--fix` to auto-bump before tagging), verifies README.md and AGENTS.md list every skill and hook (`node scripts/check-docs.cjs`), verifies skill names, frontmatter, and self-references are correct (`node scripts/check-skill-name.cjs --all` — see `docs/skill-authoring.md` → "Skill Name Validation"), then publishes to npm using OIDC Trusted Publishing.
+The publish workflow checks that the tag matches `package.json` and runs the
+repository's version, inventory, name, path, and test gates. Run the applicable
+checks during release preparation so failures are found before the tag exists.
+See `.agents/skills/manage-e-stack/steps/prep.md` for the current preparation
+workflow.
 
-Regular commits to `main` (no tag) do NOT trigger a publish.
+## Installation architecture
 
-### Why tag-triggered (security)
+Packaged skills install under `~/.agents/skills/estack-*/`; Claude may consume
+them through its linked skill location. Most hooks are Claude Code integrations
+registered through `~/.claude/settings.json`. The shared startup updater uses
+host-specific adapters and registrations, including the Codex adapter. Follow
+the installer and the relevant hook code for the actual host path; do not assume
+every hook has the same installation location.
 
-- The workflow has **no write access** to the repo (`contents: read` only) — it cannot push anything back.
-- The checkout step uses `persist-credentials: false`, so even the read-only token isn't left in `.git/config` during the job.
-- Only the repo owner can push to `main` (branch protection requires PRs from everyone else).
-- Publishing requires deliberate action (`npm version` + tag push) — it can't be smuggled into a regular PR.
-- A version-mismatch guard in the workflow refuses to publish if the tag (`v1.0.16`) doesn't match `package.json` (`1.0.16`).
-- An attacker would need to (a) merge a malicious PR (blocked: only the owner can merge) AND (b) cut a release tag (blocked: only the owner can push to `main`).
+`node bin/install.cjs` previews installation by default. A live install can
+replace local files and edit host settings, so show its real diff and obtain
+approval before using `--install`.
 
-### Repo configuration (security baseline)
+## Configuration baseline and live verification
 
-These are the settings that make the model above hold. If something here drifts, the security argument weakens.
+The settings below are the intended security baseline, recorded from prior
+repository audits. They are not proof of the current GitHub or npm configuration.
+Before relying on one, inspect it with an authorized, read-only query and report
+whether it was verified, unavailable, or differs from the baseline. Do not change
+repository, npm, or security settings as part of a health check.
 
-**Branch protection on `main`** (`gh api repos/ElliotDrel/e-stack/branches/main/protection`):
+- `main` is expected to require pull requests for non-admin contributors, retain
+  linear history, and block force pushes and deletion.
+- GitHub Actions is expected to use read-only repository contents plus the OIDC
+  permission required for npm Trusted Publishing.
+- The publish workflow is expected to avoid persisted checkout credentials.
+- npm is expected to use Trusted Publishing and to keep token-based publishing
+  disabled outside the documented manual fallback.
 
-| Setting | Value | Why |
+The last verified baseline recorded these concrete values:
+
+| Area | Setting | Expected value |
 |---|---|---|
-| `required_pull_request_reviews` | enabled (0 approvals required) | Non-admins must open a PR — they cannot push directly |
-| `enforce_admins` | `false` | Owner (admin) bypasses, so direct pushes for releases still work |
-| `required_linear_history` | `true` | No merge commits on `main` — keeps history clean and rebase-only |
-| `allow_force_pushes` | `false` | No history rewrites on `main` |
-| `allow_deletions` | `false` | `main` cannot be deleted |
-| `restrictions` | `null` | (Personal repos can't use push allowlists — admin bypass covers it) |
+| Branch protection | `required_pull_request_reviews` | enabled, 0 approvals required |
+| Branch protection | `enforce_admins` | `false` |
+| Branch protection | `required_linear_history` | `true` |
+| Branch protection | `allow_force_pushes` / `allow_deletions` | `false` / `false` |
+| Repository | `allow_merge_commit` | `false` |
+| Repository | `allow_squash_merge` / `allow_rebase_merge` | `true` / `true` |
+| Repository | `delete_branch_on_merge` | `true` |
+| Actions | `default_workflow_permissions` | `read` |
+| Repository security | vulnerability alerts, Dependabot security updates, secret scanning, push protection | enabled |
 
-**Repo settings** (`gh api repos/ElliotDrel/e-stack`):
+| Publish control | Expected value |
+|---|---|
+| npm Trusted Publisher | `ElliotDrel/e-stack` with `publish.yml` |
+| npm publishing access | Require 2FA and disallow tokens |
+| Workflow permissions | `id-token: write`, `contents: read` |
+| Checkout | `actions/checkout@v6`, `persist-credentials: false` |
+| Node setup | `actions/setup-node@v6` with Node 24 |
 
-| Setting | Value | Why |
-|---|---|---|
-| `allow_merge_commit` | `false` | PR merge UI only offers Squash or Rebase — supports linear history |
-| `allow_squash_merge` | `true` | Allowed |
-| `allow_rebase_merge` | `true` | Allowed |
-| `delete_branch_on_merge` | `true` | PR branches auto-delete after merge |
-| `default_workflow_permissions` | `read` | Default `GITHUB_TOKEN` in any workflow is read-only |
-| Vulnerability alerts | `enabled` | Required for Dependabot security updates |
-| Dependabot security updates | `enabled` | Auto-PRs for vulnerable deps |
-| Secret scanning | `enabled` | Catches leaked secrets in pushes/history |
-| Secret scanning push protection | `enabled` | Blocks pushes that contain detected secrets |
+Useful read-only checks include the workflow file in the checked-out repository,
+`gh run list --workflow publish.yml`, and authenticated `gh api` reads of the
+relevant repository settings. A failed read is not evidence that the setting has
+its documented value.
 
-**npm side:**
+Do not use `gh workflow run publish.yml` as an Actions health check. It creates a
+workflow dispatch attempt and does not test the tag-triggered release path.
 
-- **Trusted Publisher** configured for `ElliotDrel/e-stack` → `publish.yml` (OIDC, no npm token stored anywhere)
-- **Publishing access:** "Require two-factor authentication and disallow tokens"
-- **Provenance** is emitted automatically by Trusted Publishing — no `--provenance` flag needed
+npm OIDC Trusted Publishing requires the current OIDC-compatible npm toolchain;
+the recorded working baseline uses `actions/setup-node@v6` and Node 24. Trusted
+Publishing supplies authentication and provenance without `NODE_AUTH_TOKEN` or
+an added `--provenance` flag. If Actions was disabled when a tag was pushed,
+re-enabling it does not replay the event; after approval, delete and re-push only
+the intended release tag.
 
-**Workflow file:**
+## Failure handling
 
-- `permissions: { id-token: write, contents: read }` — only what OIDC needs
-- `actions/checkout@v6` with `persist-credentials: false`
-- `actions/setup-node@v6` with Node 24 (required for OIDC, see Learnings below)
-
-### Learnings
-
-- npm OIDC Trusted Publishing requires `actions/setup-node@v6` and Node 24+. Older versions (v4, Node 20) silently fail with E404 because the npm CLI doesn't properly handle the OIDC token exchange.
-- npm's "Trusted Publishing" handles both auth AND provenance — no `--provenance` flag or `NODE_AUTH_TOKEN` env var needed.
-- YAML values containing colons (e.g. `"chore: bump"`) must be quoted or they break GitHub Actions parsing.
-- The previous flow (commit-message `[publish]` → CI bumps version → CI pushes back) required the workflow to have write access to `main`, which is incompatible with strict branch protection. Tag-triggered publish removes that requirement entirely.
-- GitHub Actions can be disabled at the account level. When disabled, the API returns HTTP 422: "Actions has been disabled for this user" on any workflow trigger, and zero runs appear in history — even for workflows that previously ran successfully. There is no self-service toggle (`github.com/settings/actions` 404s for personal accounts). Fix: contact GitHub Support (reinstatement request form).
-- Re-enabling Actions does not replay missed tag events. If tags were pushed while Actions was disabled, delete and re-push only the latest tag after re-enabling: `git push origin :refs/tags/vX.Y.Z && git push origin refs/tags/vX.Y.Z`
-- Fastest Actions health check: run `gh workflow run publish.yml --repo ElliotDrel/e-stack`. HTTP 422 = disabled at account level. A run appearing = Actions is working.
-- **Manual CLI publish (when Actions are disabled):** there is a full fallback flow for publishing directly from your machine with `npm publish`. It requires temporarily enabling a package setting and creating a 2FA-bypass token, both of which are reverted after each release. See `docs/manual-publish.md`.
+If the tagged release fails, inspect the specific run and its failed logs. Keep
+the local checks and the remote publication result separate in the report. For a
+manual publish only when Actions are unavailable, read
+[`manual-publish.md`](manual-publish.md); it has additional authorization and
+cleanup requirements.

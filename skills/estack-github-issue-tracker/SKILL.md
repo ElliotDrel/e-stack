@@ -1,7 +1,7 @@
 ---
 name: estack-github-issue-tracker
-version: 1.4.0
-description: >
+version: 1.4.1
+description: >-
   (github-issue-tracker) GitHub issue tracker management. Checks all open issues the user is involved in,
   finds related/duplicate issues, reports what changed, and recommends next steps.
   Run anytime for a check-in — works the same whether it's the first run or a daily habit.
@@ -103,7 +103,7 @@ issues just need a quick diff check.
 
 ## Step 1: Discover
 
-**Goal:** Build the complete list of issues to analyze this run.
+**Goal:** Build the requested, currently discoverable issue list for this run.
 
 Sources (all from `$STARTUP`):
 
@@ -116,16 +116,18 @@ Sources (all from `$STARTUP`):
 apply them when filtering issues throughout this step. For example, if config says
 "Excluded repos: my-org/*", skip any issues from repos owned by `my-org`.
 
-If `$CONFIG` is null (tracker has no Config section), ask the user if they want to set
-one up (which repos to track/exclude). The agent writes Config directly to the tracker
-file via the Edit tool (not through the script). The script reads Config; the agent writes it.
+If `$CONFIG` is null (tracker has no Config section), analyze the requested or discovered
+scope and report it. Ask about persistent repo inclusions or exclusions only when they are
+needed to narrow a future run. The agent writes Config directly to the tracker file via the
+Edit tool (not through the script). The script reads Config; the agent writes it.
 
 **If tracker doesn't exist or has no issues** (first run):
 
-- Show `new_issues` grouped by repo. List which repos were found.
-- Ask: "Which repos do you want to track? You can also exclude any."
-- Save their choices to the `## Config` section by writing directly to the tracker via Edit.
-- Then ask which specific issues to track from the included repos.
+- Use the requested issues when present; otherwise analyze `new_issues` from the discovered
+  scope and identify that scope in the report. Do not block a useful first report on collecting
+  a full configuration.
+- Ask for explicit inclusions or exclusions only if the discovery result is too broad for the
+  requested check-in, then save the user's choices to `## Config` through Edit.
 
 **If tracker exists with issues:**
 
@@ -200,9 +202,10 @@ review decision, and CI status in `## Status Summary`, the `## PR Health` sectio
 `## Next Steps`. Distinguish bot reviews (login ends in `[bot]`) from human reviews, and treat
 `COMMENTED` ≠ `APPROVED` — a `COMMENTED` review is not an approval.
 
-**Exception — fields that require user input:** The **Goal** field must be asked, not
-guessed. If an issue is missing a Goal, flag it in the result file so Step 5d can
-collect them. Same for Config — never assume repo exclusions or preferences, always ask.
+**User-intent fields:** Never invent a Goal, repository exclusion, or preference. If a
+Goal is missing, flag it in the result file but continue the factual report. Collect it in
+Step 5d only when it would change an action recommendation. Treat Config the same way:
+ask before persisting a preference, but do not block the requested report on it.
 
 Each agent prompt must include:
 
@@ -214,10 +217,14 @@ Each agent prompt must include:
 - `$TODAY` as today's date (for history entries)
 - Instruction to read `$SKILL_DIR/references/result-file-schema.md` for format and quality guidance
 
-**Subagent return convention.** Each agent's analysis is persisted by `update-tracker`
-(Step 3) reading the result files — agents do **not** call `append-history` themselves.
-But if an agent takes a tracker-relevant action directly (rare in 2b), it must end its
-reply with one line per action so the orchestrator can persist it incrementally:
+**Analysis boundary.** Step 2b agents read external state and write only their owned
+temporary result files. They recommend actions for Step 5c; they do not post, push, edit a
+tracker, or take any other tracker-relevant action. `update-tracker` (Step 3) persists their
+analysis.
+
+**Later executor return convention.** If a separately authorized Step 5c executor takes a
+tracker-relevant action, it ends its reply with one line per action so the orchestrator can
+persist it incrementally:
 
 ```
 TRACKER_UPDATE: owner/repo#NUMBER | YYYY-MM-DD | <one-line description>
@@ -360,40 +367,36 @@ section, never from `TaskList`.
 
 ### 5c: Execute approved actions
 
-Present the queued items to the user and ask whether to act on them (e.g. "Want me to
-act on these? I'll do all of them." or per-item). If the user declines, leave the items
-as `- [ ]` in the queue — they carry over to the next run. If the user approves (a
-blanket "do all of them" approves the whole batch), run the execution framework below
-against the 5b queue.
+Present the queued items with their intended effect. Approval applies to the exact listed
+actions, not to an unstated force-push, merge, deletion, or external message. If the user
+declines, leave the items as `- [ ]` in the queue — they carry over to the next run. Run
+the approved actions against the 5b queue.
 
 1. **Mark before acting.** Flip the queue item you're about to work on to in-progress
    (note it inline, e.g. `- [~]`, or mark the mirrored harness task `in_progress` if you
    created one). Do this before any work starts so an interruption leaves a clear trail.
 
-2. **Parallel subagents — one per approved action.** Spawn one Agent per approved queue
-   item so independent actions run concurrently.
+2. **Use a scoped executor only when it helps.** Parallelize independent, bounded actions
+   when the environment supports it. Keep an action that mutates a branch or external
+   issue in one clearly scoped execution path so its evidence and recovery state stay
+   together.
 
 3. **Action-type routing table.** Route each action by type:
 
    | Action | Execution |
    |---|---|
    | Post comment / tag maintainer | `gh pr comment` / `gh issue comment` directly — no clone |
-   | Rebase a PR branch | clone fork → temp dir → add upstream remote → rebase → force-push → `rm -rf` |
-   | Fix PR review blockers | clone branch → temp dir → make change → push → re-request review → `rm -rf` |
+   | Rebase a PR branch | clone fork → temp dir → add upstream remote → rebase → inspect the resolved branch and diff → use an exact prior approval for this `git push --force-with-lease`, or request it if that push was not included |
+   | Fix PR review blockers | clone branch → temp dir → make the scoped change → run the relevant checks → verify the local diff; push only when the user authorized that push |
    | Watch / monitor | no action; note it in the report |
 
 4. **Temp-dir-only for git.** Any `git clone` goes into a fresh `mktemp -d` directory;
-   do the work there and `rm -rf` it when done. **Never** clone into the user's working
-   directory.
+   never clone into the user's working directory. Keep the exact temp path until a remote
+   mutation is independently verified (for example, inspect the remote branch SHA after a
+   push). If publication or verification fails, preserve the directory and report the path
+   as the recovery handoff. Remove a verified disposable clone only after that check.
 
-5. **Force-push auth.** A blanket "do all of them" approval authorizes force-pushing the
-   rebased PR branches in this batch. Do **not** re-ask for permission per branch.
-
-6. **Subagent model.** Follow the global subagent cascade (one tier below the
-   orchestrator). For complex code-fixing tasks (unfamiliar repo plus test infrastructure),
-   floor the model at Sonnet even if the cascade would otherwise pick Haiku.
-
-7. **Report back + persist immediately.** Each agent returns what it did: conflicts
+5. **Report back + persist immediately.** Each executor returns what it did: conflicts
    resolved, push/comment success, and any blockers. As **each** action completes,
    **immediately** record it with `append-history` for that issue — do not batch, do not
    wait until the end of the session, and do not use `Edit` for history (`append-history`
@@ -415,7 +418,7 @@ against the 5b queue.
    complete if you created one. **Prune** any `- [x]` items whose date is more than 7 days
    old from the section.
 
-   If a subagent reports actions via `TRACKER_UPDATE:` lines (see Step 2b and
+   If an executor reports actions via `TRACKER_UPDATE:` lines (see Step 2b and
    `references/result-file-schema.md`), call `append-history` once per line as soon as you
    receive them — one line maps to one `--issue` / `--date` / `--desc` invocation.
 
@@ -451,6 +454,10 @@ goal set — the field value goes in via `Edit`, the history entry via `append-h
 rm -rf "$TEMP_DIR"
 ```
 
+Remove the temporary directory only after required tracker persistence and any approved
+external-action verification are complete. If analysis, publication, or verification failed,
+preserve the path as a recovery handoff instead of cleaning it up.
+
 </flow>
 
 <context>
@@ -461,29 +468,21 @@ $ARGUMENTS
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-github-issue-tracker:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-github-issue-tracker: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-github-issue-tracker: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

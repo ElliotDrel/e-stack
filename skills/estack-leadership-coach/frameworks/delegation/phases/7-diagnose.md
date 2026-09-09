@@ -10,9 +10,9 @@ Your job is to find the *primary* structural gap that, if fixed, would have prev
 
 ---
 
-## Ask 1–3 questions, then wait
+## Diagnose from the available handoff history
 
-Start with two or three of these, depending on what the user has already told you. Don't fire off all six in one turn.
+Use the failure history already supplied to form a provisional structural diagnosis. Ask only the questions that distinguish a plausible primary gap from another; do not withhold a useful diagnosis when the evidence is sufficient. State confidence and uncertainty when facts remain missing.
 
 1. When did you first notice something was off?
 2. How did you present the work to them — did you explain the problem and why you chose them, or just hand over the task?
@@ -21,7 +21,7 @@ Start with two or three of these, depending on what the user has already told yo
 5. Were there checkpoints, or did you only see it at the end?
 6. *(Flat teams)* Was there one clear owner, or was it more of a shared effort?
 
-The order matters: by the time you've asked the first two or three, you usually already have a candidate gap. The rest confirm or rule it out.
+The questions distinguish a candidate gap from close alternatives. Use the rest only to confirm or rule it out.
 
 ---
 
@@ -29,7 +29,7 @@ The order matters: by the time you've asked the first two or three, you usually 
 
 Map the user's answers to *one* of these. The primary gap is the one that, if fixed, would have prevented the failure. Secondary gaps may exist; surface them but don't make them the headline.
 
-**Don't confuse the two fives.** The five *structural gaps* below (Enrollment / Authority / Context / Success criteria / Accountability diffusion) diagnose how a *legitimate delegation* failed. They are a different list from Lencioni's five *omissions* (developing the team, managing subordinates, difficult conversations, meetings, repetitive communication), which name work that should never have been delegated at all. If the post-mortem reveals the delegated work was actually one of the five omissions, the primary diagnosis isn't a structural gap — it's abdication, and the corrective move is routing to that omission's flow to take the work back.
+**Don't confuse the two fives.** The five *structural gaps* below (Enrollment / Authority / Context / Success criteria / Accountability diffusion) diagnose how a *legitimate delegation* failed. Lencioni's five *omissions* (developing the team, managing subordinates, difficult conversations, meetings, repetitive communication) identify responsibilities a leader must retain. If a post-mortem touches one, diagnose both the structural gap and the accountability that should have remained with the leader; the corrective move can include a bounded delegation with better follow-through.
 
 **The gap beneath the gap — check the motive.** A structural gap is the mechanism; sometimes a reward-centered motive is the reason it opened. If the user skipped monitoring because check-ins felt tedious, skipped enrollment because the conversation felt awkward, or left authority vague to avoid a hard boundary, the corrective move isn't only structural — it's naming that the tedious part *is* the job. Lencioni's definition is the line to hold here: *"Management is the act of aligning people's actions, behaviors, and attitudes with the needs of the organization and making sure that little problems don't become big ones."* The follow-through the user avoided is not overhead on top of delegation — it is the management the delegation required. Name the motive when it's driving the gap, and route to `../../motive-check/flow.md` if the user wants to work it directly. (See `../../../references/lencioni_the-motive.md`.)
 
@@ -136,37 +136,17 @@ Once the primary gap is named, the corrective move is the structural fix. **Don'
 
 ---
 
-## Real-world case: Nicole Wipp — the first-hire failure that was actually a clarity failure
+## Source cues
 
-Attorney Nicole Wipp opened her own law firm during the 2008 recession and ran herself into the ground at 80–100 hours a week as a solo practitioner, still not clearing six figures. Her first attempt at hiring failed — the obvious read was "the hire didn't work out." Sullivan and Hardy's diagnosis was the opposite: the hire failed because *Nicole had not yet defined the role's specific results clearly enough for anyone to succeed in it*. The standard for "done" lived in her head; the new Who walked in blind. Only after that first painful miss did Nicole sharpen her vision precisely enough that subsequent hires could execute autonomously.
+For a success-criteria diagnosis, [Sullivan & Hardy](../../../references/sullivan_who-not-how.md)
+supports the principle that a standard held only in the leader's head is a leadership-system gap.
+For enrollment, context, or decision-bottleneck diagnoses, consult the
+[Sanchez reference](../../../references/sanchez_main-street-millionaire.md) and use only the
+details that fit the user's actual handoff.
 
-The proof landed during COVID-19: with Nicole stranded in Hawaii and her team in Michigan, the firm completed a full operational transition for vulnerable elderly clients with Nicole only providing the vision — the team owned the how. The lesson for Phase 7: when a delegation fails and the first instinct is "they dropped the ball," run the diagnostic the other direction first. The bar usually wasn't externalized. Fixing the next handoff is a brief problem (write the Impact Filter's Success Criteria), not a personnel problem.
-
-Source: [Sullivan & Hardy — *Who Not How*](../../../references/sullivan_who-not-how.md)
-
----
-
-## Real-world case: Sanchez — "raised dependents, not leaders" (Enrollment + decision-bottleneck failure)
-
-Codie Sanchez's most common diagnostic for delegation failure isn't that the work was wrong — it's that the founder accidentally trained the team to wait for them. Two of her framings, taken from her YouTube shorts, land directly on the Phase 7 *Enrollment gap* and on the broader pattern where the user becomes the bottleneck without realizing it.
-
-From *The 3 Jobs Of A CEO*: *"Your entire job is to hire people better than you at what they do, then get out of their way. And if you're still in the weeds doing everything, something is wrong. It's either A, you hired the wrong person, or B, you haven't set them up to actually do the job. As Warren Buffett says, don't get a dog and then do the barking."* And later in the same video: *"If everyone has to call you every time something small comes up, the vision isn't clear enough. And that means you kept the strategy in here instead of telling it to the company."* That second line is the Phase 7 *Context gap* in one sentence.
-
-The deeper Sanchez principle is from *Pay Won't Fix Performance*: when work comes back competent but soulless, the lever is not money — it is enrollment. *"Instead of when performance dips, reaching for money or perks, you just fire bad bosses. You tell your employee exactly why you they're your best. You give them ownership over something that matters. You let them make real decisions without somebody over their shoulder yapping. You show them where they're going next, because people don't just want to be paid, they want to matter."* That is the four-move enrollment conversation (Phase 3) restated as a post-mortem corrective.
-
-Use this case during coaching when the user's diagnostic answers point toward Enrollment gap or toward "they kept coming back to me for small things" — Sanchez's framing reframes the failure from a *team* problem ("they're dependent") to a *system* problem the user owns ("I either hired the wrong person or didn't set them up").
-
-Source: [Sanchez — *Main Street Millionaire* (and related video content)](../../../references/sanchez_main-street-millionaire.md), drawn from *The 3 Jobs Of A CEO* and *Pay Won't Fix Performance*.
-
----
-
-## Source gap acknowledged: accountability diffusion in flat / co-founder teams
-
-The vault still does not hold a verified case study of accountability diffusion on a flat / co-founder team specifically. The Sanchez reference was substantially deepened in May 2026 with 11 YouTube short transcripts on hiring, vision, motivation, and decision-tiering — but none of those videos address flat-team, peer-level, or co-founder dynamics where no one has positional authority over anyone else.
-
-The structural illustration to use during coaching: when a flat team says "we were all pitching in on it" or "I thought [other person] was handling that part," the failure is not effort, skill, or motivation — it is that no single person had standing to make the in-flight calls. The corrective move is structural, not motivational: one named owner, one named outcome, reciprocal commitments stated out loud (Phase 4 ⑥). Acknowledge to the user that the vault is still being populated with flat-team case material; offer to coach from the principle and run the four-question diagnostic against their actual situation.
-
-Source gap: see [Sanchez — *Main Street Millionaire*](../../../references/sanchez_main-street-millionaire.md) "Known gaps" section, item 4 (co-founder / flat-team dynamics), for what is still missing and which additional sources would close it.
+The vault has no verified flat-team case study. Do not imply otherwise. Diagnose accountability
+diffusion from the user's facts: one named owner, one named outcome, and reciprocal commitments
+are the corrective structure.
 
 ---
 

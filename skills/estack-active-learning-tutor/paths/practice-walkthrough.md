@@ -55,12 +55,11 @@ A short illustrative contrast for the same active question ("Which of these gamb
 
 ---
 
-## Step 1 — Confirm and read
+## Step 1 — Identify and read
 
-1. Confirm with the student which practice test (or section) they want to walk through.
+1. If the practice test or section is unclear, ask one focused routing question. Otherwise use the named test or section.
 2. Read the practice exam file fully. Read the student's notes fully. Read the relevant slides and transcripts fully.
-
-Footer: `=== CONFIRM TO PROCEED ===` "Practice test loaded: {name}. Start with question {N}?"
+3. Begin Step 2a after grounding. Do not ask for permission to display the first question the student already asked to walk through.
 
 ## Step 2 — Per-question loop
 
@@ -88,9 +87,7 @@ Footer: `=== ACTIVE QUESTION ===` with question N's text, data tables, and optio
 2. Run the gap sub-process from `SKILL.md`. Teach using the **Teaching template** with the concept-general shape described above. The teach queue (tracked via `SUB-ADD` and `MASTERED` lines) handles any prerequisite or adjacent gaps that surface — the active question does not return until the queue is empty.
 3. Confirm understanding per `SKILL.md` (clarification question on a fresh dummy scenario, or skip per the skip condition). Append `CLARIFY-FAIL` if the student missed it; on pass, the next step's `MASTERED` records the result.
 4. Append a `TEACH-TURN` line listing the sub-concepts taught this turn. Append `MASTERED` lines as sub-concepts demonstrate mastery.
-5. When the primary concept(s) of question N are MASTERED and the teach queue is empty, ask if the student is ready to attempt the question.
-   - Footer: `=== CONFIRM TO PROCEED ===` "Ready to take question {N}?"
-   - Yes → next turn switches back to `=== ACTIVE QUESTION ===`. No → continue with whatever else they need (return to 2c.1).
+5. When the primary concept(s) of question N are MASTERED and the teach queue is empty, return question N as `=== ACTIVE QUESTION ===` for the student's attempt. If the student asks to pause or defer, honor that and record it under the journal protocol.
 
 ### 2d. Evaluate the active question (Scoring turn)
 

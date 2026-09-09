@@ -1,6 +1,6 @@
 ---
 name: estack-repo-search
-version: 1.2.1
+version: 1.2.2
 description: >-
   (repo-search) Clone an external GitHub repository locally and search it. Use
   when a question needs code from a repository that is not in the working
@@ -9,14 +9,13 @@ description: >-
 
 # Repo Search
 
-Search external repositories by cloning them into a persistent sandbox and exploring with subagents.
+Search external repositories by cloning them into a persistent sandbox and inspecting the relevant source.
 
-**Read-only sandbox — never edit, write, or delete files inside `~/.e-stack/estack-repo-search/`.** This directory holds cloned copies of other people's repos purely for you to `Read`/`Grep`/`Explore`. It is not a workspace to modify, patch, or "fix" anything in. It's fine to be extra careful here: on every invocation this skill hard-resets each repo to match its remote HEAD (see below), so any local edits would be silently discarded anyway — but the point stands regardless of that safety net. If the user wants to *change* code in one of these repos, that's a different task (fork it, clone it elsewhere as a real working copy) — not something this skill does.
+**Preserve cached working-tree files.** This directory holds cached clones of other people's repositories for `Read`/`Grep`/`Explore`; it is not a workspace to patch or fix. Creating a new clone and fetching remote objects are allowed, but never modify, reset, clean, or delete an existing cache's worktree files. If the user wants to change code in one of these repositories, use a fork or a separate working clone.
 
 ## Available repos
 
 ```!
-mkdir -p ~/.e-stack/estack-repo-search
 echo "=== Repo Sandbox: ~/.e-stack/estack-repo-search ==="
 echo ""
 found=0
@@ -25,16 +24,11 @@ for dir in ~/.e-stack/estack-repo-search/*/; do
   found=1
   name=$(basename "$dir")
   url=$(cd "$dir" && git remote get-url origin 2>/dev/null || echo "(no remote)")
+  head=$(git -C "$dir" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+  changes=$(git -C "$dir" status --short 2>/dev/null)
   echo "- $name  →  $url"
-  echo "  Resetting to latest origin state..."
-  (
-    cd "$dir" || exit 1
-    default_branch=$(git ls-remote --symref origin HEAD 2>/dev/null | sed -n 's#^ref: refs/heads/\(.*\)\tHEAD#\1#p')
-    [ -z "$default_branch" ] && default_branch="main"
-    git fetch --depth 1 origin "$default_branch" 2>&1
-    git reset --hard FETCH_HEAD 2>&1
-    git clean -fdx 2>&1
-  ) | sed 's/^/  /'
+  echo "  Local HEAD: $head"
+  [ -z "$changes" ] || echo "  Local changes: present (preserved)"
   echo ""
 done
 if [ "$found" -eq 0 ]; then
@@ -42,7 +36,7 @@ if [ "$found" -eq 0 ]; then
 fi
 ```
 
-Every repo listed above is force-synced to its remote's current default-branch tip before you see it — this covers both a repo that drifted out of local sync and one that picked up stray local changes (from a prior session, a crash, whatever). You're always searching fresh, unmodified upstream state. Present the user with the repos listed above and offer to search any of them or clone a new one.
+This is an inventory of cached evidence. Reuse an exact cached clone when its remote and local commit answer the question. When current upstream state matters, fetch its relevant branch, compare its remote ref with the checked-out commit, then inspect the fetched revision with `git show`, `git grep <revision>`, or a separate fresh snapshot; do not silently search a stale checkout. Never reset or clean a cache to refresh it. Present the listed repositories as available evidence and clone only when no suitable cache exists.
 
 ## Finding the correct repo
 
@@ -50,11 +44,11 @@ Before cloning, you must have the exact GitHub URL. Follow these rules:
 
 - **If the user gave a full GitHub URL** (e.g. `https://github.com/org/repo`), use it directly.
 - **If the user gave only a name** (e.g. "openclaw", "langchain"), use WebSearch to find the correct GitHub repository URL first. Never guess a repo URL — confirm it via search.
-- **Always verify** the search result matches what the user is asking about before cloning. It doesn't hurt to confirm with the user — "I found X repo, is that the one you meant?" — before spending time cloning. Wrong repo = wasted time and misleading answers.
+- **Verify** the search result matches the user's request before cloning. Ask only when multiple candidates remain plausible or the search evidence conflicts with the request.
 
 ## Cloning
 
-Once you have a confirmed URL, shallow clone into the sandbox:
+Once you have a confirmed URL and no suitable cached clone, shallow-clone into the sandbox. If the simple target name already exists for a different remote (for example, two organizations both have `api`), select a distinct target such as `<owner>-<repo>` rather than overwriting or reusing it:
 
 ```bash
 git clone --depth 1 <repo-url> ~/.e-stack/estack-repo-search/<repo-name>
@@ -62,9 +56,7 @@ git clone --depth 1 <repo-url> ~/.e-stack/estack-repo-search/<repo-name>
 
 ## Searching
 
-To explore a repo, spawn one or more **Haiku** subagents using the Agent tool with `model: "haiku"` and `subagent_type: "Explore"`. In the prompt, always include the **full absolute path** to the cloned repo, with `~` expanded — the subagent will not resolve it. Run `echo ~/.e-stack/estack-repo-search` once and use that, giving each subagent `<that path>/<repo-name>`. Without an absolute path the subagent won't know where to look.
-
-If the question spans multiple areas of the repo, spawn multiple subagents in parallel — each focused on a different aspect — to get answers faster.
+Inspect locally for a focused question. Use the available delegation facility only when the question has independent bounded areas, and include the full absolute path to the cloned repository in each task. Do not require a particular model, agent type, or delegation feature.
 
 **The subagent's job is navigation, not answers.** Use subagent results to identify which files are relevant, then **read those files yourself** with the Read tool before drawing conclusions. Never trust a subagent's summary of code verbatim — always verify by reading the source directly.
 
@@ -72,29 +64,21 @@ If the question spans multiple areas of the repo, spawn multiple subagents in pa
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-repo-search:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-repo-search: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-repo-search: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

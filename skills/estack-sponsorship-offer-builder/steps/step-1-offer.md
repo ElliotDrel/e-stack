@@ -1,8 +1,8 @@
 # Phase 1: Build the Offer (Core Deliverable)
 
-Read `references/01-hormozi-value-equation.md` and `references/02-positioning-and-pricing.md` before this phase; pull `references/06-messaging.md` for the one-liner and why-first framing. Inputs: Phase 0's why, inventory, and sponsor profile — if they don't exist, go back.
+Read `references/01-hormozi-value-equation.md` and `references/02-positioning-and-pricing.md` before this phase; pull `references/06-messaging.md` for the one-liner and why-first framing. Use Phase 0's why, inventory, and sponsor profile when available. For a direct offer draft, proceed from supplied context, label material assumptions, and resolve them before the user presents the offer externally.
 
-This phase runs Hormozi's 5-step process on the sponsor profile, prices it with Enns' option structure, and writes the result to a file. Work step by step; each step ends with something the user has agreed to. Ask once at the start: any brand rules for written output?
+This phase runs Hormozi's 5-step process on the sponsor profile, prices it with Enns' option structure, and writes the result to the user's requested location. Build from the information already available, asking only for inputs that materially affect the offer. Apply any brand rules the user has supplied.
 
 ## 1. Dream outcome
 
@@ -49,6 +49,6 @@ Enns' structure (reference 02): Option 3 the anchor, presented first (exclusivit
 
 ## Acceptance bar
 
-Done only when: the file exists; a named profile with real example companies is in it; every component maps to a discovered problem; a named guarantee; three priced options, anchor first; a literally-true why-now; an explicit assumptions list. Final check: each component moves a Value Equation lever, or it gets cut.
+An external-ready offer has a named profile with verified example companies where named, every component mapped to a discovered problem, a guarantee the org can honor, three priced options when pricing is requested, a literally-true why-now, and an explicit assumptions list. A direct draft may use clearly labeled placeholders or segments while the user verifies them. Final check: each component moves a Value Equation lever, or it gets cut.
 
-Then offer the paths in one block: **Path A** — the packet. **Path B** — the cold email chain. **Path C** — the meeting script.
+After an offer, mention the relevant Path A, B, or C only when it is a useful next move or part of the requested package.

@@ -1,3 +1,11 @@
+# Archived Execution Briefs
+
+This directory preserves a historical planning snapshot from the issue-tracker
+work that produced it. Issue counts, code locations, recommendations, and status
+claims below describe that snapshot; they are not a current work queue or a
+standing instruction. Do not update the old briefs or use them as live evidence
+without rechecking the repository and issue tracker.
+
 # Execution Briefs — estack-github-issue-tracker open issues
 
 Triage of all 7 open issues on `ElliotDrel/e-stack`, each investigated by a dedicated

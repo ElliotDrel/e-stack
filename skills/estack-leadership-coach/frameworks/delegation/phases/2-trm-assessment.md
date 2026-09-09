@@ -8,7 +8,9 @@ This is the most commonly miscalibrated phase. Leaders apply their general impre
 
 ---
 
-## Ask 1–3 questions, then wait
+## Calibrate from the task-specific evidence
+
+Use evidence already supplied about the person's experience, prior results, and role. Ask the relevant questions only when the answer changes the maturity rating or the proposed authority level:
 
 1. Has this person done this specific type of work before?
 2. If yes — what did the result look like, and how recently was it?
@@ -73,23 +75,15 @@ Her corollary is the **Not To Do List** — an explicit list of things the user 
 
 ---
 
-## Real-world case: the sales manager promoted to run a factory
+## Source cues
 
-Grove tells the story of a competent, proven sales manager who was promoted into running a factory and performed badly. The verdict Grove draws is precise: *"we confused the manager's general competence and maturity with his task-relevant maturity."* The person hadn't gotten worse overnight — the task changed, and his TRM on the new task was low, even though his TRM on his prior work was high. Grove reinforces the same pattern with the driving analogy (an experienced country-road driver becomes a novice on a metro freeway) and the army-sergeant analogy (peacetime competence reverts in sudden combat). TRM, in Grove's framing, is a property of the person-task-context triple, and it can drop the moment the context shifts.
+Grove's factory-manager example supports the distinction between general seniority and
+task-relevant maturity. Use it only when a user is overgeneralizing from someone's past success;
+the fuller case is in [High Output Management](../../../references/grove_high-output-management.md).
 
-The coaching implication is direct: when the user says "they're senior, they can handle it," what they're describing is general maturity, not task-relevant maturity. If the task is genuinely new to this person, leaving them alone on it isn't trusting them — it's misreading the situation Grove explicitly warns about. The right move at low task-specific TRM is structured, directive management with frequent check-ins, regardless of how senior the person is on their core work.
-
-Source: [Grove — *High Output Management*](../../../references/grove_high-output-management.md), Ch 12.
-
----
-
-## Real-world case: Leila's "delegate everything, then take it back" trap
-
-Leila Hormozi opens her account of how she learned the four-stage progression with her own failure pattern: *"When I first started hiring people, I tried to delegate **everything** at once. It was complete chaos. I'd hand someone a project, disappear, and come back to find... nothing like what I expected. Or worse, nothing at all :) So I'd take it back. Do it myself. Tell myself 'nobody can do this like me.'"* She names this as the exact trap the four stages exist to interrupt — the swing from "delegate everything" straight to "take it back and do it myself," with no intermediate stages of structured progress in between.
-
-Her vivid framing for why Stage 4 cannot be a starting point: *"You can't go from doing everything yourself straight to Stage 4. That's like teaching someone to swim by throwing them in the ocean."* She follows it with an empathy reframe — *"if someone came to you today with zero context and said 'just own this completely,' you'd probably fail too. Not because you're incompetent, but because you don't have the foundation yet."* The cost of skipping stages isn't paid by the leader's calendar; it's paid by the teammate, who fails publicly, and by the leader's confidence in the teammate, which is exactly what made her take work back in the first place. Her rule: *"You must earn each stage with each person on each task."*
-
-Source: [Hormozi (Leila) — *The Art of Delegation*](../../../references/hormozi-leila_4-stages.md).
+Hormozi's progression cautions against jumping from close direction to complete ownership. Match
+the stage to this person and this task, then increase it as evidence supports it. Consult [The Art
+of Delegation](../../../references/hormozi-leila_4-stages.md) when the user needs the source detail.
 
 ---
 

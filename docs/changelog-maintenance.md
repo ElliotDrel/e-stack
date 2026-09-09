@@ -119,7 +119,7 @@ git add CHANGELOG.md
 git commit -m "update CHANGELOG for X.Y.Z"
 ```
 
-Then proceed with `npm version patch && git push --follow-tags` as usual.
+Then follow the approved publish route: run the selected `npm version` command and push the intended branch and `refs/tags/vX.Y.Z`, replacing the placeholder with the actual new version.
 
 ### Before and after example
 

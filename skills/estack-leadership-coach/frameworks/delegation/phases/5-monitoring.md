@@ -10,7 +10,9 @@ The user's instinct here often skews in one of two directions: either they hover
 
 ---
 
-## Ask 1–3 questions, then wait
+## Set a proportionate monitoring plan
+
+Use the timeline, TRM, and milestones already supplied. Ask the relevant questions only when they change the cadence or check-in focus:
 
 1. When do you plan to check in?
 2. What will each check-in actually cover?
@@ -89,23 +91,15 @@ This is the difference between *building taste* (which compounds over time, rais
 
 ---
 
-## Real-world case: the customer pays the tuition
+## Source cues
 
-In the Foreword to *High Output Management*, Ben Horowitz recounts an exchange with an associate whose subordinate had turned in poor work. The associate's reaction was *"He has to make his own mistakes. That's how he learns!"* Horowitz's response, quoting Grove's logic back at him: *"The problem with this is that the subordinate's tuition is paid by his customers. And that is absolutely wrong."* The point is structural, not motivational — a leader who waits until final delivery to surface concerns has, by then, already forced the customer (internal or external) to absorb the cost of the gap.
+Grove's monitoring example supports early feedback: catch a gap while the owner can still correct
+it, rather than waiting for final delivery. Consult [High Output Management](../../../references/grove_high-output-management.md)
+for the source case.
 
-This is the same economic logic that makes the midpoint draft review cheaper than the final review. Grove's framing in Chapter 12 is direct: *"The presence or absence of monitoring, as we've said before, is the difference between a supervisor's delegating a task and abdicating it."* Intervening on a rough draft costs the owner a revision; intervening at the final costs the owner the project — and the customer pays the difference. Asking to see work-in-progress is the cheapest insurance the user has, and it signals trust ("I am invested early") rather than distrust ("I am inspecting at the end").
-
-Source: [Grove — *High Output Management*](../../../references/grove_high-output-management.md), Foreword (Horowitz) and Chapter 12.
-
----
-
-## Real-world case: the first 15 seconds — the Shark Tank pitch study
-
-Van Edwards' team coded 495 Shark Tank pitches for entrance, first impression, eye contact, smiling, interactivity, and hand gestures, then mapped those cues against deal outcomes. The biggest differentiator between successful and unsuccessful pitches was the opening seconds: successful pitchers showed their hands and used a hand greeting on entry ("Hey sharks, good morning"); unsuccessful ones hid their hands in pockets, behind their backs, or behind props. Van Edwards' framing of why this matters: *"There are two questions that humans ask themselves about the person they're with, and this happens immediately in every interaction. … The first question they ask is, 'Can I trust you?'"* And: *"The very second question they ask is, 'Can I rely on you?'"* The cues sent in the first moments are how the other person answers both.
-
-The same dynamic governs a check-in. The owner is reading the user's opening cues — the hands, the greeting, the first sentence — to answer "Can I trust this person with my honest status?" before any feedback is given. A check-in opened with anxious eyes and a closed posture, even paired with warm words, signals doubt; an open greeting and a question about how it is going signals belief. The user is broadcasting the trust answer in the first 15 seconds whether they mean to or not.
-
-Source: [Van Edwards — *Cues*](../../../references/van-edwards_cues.md), drawn from the Shark Tank coding study and the two-question model (Lewis Howes Ep. 1231; Roger Dooley *Brainfluence* interview).
+Use warmth and clear interest at a check-in, but do not turn this flow into body-language coaching.
+The [Cues reference](../../../references/van-edwards_cues.md) is available when the user asks for
+that detail.
 
 ---
 

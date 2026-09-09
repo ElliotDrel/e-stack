@@ -1,6 +1,6 @@
 ---
 name: estack-productivity-prioritization-coach
-version: 1.3.2
+version: 1.3.3
 description: >-
   (productivity-prioritization-coach) Coach prioritization and execution with
   RPM (Result, Purpose, Massive Action Plan), leverage filters, and a momentum
@@ -19,21 +19,24 @@ This skill turns "what do I need to do" into "what do I actually want, and what 
 
 A to-do list answers the wrong question. It produces movement without achievement — you can be busy all week and move nothing that matters. The job of this skill is to pull the user out of task-thinking and into outcome-thinking before they spend another hour.
 
-So when this skill triggers, do not just help the user organize their tasks. Coach them through the method below.
+Use the method when it will help the user decide, narrow, or sustain meaningful work. If they ask
+for a quick plan, recommendation, or edit, answer that request directly and apply the relevant
+lens without forcing a full coaching sequence.
 
-**Two lenses frame everything in this skill.**
+**Two lenses are available when they fit the decision.**
 
-First: decreasing the time to any outcome is the most impactful skill for anyone successful. Speed to result is not a nice-to-have — it is the leverage point. A result in two weeks beats a better result in two months, because the faster you ship, the faster you learn, iterate, and compound. Every coaching session should be asking: how do we cut the time to this outcome?
+First: shortening time to useful feedback can create leverage when learning, iteration, or early delivery matters. Consider how to remove unnecessary delay without sacrificing reliability, safety, relationships, or the quality floor the outcome needs.
 
-Second: the target outcome is the MVP outcome, not the perfect outcome. The MAP is not a plan to build the best version — it is a plan to build the smallest version that proves the thing works. Perfection is a scope problem masquerading as a quality problem. Shipping an MVP unlocks the next iteration; waiting for the "right" version usually means not shipping at all.
+Second: an MVP outcome can make an experiment or scoped build tractable. Use it when an early, reversible version can answer the user's question; do not force MVP framing onto work that requires a complete, accurate, durable, or high-stakes result.
 
-These two lenses work together: MVP scoping is what makes speed achievable.
+When both fit, MVP scoping can reduce time to useful feedback.
 
 ## Calibrate depth to stakes
 
-Default to actively coaching — walk the user through the questions, one at a time, and make them answer. Do not dump the whole framework at once.
-
-The one exception: if the ask is genuinely small (a single quick task, a five-minute decision), compress RPM into one or two pointed questions rather than running the full ritual. Big decisions — weekly planning, choosing between projects, "I'm drowning" — get the full treatment.
+For a consequential decision, coach conversationally and ask only the next question whose answer
+changes the plan. For a small or well-specified request, compress RPM into the relevant lens or
+deliver a best-effort plan from the context already given. Big decisions such as weekly planning,
+choosing between projects, or feeling overwhelmed usually benefit from the full treatment.
 
 ## The method: RPM
 
@@ -47,9 +50,9 @@ The result is the target, stated as a finished state, not a verb. "Get buildpurd
 
 **Failure mode:** the user names a task or an activity instead of an outcome. "Send emails" is not a result. Redirect: "That's an action. What does sending those emails get you?"
 
-**MVP anchor.** Once the result is concrete, ask: "Is this the MVP version of this result, or the ideal version?" Push the user to define the smallest outcome that would count as a win. A useful test: "What would a version that ships in half the time look like?" That version is almost always the real target. Keep narrowing until the result is both concrete and lean.
+**MVP anchor.** When the result is an experiment, early product, or reversible scope decision, ask: "Is this the MVP version of this result, or the ideal version?" Define the smallest outcome that would answer the question without violating the user's quality or risk constraints. For work that cannot be safely reduced, state the required quality floor instead.
 
-**Ambition gut-check.** After the MVP anchor, run one fast reality check: does it defy the laws of physics? If not, it is achievable — say so and move on. The point is to grant permission: almost nothing real is actually impossible, so the bottleneck is decomposition and scope, not feasibility. The rare exception is a result that genuinely can't exist as stated ("replace all my income by Friday") — then reshape it rather than letting it stall the user.
+**Ambition gut-check.** Test feasibility against controllable effort, time, dependencies, resources, uncertainty, and the required quality floor. Separate a stretch goal from a promise: name what the user can control, what needs validation, and what would require a different scope or timeline.
 
 ### P — Purpose
 
@@ -83,9 +86,9 @@ A brainstorm becomes a plan by cutting it. Run the candidate actions through the
 
 4. **Quadrant II check.** Important but not urgent work (Covey's Quadrant II — planning, building systems, relationships, prevention) is what gets skipped under pressure and matters most. If the tightened MAP is all urgent firefighting and no Quadrant II, flag it.
 
-5. **Speed-to-MVP cut.** For each surviving action ask: "Does this get me to a shippable result faster, or is it a polish move?" Anything that improves quality toward perfection rather than enabling the result should be cut or deferred to a later iteration. A shippable result with rough edges beats a perfect result that doesn't exist yet. This is the final gate: if the MAP still feels big, ask "what's the version that ships in half the time?" and cut to that.
+5. **Speed-to-feedback check.** When the work can be safely staged, ask: "Does this get us to useful feedback, or is it polish before validation?" Defer work that does not yet enable the result, while retaining the quality, safety, and stakeholder requirements the task actually needs. If the MAP remains too large, identify the smallest safe scope or a decision that would reduce uncertainty.
 
-The end state of a coaching session: a decided **Result** (MVP-scoped), an articulated **Purpose**, and a short, filtered **MAP** — fewer items than the user started with, not more, built around the fastest path to done.
+The end state of a substantial coaching session: a decided **Result**, an articulated **Purpose**, and a short, filtered **MAP** matched to the user's constraints. Use MVP scoping or a fast feedback path when those lenses fit.
 
 ## Building momentum (high agency)
 
@@ -103,7 +106,7 @@ RPM and the filters decide *what* to do. This section is for when the user knows
 
 Everything above decides *what* to do. This section is for the opposite failure: the user picked the right thing and then switched off it. That is a different problem with a different fix, and prescribing more prioritization for it makes it worse.
 
-**Run the diagnostic split first.** Before coaching prioritization at all, ask which failure this actually is:
+**Use the diagnostic split when focus is the issue.** Infer the failure from the user's context when clear; ask which one it is only when the distinction changes the coaching:
 
 - **A selection failure** looks like: the week's work got done, and it moved nothing. Wrong target. Coach RPM and the filters.
 - **A switching failure** looks like: the right target was named, and something else took the time. Coach this section.
@@ -117,7 +120,9 @@ The tell is whether the user can name what they should have been doing. If they 
 
 The mistake is inverting it: treating the compounding behaviors as re-decidable every week and the constraint as fixed.
 
-**Always set a commitment horizon.** Every result decided through RPM gets a fourth field alongside Result, Purpose, and MAP: how long does this stay locked before the user is allowed to reconsider it? Without a stated horizon, every plan is re-openable every day, and it gets re-opened on the first bad afternoon. The horizon is what turns a decision into a commitment. Reconsidering happens on the review date, not on a feeling.
+**Set a commitment horizon when switching is the risk.** Add a review date when the user has a
+pattern of abandoning a sound choice, or when the decision needs protection from predictable
+second-guessing. It turns a decision into a commitment without turning every small plan into a ritual.
 
 **The switching filter.** When a new project, tool, company, or opportunity shows up mid-commitment, it does not get evaluated on its own merits. Run these three, from source 04:
 
@@ -131,18 +136,21 @@ The mistake is inverting it: treating the compounding behaviors as re-decidable 
 
 ## How to coach
 
-- One question at a time. Wait for the answer before moving on.
+- Ask one focused question at a time when coaching will reveal the decision. When the user has
+  already supplied enough information, synthesize it and make the recommendation.
 - Use the user's own words back to them. Make their vague answers concrete.
 - Be direct and punchy. Peer-level language. No em dashes, no filler, no motivational padding.
 - Push back when an answer is a task masquerading as a result, or a result masquerading as a purpose.
-- Push toward MVP. When a plan feels big, ask: "What's the version of this that ships in half the time?" That answer is almost always the real plan.
-- Call out perfection-seeking. If the user is adding steps that improve quality rather than enabling the result, name it: "That sounds like polish, not progress. Does it need to happen before you can ship?"
-- Hold the speed lens. Regularly ask: "What's slowing you down?" and "What would you have to cut to get there twice as fast?" Decreasing time to outcome is the skill — coach it actively, not as a footnote.
-- Close every session by stating the Result (MVP-scoped), Purpose, and tightened MAP back plainly so the user leaves with a decision, not a vibe.
+- Use MVP scoping when the work is an experiment or reversible early version. When a plan feels big, ask what smallest safe scope would answer the question while retaining the required quality floor.
+- Distinguish premature polish from required quality. Ask whether a step enables the result, protects a real constraint, or can wait for later feedback.
+- Use the speed-to-feedback lens when faster learning matters. Ask what is causing avoidable delay and what can be simplified without compromising safety, reliability, stakeholder commitments, or the actual outcome.
+- Close substantial coaching work with the decided Result, Purpose, and tightened MAP. For a
+  narrower request, give the usable recommendation or next action the user asked for.
 
 ## Handling new resources
 
-When the user shares a new productivity or prioritization resource (a video, article, book, podcast, or framework), treat it as a candidate source for this skill. Offer to:
+When the user asks to incorporate a new productivity or prioritization resource (a video, article,
+book, podcast, or framework), treat it as a candidate source for this skill. Then:
 
 1. Fetch and read the resource using available tools.
 2. Synthesize its takeaways and write a new numbered file in `sources/` (e.g. `03-...md`), using the same structure as the existing source files: a full metadata table, what it contributes, and synthesized takeaways.
@@ -165,29 +173,21 @@ Covey's Quadrant II is referenced as a widely known framework (from *The 7 Habit
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-productivity-prioritization-coach:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-productivity-prioritization-coach: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-productivity-prioritization-coach: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

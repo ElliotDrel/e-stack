@@ -1,6 +1,6 @@
 ---
 name: estack-pr-description
-version: 2.0.1
+version: 2.0.2
 description: >-
   (pr-description) Rewrite a pull request description from its actual diff,
   commits, and tests for a maintainer who reviews product logic and risk. Use
@@ -11,7 +11,7 @@ description: >-
 
 Rewrite the current PR's description for a maintainer who reviews product logic, risk, and alignment, not implementation detail. Inspect the actual diff, commits, tests, and PR state first. Do not trust the old description or commit titles as proof of behavior; they describe intent, not what the code does.
 
-Before writing a real description, read `reference/example-pr.md` in this skill's folder. It is the canonical worked example of the format below, settled over three rounds of maintainer and author feedback. Match its shape, not its content.
+Before writing, inspect `reference/example-pr.md` as a historical worked example. It illustrates one maintainer's preferred detailed format; it is not a universal template or evidence for the current PR. The user's instructions and any repository PR template control the structure.
 
 ## Before writing
 
@@ -21,11 +21,11 @@ Gather ground truth yourself:
 2. **Read the commits.** History shows the shape of the work, but a commit title claiming "fix race condition" is not proof the race is fixed. Verify against the code.
 3. **Check the PR state.** CI status, existing review comments, linked issues. Passing CI proves tests ran, not that a deployed workflow executed correctly.
 4. **Check tests.** Read what the tests actually assert, not just that they exist.
-5. **Ask the author what they manually tested.** The PR author is the only source of truth for manual testing. Never infer it from the diff or CI, and never widen what they say. If you do not have their exact answer, ask before drafting the Verification section.
+5. **Use author-supplied manual-test evidence.** The PR author is the only source of truth for manual testing. Never infer it from the diff or CI, and never widen what they say. If no evidence is available, draft the Verification section as `Manual testing: not reported.` and put relevant manual checks in post-merge follow-up; ask only when the task is to solicit that evidence.
 
 ## Body structure
 
-Keep it short; a reviewer should read the whole thing in under a minute. Use numbered lists for topics, verification checks, post-merge checks, and open calls, so review conversation can say "open call 2" instead of quoting.
+Keep it short enough for the actual PR. Honor an explicit repository template or maintainer request first. For a product or multi-part change, use the sections below when they add review value; for a focused fix, use `Root cause`, `Fix`, and `Verification`. Use numbered lists only when the items need a stable reference in review conversation.
 
 ### 1. What changed and why
 
@@ -46,7 +46,7 @@ If a maintainer explicitly wants the older two-section layout, use it, but the a
 
 ### 2. Verification
 
-Only what a human manually did, with its exact scope stated honestly, ending with a line like "That is the only functionality tested by hand, nothing else." Take the scope word for word from the author's answer from step 5 above. Everything untested becomes a numbered post-merge checklist ("Still to check by hand right after merge:"). Never list gate, lint, build, or test commands, and never catalog test cases or status codes; CI proves those on its own and the maintainer does not want them here. "Tests exist" belongs in What changed, in plain English.
+Report only evidence actually available. State manual testing with its exact author-supplied scope, or `Manual testing: not reported.` Report automated evidence separately with the actual command or CI check and result, including a failed, skipped, or unavailable result when relevant. Do not claim production behavior from CI or local tests. Put material untested workflows in a concise post-merge checklist.
 
 ### 3. Database / Supabase / edge functions / migrations
 
@@ -62,11 +62,11 @@ Numbered. Only unresolved product or risk decisions. For each: state it, recomme
 
 ### Footer
 
-Reference only OPEN issues and PRs. If a referenced issue was closed or folded into a successor, link the live successor instead. Verify every reference with `gh issue view <n>` (or `gh pr view <n>`) before publishing. If the body is AI-written, end it with the Claude Code attribution footer.
+Reference issues and PRs when they help a reviewer trace context. Verify their current state this session, and label a historical closed reference or successor accurately rather than dropping useful provenance. Include an attribution footer only when the user, repository, or host requires it, and name the actual tool that produced the draft.
 
 ## Scaling down
 
-A pure fix does not get the full structure. Use Root cause / Fix / Verification. The Verification rules and both named tests still apply.
+A pure fix does not get the full structure. Use Root cause / Fix / Verification, keeping only the decision or follow-up context that affects review.
 
 ## Writing style
 
@@ -87,7 +87,7 @@ A description that violates these reads generated, which undercuts the whole poi
 
 ## Final self-check (mandatory)
 
-Before delivering the draft, reread it top to bottom against this checklist. Do not skip it. Earlier versions of this skill stated the duplication and change-list rules as prose and drafts violated them anyway; the checklist exists because prose rules are not enough.
+Before delivering the draft, check it against the selected structure and the user's or repository's stated requirements.
 
 1. Every sentence passes the say-it-aloud test.
 2. No raw code, queries, or config fragments in prose.
@@ -97,37 +97,29 @@ Before delivering the draft, reread it top to bottom against this checklist. Do 
 6. No fact stated twice anywhere in the body (deletion test).
 7. Every Key decision line names a credible rejected alternative (alternative test), and each decision sub-bullet is at most two sentences.
 8. The Key decision lines, read alone, are judgment calls, not a reworded change list.
-9. Verification scope matches exactly what the author said they tested by hand, with the untested rest in a numbered post-merge checklist. No gate commands or test-case catalogs.
-10. Every referenced issue or PR was verified open this session; closed ones were replaced with their live successor.
-11. Topics, verification checks, and open calls are numbered lists.
+9. Manual verification matches author-supplied evidence or says it was not reported; automated evidence reports the actual command or check and outcome. Untested material workflows have a proportionate follow-up.
+10. Every referenced issue or PR has a state verified this session and any historical reference is labeled accurately.
+11. The structure follows an explicit user/repository template when one exists; otherwise it is proportionate to the diff.
 
 ---
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-pr-description:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-pr-description: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-pr-description: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

@@ -1,10 +1,8 @@
 # Step 4: Analysis & Signals
 
-## Before anything else — BLOCKING REQUIREMENT
+## Use the analysis reference proportionately
 
-<CRITICAL>
-You MUST read `references/04-analysis-and-signals.md` BEFORE responding to the user. Do NOT skip this. This file contains the actual frameworks and instructions — without reading it, your output will be generic and wrong.
-</CRITICAL>
+Consult `references/04-analysis-and-signals.md` when analyzing discovery evidence or creating a findings report. For a supplied pattern, quote, or narrow decision, use the relevant framework without requiring a full report workflow.
 
 ## What this step accomplishes
 
@@ -14,7 +12,7 @@ Help the user make sense of their interviews. By the end, they should know what 
 
 ### Get the raw material
 
-Ask the user to share their interview transcripts or notes — or both. They can paste them in, describe what they heard, or point to files. Raw transcripts are ideal (more detail, less filtering), but messy notes work too. Work with whatever they have.
+Work with the interview transcripts or notes already available. If there is not enough evidence for the requested analysis, ask the user to paste, describe, or point to the missing material. Raw transcripts are ideal, but messy notes work too.
 
 If their material is thin, help them reconstruct what they remember. Prompt with: "What surprised you?" "What did you hear more than once?" "Did anyone describe a workaround they built?"
 
@@ -72,9 +70,9 @@ Help them figure out their next move:
 - **Patterns aren't emerging after 15-20 interviews?** The segment or hypothesis is probably off. Rethink before doing more interviews.
 - **Strong signals but only from a few people?** Might need more interviews to confirm, or might have found a very specific niche.
 
-## Deliverable
+## Durable deliverable
 
-Offer to produce a **Discovery Findings Report** — a document that captures everything learned so the insights don't live only in the user's head. This is the document they'd share with co-founders, advisors, or investors to show what they learned.
+When the user asks for a report, or a full evidence analysis naturally produces one, write a **Discovery Findings Report** that captures what was learned for co-founders, advisors, or investors.
 
 The report should include:
 - **Interview summary table:** Who was interviewed (name/role, date, format), one-line takeaway per interview.

@@ -24,11 +24,11 @@ If the user clearly wants to set up a legitimate delegation, skip this and go to
 
 ## The root question (the deepest diagnostic in the coach)
 
-Everything here traces back to the single question Lencioni says every leader must answer honestly:
+Everything here uses a question Lencioni presents as central to his framework:
 
 > **"Why do you want to be a leader?"**
 
-At the most fundamental level there are only two answers — *to serve* or *to be rewarded* — and the answer predicts whether the leader does the hard, tedious work that only a leader can do. This flow's job is to help the user answer it honestly *for the specific situation in front of them*, and, when the situation warrants, to ask it of their leadership as a whole. Ask it plainly when a session needs it: *"Set the task aside for a second — why do you want to be a leader of this team at all?"* The answer reframes everything downstream.
+Lencioni frames the answers as *to serve* or *to be rewarded*. Use that as a reflective lens for the specific situation, not as a psychological verdict. Ask the root question only when the user wants to explore a recurring pattern or when the answer would materially change the advice.
 
 ## The two motives (the frame this whole flow reads through)
 
@@ -43,11 +43,11 @@ No one is purely one or the other. The job here is not to label the user a bad l
 
 ---
 
-## The flow (run the moves in order)
+## The flow (use the moves that the situation needs)
 
 ### Move 1 — Name the situation (Listen)
 
-Get the concrete thing on the table. One question:
+Use the concrete task, conversation, or decision the user already supplied. Ask the following only when the situation is still too abstract to assess:
 
 > **Question:** What's the specific thing you're wrestling with — the task, conversation, or decision you're circling?
 
@@ -55,9 +55,9 @@ Make them name a *specific* thing, not a category. "My team" → "what about you
 
 ### Move 2 — Run the two tests (Educate + Apply)
 
-Hold two questions silently against what they said, then ask the user directly about the one that matters.
+Hold two questions silently against what they said, then ask the user directly only about the one whose answer changes the recommendation or requested artifact.
 
-**Test A — the five-omissions test.** Is this one of the five things only a leader can do?
+**Test A — retained-accountability test.** Does this touch one of the five responsibilities a leader must remain accountable for?
 
 1. Developing the leadership team
 2. Managing subordinates (and making them manage theirs)
@@ -65,13 +65,13 @@ Hold two questions silently against what they said, then ask the user directly a
 4. Running team meetings
 5. Communicating the core message constantly
 
-If yes, the situation is not a delegation question at all — it's an "am I doing my job" question. Say so plainly.
+If yes, identify the accountability the leader must retain. Preparation, facilitation, and execution may still be shared; do not treat support for the work as abdication by default.
 
-**Test B — the motive tell.** Ask the diagnostic:
+**Test B — the motive tell.** When avoidance is plausible and unresolved, ask the diagnostic:
 
 > **Question:** Be honest with yourself for a second — are you looking to hand this off (or avoid it) because someone else genuinely should own it, or because it's tedious, uncomfortable, or just not the part of the job you enjoy?
 
-Then listen for the reward-centered tells:
+Then listen for possible reward-centered tells:
 - "It's not a good use of my time" applied to people-work (developing, managing, confronting)
 - "I trust them, so I stay out of it" (trust is not a substitute for management — see the management line)
 - "I've already said it" (communication as a one-time transaction)
@@ -80,7 +80,7 @@ Then listen for the reward-centered tells:
 
 ### Move 3 — Deliver the honest read (Apply)
 
-State the diagnosis in one or two direct sentences. Attribute the principle. Examples of the move:
+When the evidence supports a motive read, state it in one or two direct sentences and label it an inference. Attribute the principle. If the user asked for a well-specified artifact and the concern does not change it, include a concise concern in the artifact instead of delaying delivery. Examples of the move:
 
 - *"Wanting to hand off developing your team isn't a delegation call — Lencioni's point is that if your team doesn't see you owning it, they won't take it seriously. This one's yours."*
 - *"'I trust them so I don't manage them' is the exact line Lencioni calls out. Trusting someone isn't an excuse for not managing them — management is aligning their actions with the org and catching small problems early."*
@@ -99,9 +99,9 @@ The diagnosis is worthless without a next move. Two paths:
   - Running meetings → `../running-meetings/flow.md`
   - Repetitive communication → `../repetitive-communication/flow.md`
 
-  Say it as an invitation: *"Let's build the plan to actually do this."* Then deliver the Motive Diagnosis artifact below as the bridge, and continue into that flow in the same session if the user is willing.
+   Deliver the requested, responsibility-centered artifact now when its necessary facts are known. Use the Motive Diagnosis artifact below as a concise bridge, then offer the deeper flow when it would help the user do the work.
 
-- **If it's a genuinely delegable task with a reward-centered wobble →** name the wobble, then route to `../delegation/flows/pre-delegation.md`. The delegation is fine; the user just needed to see they were reaching for it to escape tedium, not to serve the work.
+- **If it's a genuinely delegable task with a reward-centered wobble →** name the wobble, then build or refine the requested delegation artifact. Route to `../delegation/flows/pre-delegation.md` only for the detail the remaining handoff needs.
 
 ---
 
@@ -121,7 +121,7 @@ Deliver as a markdown block. Keep it short — this is a mirror, not a report.
 <1–2 sentences: the specific behavior or phrase that showed the motive. Quote the user where you can.>
 
 ## Is this one of the five?
-<Yes → name which omission, and state that it is not delegable. / No → it's a legitimate delegation, with a motive note.>
+<Yes → name which responsibility the leader retains and any bounded support that can be delegated. / No → it is a legitimate delegation, with a motive note if relevant.>
 
 ## The responsibility-centered move
 <One concrete next action. Not "think about it" — a scheduled conversation, a management cadence, a plan to build. Names the flow it routes into.>
@@ -133,18 +133,18 @@ Deliver as a markdown block. Keep it short — this is a mirror, not a report.
 
 ## Pre-empted shortcuts
 
-- **Don't soften the read into mush.** "There might be a little of both and it's totally understandable" helps no one. Name the dominant motive in this situation, plainly and kindly.
+- **Don't overstate the read.** Name the evidence and describe motive as an inference. Let the user's explanation update the diagnosis.
 - **Don't diagnose the person's character.** The motive is about *this situation*, not their soul. Lencioni is explicit: no one is purely one motive. Keep it local.
 - **Don't stop at the diagnosis.** A read with no move is just a critique. Every diagnosis converts to a concrete action and a route.
-- **Don't route a five-omission task into delegation.** That's the exact error the whole gate exists to catch. If it's one of the five, it goes to that omission's flow, never to a delegation brief.
+- **Don't lose the leader's accountability in a five-omission task.** If support is delegated, make the retained leadership responsibility and follow-through explicit.
 
 ---
 
 ## Acceptance self-audit (run before declaring done)
 
 - [ ] The situation is named specifically, not as a category
-- [ ] The motive is named (reward / responsibility / mixed-sliding) with the behavior that revealed it
-- [ ] The five-omissions test was run and its result stated
+- [ ] If motive affected the advice, it is named (reward / responsibility / mixed-sliding) with the behavior that revealed it
+- [ ] The five-omissions test was run when the request could implicate one, and its result is stated
 - [ ] A concrete responsibility-centered move exists, with the flow it routes into
-- [ ] If it's one of the five omissions, it was *not* converted into a delegation brief
+- [ ] If it is one of the five omissions and support is delegated, the leader's retained accountability and follow-through are explicit in the artifact
 - [ ] The read was direct but charitable — no character verdict

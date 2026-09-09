@@ -109,7 +109,7 @@ Grove says the follow-through is non-negotiable; Lencioni says the follow-throug
 - `frameworks/difficult-conversations/flow.md` — Omission 3, clarity/charity/resolve, joyful accountability, the selfishness reframe.
 - `frameworks/running-meetings/flow.md` — Omission 4, meetings-as-surgery, the ceiling principle.
 - `frameworks/repetitive-communication/flow.md` — Omission 5, the rule of seven, the CRO role.
-- `frameworks/delegation/phases/1-intake.md` — the motive check that can halt a delegation.
+- `frameworks/delegation/phases/1-intake.md` — the motive check that names retained accountability and any plausible avoidance concern.
 - `frameworks/delegation/phases/7-diagnose.md` — reward-centered motive as a root cause behind structural gaps.
 
 ## Sources (live-fetched on 2026-07-06)

@@ -1,10 +1,10 @@
 # Phase 4 — Build the Delegation Brief
 
 <primary_outcome>
-By the end of this phase you have six (or, in flat teams, seven) named brief elements drafted: ① What (the deliverable), ② Why (the context), ③ Success Looks Like (externalized standard), ④ Constraints, ⑤ Authority Level (named with a number 1–5), and — in flat teams — ⑥ Reciprocal Commitments. Each element has actual content; "we'll figure that out" does not count. This is the longest and highest-leverage phase. Most delegation failures trace back to a brief element that was vague, missing, or assumed.
+By the end of this phase you have five (or, in flat teams, six) named brief elements drafted: ① What (the deliverable), ② Why (the context), ③ Success Looks Like (externalized standard), ④ Constraints, ⑤ Authority Level (named with a number 1–5), and — in flat teams — ⑥ Reciprocal Commitments. Each element has actual content; "we'll figure that out" does not count. This is the longest and highest-leverage phase. Most delegation failures trace back to a brief element that was vague, missing, or assumed.
 </primary_outcome>
 
-This is the phase where the user externalizes everything that has been living in their head. Walk through each element one at a time. Ask, listen, move on. **Don't present all six at once** — that's a form, not a coaching conversation. One element per exchange.
+This is the phase where the user externalizes everything that has been living in their head. For an exploratory coaching conversation, work through unclear elements one at a time. When the user already supplied enough facts for a direct brief, synthesize the elements in one pass and label any material assumptions. Do not turn a well-specified request into a six-turn form.
 
 The principle behind the brief: **specify what done looks like, not how to get there.** Prescribing steps eliminates the owner's judgment and ownership. Defining the outcome hands them a problem to solve — more engaging, develops skills faster, adapts better to conditions the user didn't anticipate.
 
@@ -147,7 +147,7 @@ Source: [Sullivan — *Who Not How*](../../../references/sullivan_who-not-how.md
 - **Don't use adjectives in element ③.** "Polished," "professional," "high-quality," "tight" — these don't externalize the standard. Push for examples, formats, lengths, audiences, what specifically the user doesn't want.
 - **Don't skip element ⑤ because "they know."** They don't. Or — they think they know, and they're at a different level than the user thinks. Name it.
 - **Don't skip element ⑥ in a flat team.** If the user is in a flat team and you didn't surface reciprocal commitments, the brief is structurally incomplete.
-- **Don't present all six elements at once.** One element per exchange. Wait for the user's answer before moving on.
+- **Don't turn an exploratory conversation into a form.** Resolve unclear elements one at a time; when a direct request already provides the facts, synthesize the relevant elements and label material assumptions.
 
 ---
 
@@ -160,7 +160,7 @@ Source: [Sullivan — *Who Not How*](../../../references/sullivan_who-not-how.md
 - ⑤ Authority Level: number 1–5 named with the matching level name
 - ⑥ Reciprocal Commitments (flat teams only): specific items the user / team owes the owner
 
-When all of those are true (six for hierarchical, six-plus-one for flat), move to Phase 5.
+For a complete delegation setup, when all applicable elements are true (five for hierarchical, six for flat), set the monitoring plan in Phase 5. For a direct draft, include the monitoring assumptions or triggers that the known facts support and identify what must be confirmed before sharing it.
 
 ---
 

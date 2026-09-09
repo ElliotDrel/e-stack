@@ -2,6 +2,10 @@
 
 A synthesis of Theo's (t3.gg) approach to writing, structuring, and maintaining context files for AI coding agents — `AGENTS.md`, `CLAUDE.md`, `agent.md` — based on his video **"How I Build with AI (Updated)"** ([youtube.com/watch?v=xJaMTo2YgO8](https://www.youtube.com/watch?v=xJaMTo2YgO8)).
 
+> Historical reference note: use this as a source summary, not current platform
+> guidance. Fetch the linked video before presenting a quote or factual detail as
+> verified.
+
 Context: He developed this view while building **Lakebed** (codename "span"), a from-scratch full-stack TypeScript framework/cloud, mostly solo, over ~5 days and 100+ agent threads. He used GPT-5.5 ("55") primarily, via the Codex app and T3 Code, and tested Cursor, Claude Code, and open code along the way. This document focuses narrowly on his agent-context-file philosophy, not the full workflow.
 
 ---

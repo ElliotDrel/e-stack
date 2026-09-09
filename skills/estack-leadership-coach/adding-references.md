@@ -1,7 +1,10 @@
 # How to add a reference file to the knowledge vault
 
 <primary_outcome>
-A new file in `references/` that contains live-fetched, properly cited source material — plus every placeholder link and "Real-world case" block in the skill that points to it has been updated to use the verified content from that file. After this task is complete, the user can ask the coach about that source mid-session and get a grounded answer with a real URL.
+A new file in `references/` that contains properly attributed source material and the minimal,
+source-faithful extracts or summaries needed for the coach to use it. The file records whether its
+evidence was fetched from the web or supplied locally, so the user can ask about the source
+mid-session and get a grounded answer with accurate provenance.
 </primary_outcome>
 
 This file is the playbook for populating the knowledge vault. The user triggers it by saying something like *"I want to add a reference source"* or *"Let's build the reference for [author/work]."* When that happens, load this file and follow it step by step.
@@ -10,31 +13,32 @@ This file is the playbook for populating the knowledge vault. The user triggers 
 
 ## Hard rules (apply throughout — never violated)
 
-1. **Live-fetch every fact.** Use `WebSearch`, `WebFetch`, or `mcp__claude_ai_Supadata__supadata_transcript` (for YouTube, Instagram, TikTok, and all other social media) every single session you build a reference. Never recall content from training memory and present it as sourced. This rule comes from the user's global CLAUDE.md and is not negotiable.
-2. **Cite real URLs only.** Every reference file ends with a Sources section that contains URLs fetched this session. A name without a URL is a fabricated citation — do not write one.
-3. **Do not paraphrase quotes.** If you put text in quote marks, it must be a verbatim extract from the fetched source. Otherwise drop the quotes and frame as synthesis.
-4. **Note the fetch date.** Every reference file's frontmatter records the date the material was fetched. Source content drifts; the fetch date is how the user knows how fresh the snapshot is.
-5. **If you can't fetch it, say so.** Books that aren't online verbatim, paywalled articles, deleted videos — these can't be sourced live. Tell the user, and propose pulling from interviews / talks / podcast appearances by the same author that *are* accessible OR ask the user to provide the source. Do not fabricate to fill the gap.
+1. **Ground every factual claim in evidence actually inspected.** For current or external web claims, use `WebSearch`, `WebFetch`, or `mcp__claude_ai_Supadata__supadata_transcript` (for YouTube, Instagram, TikTok, and other social media). A user-supplied book, document, or local file is valid evidence too. Never present recalled training material as sourced.
+2. **Cite the evidence accurately.** Cite fetched web material with its real URL. Cite supplied local material with the title, edition or version, filename, and page or section when available; label it supplied. Never invent a URL, page number, timestamp, or source location.
+3. **Quote carefully; synthesize normally.** Text in quotation marks must be a short, verbatim extract from an available source and must preserve its meaning. Paraphrase and synthesis are appropriate when attributed to their supporting source; do not disguise them as quotations or reproduce copyrighted passages at length.
+4. **Record provenance and timing.** Use `last_fetched` for live web sources. For supplied material, record `source_version`, `supplied_on`, or the edition/date available from the source. Do not imply a local source was fetched from the web.
+5. **Surface real gaps.** If a needed source cannot be fetched and the user has not supplied it, say so. Propose accessible primary material or ask the user to provide the source; do not fabricate to fill the gap.
 
 ---
 
-## Workflow (six steps — run in order)
+## Workflow (six steps — adapt to the evidence and request)
 
-### Step 1 — Confirm scope with the user (ask 1–3 questions, then stop)
+### Step 1 — Establish the source and intended use
 
-Before fetching anything, get explicit on:
+Use the request and any supplied material to establish:
 
 1. **Which source?** Specific book, article, talk, video, podcast episode — with title and author.
 2. **Which type of reference?**
    - **Extraction** — verbatim quotes/passages organized for retrieval (best for talks, interviews, articles, video transcripts)
    - **Synthesis** — organized key takeaways drawn from longer material (best for books, multi-source bodies of work)
 3. **Which phases / placeholders should this reference feed?** (Optional but helpful — narrows the synthesis.) For example: *"This Grove reference should feed the Phase 2 TRM case placeholder and the Phase 5 midpoint-review placeholder."*
+4. **What evidence is available?** A URL or accessible web source, or a supplied book, document, excerpt, or local file.
 
-Stop and wait for the answers. Do not start fetching yet.
+If those facts are already clear, inspect or fetch the source in the same turn. Ask only the question whose answer would materially change the reference; do not add a separate scope-confirmation turn.
 
-### Step 2 — Live-fetch the source material
+### Step 2 — Inspect the source material
 
-Pick the right tool for the source type:
+For web sources, pick the right tool for the source type:
 
 | Source type | Tool | Notes |
 |---|---|---|
@@ -44,7 +48,7 @@ Pick the right tool for the source type:
 | Podcast episode | Check if the podcast has a transcript page; fetch that with `WebFetch`. Otherwise look for show notes / quoted passages from secondary coverage. | Note: audio-only without transcript ≠ fetchable. |
 | Book | Look for: official author talks on the book's themes, interviews with the author, publisher excerpts, the author's own essays summarizing the book. Cite each fetched piece. | Do not fabricate page numbers or "quotes from the book" without a verifiable source. |
 
-If the first fetch is thin, do additional fetches. A good reference file synthesizes 2–4 sources, not 1.
+For user-supplied material, inspect the relevant pages, sections, or excerpts. Record its identity and the specific locations available. Use additional authoritative material only when it fills a real gap in the requested reference; a single primary source can be enough.
 
 ### Step 3 — Decide the type and pick the template
 
@@ -56,7 +60,7 @@ If both apply (e.g., a book with multiple author talks) → synthesis as the pri
 
 ### Step 4 — Create the reference file
 
-**Location:** `~/.claude/skills/estack-leadership-coach/references/<filename>.md`
+**Location:** `~/.agents/skills/estack-leadership-coach/references/<filename>.md`
 
 **Filename convention:** `<author-lastname>_<work-shortname>.md` — lowercase, hyphens not underscores within name parts, single underscore between author and work. Examples already in the skill:
 
@@ -70,29 +74,28 @@ Create the file using the appropriate template from the **Templates** section be
 
 ### Step 5 — Wire it up across the skill
 
-A new reference file is only useful if the existing placeholders find it. After creating the file, do a complete sweep:
+A new reference is useful when the relevant flow can find it without copying the source vault into
+the flow. Search for direct references to the author, work, or filename in `SKILL.md`, phase files,
+and flow files. Then make only the updates the evidence supports:
 
-1. **Search every phase file** for the filename you just created. Each match is either:
-   - A "Going deeper" link block at the bottom of the phase → no change needed, the link already points correctly
-   - A "Real-world case" placeholder pointing to this reference → **replace the placeholder block with verified case material from the new reference file**
-2. **Search `SKILL.md`** for any inline mention of the author / work that the new reference covers. If a paraphrased claim or quote in `SKILL.md` is now backed by your verified source, update it to match the source's actual wording. If it doesn't match, hedge it or remove it — do not bend the source to fit the existing prose.
-3. **Search flow files** (`flows/pre-delegation.md`, `flows/post-mortem.md`). Less common, but check.
+1. Keep or add a concise link where the flow needs the source for deeper detail or attribution.
+2. Correct, hedge, or remove an inline claim that the fetched source does not support.
+3. Replace a selected placeholder only when the new source contains an example that materially
+   improves the coaching. Summarize it in a few sentences and link the reference; do not copy
+   paragraphs of source prose into the phase file.
 
-For each "Real-world case" placeholder you replace:
-
-- Pull 1–2 paragraphs from the reference file's body — verbatim where you can, synthesized where you must
-- Keep the section header as `## Real-world case: <descriptive title>` (drop the `(placeholder — fill in during reference build)` marker)
-- Include the source URL inline or as a footnote: *"From Grove, *High Output Management*, p. 142 — see [reference](../../../references/grove_high-output-management.md)"*
-- Do **not** add invented specifics. If the reference has no verbatim case with the dialogue/metrics that would make the section pop, write a short principle illustration grounded in what *is* in the reference, and accept that it's less dramatic than the placeholder hoped for.
+Do not update every matching file merely because a reference was added. The reference file is the
+knowledge vault; phase files should retain the decision rule and point to the vault when detail is
+needed.
 
 ### Step 6 — Verify (acceptance self-audit)
 
 Before declaring done, confirm:
 
 - [ ] Reference file exists at the expected path with the expected filename
-- [ ] Frontmatter includes `name`, `author`, `work`, `type` (extraction/synthesis), `last_fetched` date, and `sources` (URLs)
-- [ ] Every fact, quote, and statistic in the file is traceable to a URL in the Sources section
-- [ ] Every "Real-world case" placeholder that points to this reference has been replaced with verified content OR explicitly left as a placeholder with a note explaining why (e.g., "verified content available but not yet drafted")
+- [ ] Frontmatter includes `name`, `author`, `work`, `type` (extraction/synthesis), and accurate provenance: `last_fetched` and URLs for web evidence, or source version/supplied date and local citation details for supplied evidence
+- [ ] Every fact, quote, and statistic in the file is traceable to the specific source listed in the Sources section
+- [ ] Any updated placeholder or inline claim is supported by the new reference, and links to it where helpful
 - [ ] Every "Going deeper" link block in phase files that references this file still resolves correctly
 - [ ] No hedged or fabricated content has been smuggled in — if the source doesn't say it, the reference file doesn't say it
 - [ ] Filename in the file matches the link paths used by placeholders
@@ -114,10 +117,11 @@ title: <Full title of the work>
 author: <Author name(s)>
 work_type: <article | talk | interview | podcast | video transcript>
 type: extraction
-last_fetched: <YYYY-MM-DD>
+last_fetched: <YYYY-MM-DD if live-fetched>
+supplied_on: <YYYY-MM-DD if supplied by the user>
+source_version: <edition, file version, or other local identifier if available>
 sources:
-  - <URL 1>
-  - <URL 2>
+  - <URL 1 or supplied title, edition/file, and page/section>
 ---
 
 # <Author> — *<Work title>*
@@ -138,7 +142,7 @@ sources:
 > "<Verbatim quote 2>"
 > — <Source location>
 
-(Pull 5–15 strong extractions. Each one is verbatim. Each one cites where in the source it came from.)
+(Include only the short, useful extracts the source supports. Each quotation is verbatim and cites a URL, timestamp, page, or section. Summarize instead where an extract would be long or unavailable.)
 
 ## Notable cases / illustrations from the source
 
@@ -146,17 +150,17 @@ sources:
 
 ### <Case 1 title>
 
-<Faithful retelling, with direct quotes where possible. Cite the location in the source.>
+<Faithful summary, with a short direct quote only when it helps. Cite the location in the source.>
 
 ## Where this is used in the skill
 
 - `phases/<file>.md` — <which placeholder / "Going deeper" block uses this>
 - `SKILL.md` — <if applicable>
 
-## Sources (live-fetched on <YYYY-MM-DD>)
+## Sources
 
-- [<Title of source>](<URL>)
-- [<Title of source>](<URL>)
+- Live-fetched <YYYY-MM-DD>: [<Title of source>](<URL>)
+- Supplied: <Title, edition or filename, page/section if available>
 ```
 
 ### Template B — Synthesis reference
@@ -170,11 +174,11 @@ title: <Full title of the work or body of work>
 author: <Author name(s)>
 work_type: <book | body of work>
 type: synthesis
-last_fetched: <YYYY-MM-DD>
+last_fetched: <YYYY-MM-DD if live-fetched>
+supplied_on: <YYYY-MM-DD if supplied by the user>
+source_version: <edition, file version, or other local identifier if available>
 sources:
-  - <URL 1>
-  - <URL 2>
-  - <URL 3>
+  - <URL or supplied title, edition/file, and page/section>
 ---
 
 # <Author> — *<Work title>*
@@ -191,7 +195,7 @@ sources:
 
 ### Principle 1: <name>
 
-<2–3 paragraph synthesis of the principle, drawn from the fetched sources. Use direct quotes where the source language is sharp; paraphrase where you're integrating across sources. Every claim should be defensible against the Sources section below.>
+<2–3 paragraph synthesis of the principle, drawn from the inspected sources. Use short direct quotes only where the source language is necessary; paraphrase when integrating across sources. Every claim should be defensible against the Sources section below.>
 
 ### Principle 2: <name>
 
@@ -223,10 +227,10 @@ sources:
 - `phases/<file>.md` — <which placeholder uses this>
 - `SKILL.md` — <if applicable>
 
-## Sources (live-fetched on <YYYY-MM-DD>)
+## Sources
 
-- [<Title>](<URL>)
-- [<Title>](<URL>)
+- Live-fetched <YYYY-MM-DD>: [<Title>](<URL>)
+- Supplied: <Title, edition or filename, page/section if available>
 
 ## Known gaps
 
@@ -237,7 +241,7 @@ sources:
 
 ## Cross-reference map (where to look when wiring up)
 
-For convenience, here's where each existing reference filename is mentioned in the skill body. When you build a new reference, update *all* the locations that point to it.
+For convenience, here's where each existing reference filename is mentioned in the skill body. Use it to find locations that may need a link, attribution correction, or a supported example. Update only the locations the new evidence actually improves.
 
 | Reference file | Mentioned in |
 |---|---|
@@ -255,13 +259,13 @@ For convenience, here's where each existing reference filename is mentioned in t
 | `gallup_engagement-research.md` | `phases/3-enrollment.md` |
 | `van-edwards_cues.md` | `phases/5-monitoring.md` |
 
-If you add a reference not on this list, append it to this map after you finish the wire-up so future passes have an accurate index.
+If you add a reference not on this list, append it to this map after the targeted wire-up so future passes have an accurate index.
 
 ---
 
 ## Pre-empted shortcuts
 
-- **Don't research from memory and dress it up as sourced.** Every claim needs a URL fetched this session.
+- **Don't research from memory and dress it up as sourced.** Every claim needs traceable inspected evidence; that may be a fetched URL or a clearly identified supplied source.
 - **Don't fabricate page numbers, timestamps, or quote locations.** If you don't know where the quote came from, omit the location citation.
 - **Don't write a "Notable case" with invented dialogue.** If the source contains the case, extract it. If it doesn't, leave the section empty or skip it.
 - **Don't skip the cross-reference sweep.** A reference file that exists but isn't wired up adds zero value to coaching.
@@ -272,10 +276,9 @@ If you add a reference not on this list, append it to this map after you finish 
 
 ## When the user says "add a reference source"
 
-1. Ask the Step 1 questions. Stop and wait.
-2. Once the user answers, fetch the source material (Step 2).
-3. Confirm with the user: *"I fetched [N] sources for [author/work]. Building as a [extraction / synthesis]. Going to populate [N] placeholders in [phase files]. Sound right?"*
-4. Build the reference file (Step 4).
-5. Sweep and wire up (Step 5).
-6. Run the acceptance audit (Step 6).
-7. Report back with what changed and any gaps.
+1. Establish the Step 1 facts from the request and supplied material; ask only material gaps.
+2. Inspect or fetch the source material (Step 2).
+3. Build the reference file (Step 4).
+4. Sweep and wire up (Step 5).
+5. Run the acceptance audit (Step 6).
+6. Report back with what changed and any gaps.

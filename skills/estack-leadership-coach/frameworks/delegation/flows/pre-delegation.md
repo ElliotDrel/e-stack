@@ -1,10 +1,10 @@
 # Pre-delegation flow
 
 <primary_outcome>
-The user finishes this flow with two things in hand: (1) a complete Delegation Brief in markdown, ready to share with the person taking the work, and (2) enrollment talking points for the sit-down conversation that happens before the brief is shared. If the user leaves without both of those, the flow is not complete.
+For a substantial delegation setup, the user leaves with a complete Delegation Brief in markdown and the enrollment talking points needed before sharing it. For a narrow request, deliver the requested draft, review, or decision with the handoff elements relevant to its stakes. Do not withhold a usable artifact merely because a broader delegation flow was not requested.
 </primary_outcome>
 
-This flow runs when the user has not yet handed off the work and wants to set the delegation up correctly. It orchestrates Phases 1 through 6 in order, then assembles the artifact.
+This flow runs when the user has not yet handed off the work and wants to set the delegation up correctly. Use the phases to resolve the information the handoff actually needs, then assemble the artifact. A consequential or incomplete handoff benefits from the full sequence; a well-specified direct request can be drafted from the facts already supplied.
 
 ---
 
@@ -21,24 +21,24 @@ If the work has already been handed off and went sideways, use `post-mortem.md` 
 
 ## Phase sequence
 
-Each phase has its own file in `../phases/`. Load and follow each one in order. Do not jump ahead — a phase is incomplete until it produces the output the phase declares.
+Each phase has its own file in `../phases/`. For a consequential or incomplete handoff, follow the sequence and resolve the fields that affect the brief. When the user already supplies a complete, low-risk brief request, synthesize its relevant outputs in one pass and ask only for material blanks. Do not manufacture a multi-turn intake just to traverse every phase.
 
 | # | Phase | Output the phase must produce |
 |---|---|---|
-| 1 | `../phases/1-intake.md` | Motive-gate result (not one of the five omissions; reward-centered motive named if present); named task, named owner (or owner-selection logic for flat teams), timeline; filter decision (Eliminate / Automate / Delegate / hold); resistance pattern named if present |
+| 1 | `../phases/1-intake.md` | Contextual accountability and motive read when relevant; named task, named owner (or owner-selection logic for flat teams), timeline; filter decision (Eliminate / Automate / Delegate / hold); resistance pattern named if present |
 | 2 | `../phases/2-trm-assessment.md` | Task-Relevant Maturity for this person on this task (Low / Medium / High) + Hormozi progression stage (Investigation / Informed Progress / Informed Results / Complete Ownership) |
 | 3 | `../phases/3-enrollment.md` | Enrollment talking points: the problem, why-them, the energizing question, the needs question |
 | 4 | `../phases/4-build-brief.md` | The brief: What, Why, Success Looks Like, Constraints, Authority Level (1–5), Reciprocal Commitments (flat teams) |
 | 5 | `../phases/5-monitoring.md` | Check-in schedule with cadence calibrated to TRM, and what each check-in will cover |
 | 6 | `../phases/6-reverse-delegation.md` | A named protocol for what the owner does when they hit a roadblock — preventing monkey-transfer back to the user |
 
-After Phase 6, deliver the artifact using the template below. Do not declare the session done until the artifact is in the conversation.
+After the needed inputs are resolved, deliver the artifact using the template below. Do not declare substantial delegation work done until the artifact is in the conversation.
 
 ---
 
 ## Compressed path
 
-If all four conditions are true (trusted peer or proven high-TRM teammate, low public visibility, short timeline, low cost of failure), run a four-step compressed path instead:
+If the handoff is low-risk or the user asks for a narrow artifact, use this compressed path. It is also appropriate when the supplied facts already establish the four conditions (trusted peer or proven high-TRM teammate, low public visibility, short timeline, low cost of failure):
 
 1. Confirm the deliverable in one sentence (Phase 1 + 4 condensed)
 2. Name "why you" in one sentence (Phase 3 Move 2 only — the other three moves are skipped)
@@ -53,16 +53,16 @@ If at any point a condition turns out to be false (the timeline grew, the visibi
 
 ## Pre-empted shortcuts
 
-- **Don't lecture all 6 phases up front.** The user will check out. Run phases one at a time.
-- **Don't fill in the brief from your assumptions.** If the user couldn't articulate Success Looks Like, do not generate it. Push the question back until they have it.
-- **Don't skip enrollment because "they're already on board."** Enrollment is not the user's belief about the owner's buy-in — it's the talking points the user will use in the actual conversation. Always produce them.
-- **Don't deliver the brief without check-ins on the calendar.** A brief without a check-in schedule is abdication waiting to happen.
+- **Don't lecture all 6 phases up front.** Use only the parts that affect the requested handoff.
+- **Don't invent a brief from unsupported assumptions.** State reasonable assumptions in a draft and ask only for blanks that materially change the recommendation.
+- **Don't skip enrollment because "they're already on board."** When the user needs to have the conversation, include the talking points that will make ownership clear.
+- **Don't omit proportionate follow-through.** A brief needs a check-in cadence or trigger that matches the work's risk and the owner's readiness.
 
 ---
 
 ## Artifact template — Delegation Brief
 
-When all six phases are complete, deliver the artifact as a markdown block exactly like this. Fill in every field with the specific content captured during the phases.
+For a complete delegation setup, deliver the artifact as a markdown block using this structure and fill in every field with specific content. For a direct draft, include the sections supported by the supplied facts, label material assumptions, and identify the few fields that require confirmation before the user shares it.
 
 <template>
 
@@ -124,7 +124,7 @@ When all six phases are complete, deliver the artifact as a markdown block exact
 
 ## Acceptance self-audit (run before declaring the session done)
 
-Before delivering the artifact, silently verify all of these. If any is false, return to the relevant phase rather than ship a half-done brief.
+Before delivering a complete brief, silently verify all of these. For a direct draft, verify the sections that apply, label material gaps, and do not force an unrelated phase just to satisfy this audit.
 
 - [ ] The deliverable is specific enough that a stranger could tell if it was met
 - [ ] Success Looks Like is concrete — not "polished" or "high-quality" or "good"
@@ -135,4 +135,4 @@ Before delivering the artifact, silently verify all of these. If any is false, r
 - [ ] Enrollment talking points include a specific "why you" — not a generic compliment
 - [ ] The user has not said "change outcome" without being re-routed
 
-When all are true, deliver the artifact and then ask: *"Want to walk through how to actually open the enrollment conversation, or are you good to go?"*
+When the applicable items are true, deliver the artifact. Offer to walk through the enrollment conversation only when it is a useful next move.
