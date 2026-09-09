@@ -7,9 +7,13 @@ Do not run `npm version` or push a `v*` tag here; those actions publish.
 
 Run the repository's release checks that apply to the changed items:
 
+Run `git fetch --tags` first because the version check compares against the
+newest local `v*` tag.
+
 1. `node scripts/check-versions.cjs` verifies changed skill and hook versions.
-2. `node scripts/update-skill-feedback.cjs --check` verifies feedback sections
-   after the shared template has been intentionally regenerated.
+2. `node scripts/update-skill-feedback.cjs --check` verifies feedback sections.
+   Regenerating the shared template changes skill content, so rerun the version
+   check afterward.
 3. `node scripts/check-docs.cjs` verifies skill and hook inventories.
 4. `node scripts/check-skill-name.cjs --all` verifies names and frontmatter.
 5. `node scripts/check-paths.cjs` verifies E-Stack state and credential paths.

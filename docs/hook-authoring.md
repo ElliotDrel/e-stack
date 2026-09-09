@@ -43,6 +43,20 @@ needs host registration. It should read the existing settings, detect its own
 entry, and return before writing in dry-run mode. Follow the closest existing
 setup function for the host and event.
 
+A Claude Code command-hook registration currently has this shape; verify it
+against the current host docs and adapt the event and matcher:
+
+```json
+{
+  "matcher": "WebFetch|WebSearch",
+  "hooks": [{
+    "type": "command",
+    "command": "node \"<installed-hook-path>\"",
+    "timeout": 5
+  }]
+}
+```
+
 `node bin/install.cjs` previews the change. Show that preview and wait for user
 approval before `--install`, because live installation can copy hook files and
 patch host settings.

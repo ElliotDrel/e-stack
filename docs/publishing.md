@@ -51,6 +51,28 @@ repository, npm, or security settings as part of a health check.
 - npm is expected to use Trusted Publishing and to keep token-based publishing
   disabled outside the documented manual fallback.
 
+The last verified baseline recorded these concrete values:
+
+| Area | Setting | Expected value |
+|---|---|---|
+| Branch protection | `required_pull_request_reviews` | enabled, 0 approvals required |
+| Branch protection | `enforce_admins` | `false` |
+| Branch protection | `required_linear_history` | `true` |
+| Branch protection | `allow_force_pushes` / `allow_deletions` | `false` / `false` |
+| Repository | `allow_merge_commit` | `false` |
+| Repository | `allow_squash_merge` / `allow_rebase_merge` | `true` / `true` |
+| Repository | `delete_branch_on_merge` | `true` |
+| Actions | `default_workflow_permissions` | `read` |
+| Repository security | vulnerability alerts, Dependabot security updates, secret scanning, push protection | enabled |
+
+| Publish control | Expected value |
+|---|---|
+| npm Trusted Publisher | `ElliotDrel/e-stack` with `publish.yml` |
+| npm publishing access | Require 2FA and disallow tokens |
+| Workflow permissions | `id-token: write`, `contents: read` |
+| Checkout | `actions/checkout@v6`, `persist-credentials: false` |
+| Node setup | `actions/setup-node@v6` with Node 24 |
+
 Useful read-only checks include the workflow file in the checked-out repository,
 `gh run list --workflow publish.yml`, and authenticated `gh api` reads of the
 relevant repository settings. A failed read is not evidence that the setting has
@@ -58,6 +80,13 @@ its documented value.
 
 Do not use `gh workflow run publish.yml` as an Actions health check. It creates a
 workflow dispatch attempt and does not test the tag-triggered release path.
+
+npm OIDC Trusted Publishing requires the current OIDC-compatible npm toolchain;
+the recorded working baseline uses `actions/setup-node@v6` and Node 24. Trusted
+Publishing supplies authentication and provenance without `NODE_AUTH_TOKEN` or
+an added `--provenance` flag. If Actions was disabled when a tag was pushed,
+re-enabling it does not replay the event; after approval, delete and re-push only
+the intended release tag.
 
 ## Failure handling
 

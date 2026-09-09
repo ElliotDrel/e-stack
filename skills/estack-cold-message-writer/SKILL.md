@@ -1,6 +1,6 @@
 ---
 name: estack-cold-message-writer
-version: 1.1.2
+version: 1.1.3
 description: >-
   (cold-message-writer) First-touch messages to someone who does not know the
   sender, on LinkedIn, email, or X DMs, for fundraising, hiring, partnerships,
@@ -47,7 +47,9 @@ Apply these to every draft. They are not a checklist to cram in all at once; pic
 
 7. **Match the channel's native register.** A lowercase first name can work in an informal DM, but it is a style choice, not evidence of authenticity. Match the sender's actual voice and the relationship.
 
-8. **Keep it short enough to be read quickly.** Cut context that does not earn the reply. The right length depends on the channel, audience, and ask.
+8. **Keep it short enough to be read quickly.** Aim below roughly 50 words for
+a DM and 90 for email, then adjust for the channel, audience, and ask. Cut
+context that does not earn the reply.
 
 9. **One ask per message.** Two asks double the work to reply, so people do neither. Pick the single smallest yes and ask for that alone. The bigger favor (the intro, the call) waits for message two.
 
@@ -80,7 +82,7 @@ This is the deepest version of the one rule, and the most common failure. A cold
 - Adjective-bragging ("amazing," "game-changing," "everyone loves it") instead of small specific proof
 - "Love what you're building" or any detail that isn't tied to why you're writing
 - Asking a stranger for 30 minutes up front
-- A bold InMail subject line
+- A campaign-like InMail subject line
 
 ## When they ghost
 

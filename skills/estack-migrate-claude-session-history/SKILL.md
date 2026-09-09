@@ -1,6 +1,6 @@
 ---
 name: estack-migrate-claude-session-history
-version: 1.0.5
+version: 1.0.6
 description: >-
   (migrate-claude-session-history) Move a Claude Code session transcript and
   its subagent sidecar files to another project so /resume finds it there. Use
@@ -182,7 +182,7 @@ After verification, the user still has work to do. Walk them through these in or
 
 ### 9. Retain or remove the backup
 
-Keep the pre-migration backup by default. It is the recovery handoff for a transcript the user may later discover was incomplete. If the user expressly asks to remove that exact backup after `/resume` works and the source copy is intentionally deleted, first show the resolved backup path and measured size, then remove only that folder and report the result.
+Keep the pre-migration backup by default. It is the recovery handoff for a transcript the user may later discover was incomplete, and sidecar-heavy backups can consume hundreds of megabytes. If the user expressly asks to remove that exact backup after `/resume` works and the source copy is intentionally deleted, first show the resolved backup path and measured size, then remove only that folder and report the result.
 
 ## Common pitfalls
 

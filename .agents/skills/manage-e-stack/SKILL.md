@@ -1,6 +1,6 @@
 ---
 name: manage-e-stack
-version: 1.0.0
+version: 1.0.1
 description: >-
   (manage-e-stack) Manage changes to E-Stack skills, hooks, installation, and
   releases. Use for work in `skills/`, `hooks/`, or the matching release flow.
@@ -36,9 +36,10 @@ for the task-specific details.
 - Use targeted edits and verification that match the change. The release gates
   are useful evidence, but do not turn a small documentation revision into an
   unrelated full-suite exercise.
-- Before a requested push, rebase onto the relevant remote branch when the
-  repository workflow requires it, preserve scoped work, and push only the
-  intended branch and tag references.
+- This repository keeps a linear history. Before a requested push, sync with
+  `git pull --rebase origin main` or rebase the topic branch onto the relevant
+  remote base; do not create a merge commit while updating it. Preserve scoped
+  work and push only the intended branch and tag references.
 
 Detailed contracts live in [`docs/skill-authoring.md`](../../../docs/skill-authoring.md),
 [`docs/hook-authoring.md`](../../../docs/hook-authoring.md),

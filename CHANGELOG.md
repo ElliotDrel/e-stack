@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Tool skills: clarify current CLI flags and verification, preserve repository caches and migration backups, and keep credential setup private.
+- Review follow-up: align first-run flight routing, shell examples, coaching
+  boundaries, generated-skill paths, and cross-file instructions; restore the
+  concrete release, security-baseline, hook-registration, and manual-publish
+  details needed to execute those workflows safely.
 
 ---
 

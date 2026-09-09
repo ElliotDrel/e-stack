@@ -4,9 +4,8 @@ version: 1.0.0
 description: >-
   ({{SHORT_NAME}}) {{CONCISE PURPOSE — the outcome this coach helps achieve.}}
   Use when {{THE USER'S REQUEST OR SITUATION CALLS FOR THAT OUTCOME.}}
-# metadata:
-#   disable_model_invocation: true   # [OPTIONAL] add only if the skill must be
-#                                    # user-invoked (/name) and never auto-fired.
+# disable-model-invocation: true  # [OPTIONAL] add only if the skill must be
+#                                # user-invoked (/name) and never auto-fired.
 ---
 <!--
 ============================================================================
@@ -138,12 +137,9 @@ points to per-phase files and keep only shared framing here.}}
       Execute (capture the decision/output). A step isn't done until it produces
       something concrete, not "we talked about it".
 
-  (b) Question discipline. Keep this even in light skills. The leadership skill's
-      three explicit modes are the gold standard — adapt or trim:
-        Mode A — single question, prefaced "**Question:**"
-        Mode B — numbered list (2-3), user replies by number
-        Mode C — AskUserQuestion tool for mutually-exclusive choices
-      Ask only the questions needed for the next useful decision.
+  (b) Question discipline. Keep this even in light skills. Ask only the
+      questions needed for the next useful decision, using plain prose, a short
+      list, or a host-provided choice tool when that format helps.
 -->
 - Ask one focused question or a short set when that best moves the decision
   forward. Avoid repeating information the user already supplied.
@@ -176,7 +172,7 @@ does not depend on it.
   names the shortcut and then states the correct move. 3-5 bullets.
 -->
 - {{Don't lecture the framework before the user has shared their situation — ask the intake question first and let their answer pull the principle out.}}
-- {{Don't generate the output from your own assumptions — when a field is blank, ask the question again instead of filling it in.}}
+- {{Don't invent material facts — state a reasonable assumption when safe, and ask only when a blank would materially change the result.}}
 - {{Don't accept adjective-level answers ("make it better") — push for the concrete next move and the observable standard.}}
 
 ## Handling new resources

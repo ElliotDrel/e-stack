@@ -1,6 +1,6 @@
 ---
 name: estack-pdf-to-md
-version: 1.2.4
+version: 1.2.5
 description: >-
   (pdf-to-md) Convert a PDF to Markdown or plain text with the RunPulse API,
   including OCR of scanned pages. Use when asked to extract text from or
@@ -47,7 +47,7 @@ if command -v powershell.exe >/dev/null 2>&1; then
 fi
 
 if [ -n "$ENV_KEY" ]; then
-  echo "[OK] PULSE_API_KEY is available from $FOUND_IN."
+  echo "[OK] PULSE_API_KEY is available from $FOUND_IN (an override when it is the current process; the shared home is $ENV_FILE)."
   if [ "$FOUND_IN" != "the current process environment" ] && [ "$FOUND_IN" != "$ENV_FILE" ]; then
     echo "     Move it privately to $ENV_FILE when convenient; that is the shared home."
   fi
@@ -74,7 +74,7 @@ If the check above said `[MISSING]`, the user has not configured a RunPulse API 
    ```
    PULSE_API_KEY=<paste-the-key-here>
    ```
-   **Append to that file, never overwrite it** — other skills keep their keys there too. Create it if it does not exist. Do not ask the user to paste a credential into chat or echo any part of it back. That file is the only persistent place the key belongs: not a Windows user env var, not a shell profile, not a per-skill `.env`, and never inside the installed skill folder, which the installer overwrites on every sync.
+   **Append to that file, never overwrite it** — other skills keep their keys there too. Create it if it does not exist. Ask the user to add the line privately rather than paste a credential into chat. If they already pasted it and authorized setup, write it without echoing any part of it. That file is the only persistent place the key belongs: not a Windows user env var, not a shell profile, not a per-skill `.env`, and never inside the installed skill folder, which the installer overwrites on every sync.
 5. **Re-run the startup check** above (or re-invoke the skill only when the host executes fenced commands), and confirm it now reports `[OK]`.
 
 **Never echo a real key back to the user in chat.** Report only whether the setup check found it.
@@ -122,7 +122,7 @@ The script auto-loads `PULSE_API_KEY` from these sources, in order:
 So in either shell, just invoke directly — no need to pass the key explicitly:
 
 ```powershell
-python "$env:USERPROFILE\.agents\skills\estack-pdf-to-md\scripts\pdf_to_md.py" "<input-pdf>" --output-dir "<output-dir>"  # estack-path-ok: execute installed converter; output is the requested deliverable
+python "$HOME/.agents/skills/estack-pdf-to-md/scripts/pdf_to_md.py" "<input-pdf>" --output-dir "<output-dir>"  # estack-path-ok: execute installed converter; output is the requested deliverable
 ```
 
 ```bash
