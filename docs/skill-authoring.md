@@ -4,9 +4,9 @@
 
 Reusable scaffolds live in `templates/` at the repo root (outside `skills/`, so they're never published, installed, or version-checked). Use a template when its shape fits the skill; adapt it to the task instead of adding structure the user does not need.
 
-- **`templates/coaching-skill/`** — for a skill that coaches the user through a decision using one or more named frameworks and ends with a concrete artifact. This is the shape `estack-leadership-coach` and `estack-productivity-prioritization-coach` share. It defines the standard component set (identity → primary outcome → voice → calibrate depth → framework → coaching protocol → acceptance bar → handling resources → sources → feedback) and ships both reference tiers: a lightweight `sources/` model and a heavier `references/` knowledge vault with an `adding-references.md` playbook. Keep the tier you use, delete the other.
+- **`templates/coaching-skill/`** — for a skill that coaches the user through a decision using one or more named frameworks and ends with a concrete artifact. This is the shape `estack-leadership-coach` and `estack-productivity-prioritization-coach` share. It offers a menu of coaching components and ships both reference tiers: a lightweight `sources/` model and a heavier `references/` knowledge vault with an `adding-references.md` playbook. Keep the tier you use, delete the other.
 
-To instantiate: `cp -r templates/coaching-skill skills/estack-<name>`, rename `SKILL.template.md` → `SKILL.md`, fill the `{{PLACEHOLDERS}}`, resolve the tier files (rename `adding-references.template.md` or delete it; the sources template is a pattern to copy, then delete), then run `node scripts/update-skill-feedback.cjs`. No `.template.md` file may remain in the finished skill — it would ship to npm. Full instructions are in `templates/README.md`. The `manage-e-stack` add flow (`steps/add.md`) points here at step 1.
+To instantiate: `cp -r templates/coaching-skill skills/estack-<name>`, rename `SKILL.template.md` → `SKILL.md`, fill the `{{PLACEHOLDERS}}`, resolve the tier files (rename `adding-references.template.md` or delete it; the sources template is a pattern to copy, then delete), then run `node scripts/update-skill-feedback.cjs`. No `.template.md` file may remain in the finished skill — it would ship to npm. Full instructions are in `templates/README.md`; the `manage-e-stack` add route covers when to use a template.
 
 If a future skill is a different shape (a tool, converter, tracker), add a new template folder under `templates/` rather than forcing it into the coaching scaffold.
 
@@ -127,8 +127,8 @@ without editing the file.
 
 **An environment variable is an override, never a home.** Do not tell a user to
 persist a key with `setx`, `SetEnvironmentVariable`, or a shell profile. A
-process-local assignment such as `$env:KEY = ...` is appropriate for a deliberate
-temporary override and should not be described as persistent configuration. A
+process-local override can be appropriate for a deliberate temporary run, but
+describe that choice without including a credential assignment in skill prose. A
 persistent key outside `~/.e-stack/.env` can drift or shadow the shared value.
 When a setup check finds an environment-only key, report it as an override; ask
 whether it is intentional before suggesting a durable shared setting.
@@ -153,10 +153,10 @@ Rules:
 - **Never print a key.** Report only whether it is set. This applies to setup
   checks, logs, and error messages.
 - **Enforcement:** `node scripts/check-paths.cjs` fails on a per-skill `.env`, on
-  a `.env` resolved relative to the script's own location, and on instructions to
-  persist a credential-looking variable in OS configuration (`setx`, a shell
-  profile, or `SetEnvironmentVariable`). Process-local temporary overrides are
-  outside that rule. Assigning `$null` or an empty value clears a variable.
+  a `.env` resolved relative to the script's own location, and on literal
+  credential-setting examples such as `setx`, `export`, PowerShell environment
+  assignment, shell-profile edits, or `SetEnvironmentVariable`. Assigning
+  `$null` or an empty value to clear a variable remains allowed.
   Mark a deliberate legacy read with an `estack-path-ok` comment on the line.
 - **Some env vars must stay unset.** `estack-drive-cli-agent` deliberately tells
   callers never to set `OPENAI_API_KEY`, `CODEX_API_KEY`, or

@@ -1,14 +1,12 @@
 ---
 name: estack-leadership-coach
-version: 5.0.3
+version: 5.0.4
 description: >-
   (leadership-coach) Responsibility-centered leadership coaching for
   delegating, developing people, and hard conversations with the user's own
   team, ending in a concrete artifact. Use when the user is handing something
   off, avoiding something hard with a report or teammate, or leading a team.
   Negotiating with an outside counterpart is estack-chris-voss.
-metadata:
-  disable_model_invocation: true
 ---
 
 # Leadership Coach
@@ -153,8 +151,12 @@ If a required item is missing, state what remains rather than claiming the artif
 
 The obvious ways to fake passing the bar without actually coaching. Ruled out by name:
 
-- **Don't help the user delegate what they should be doing themselves.** If you find yourself building a delegation brief for "developing my team" or "the hard conversation with Sam," stop — that's abdication with a template on it. Route to the omission flow and coach them to do it.
-- **Don't skip the motive read to be agreeable.** If the request smells reward-centered ("this is so tedious, can someone else just take it"), naming it is the coaching. Surface it in one honest sentence before proceeding.
+- **Keep the leader's retained accountability explicit.** A bounded delegation
+  may hand off preparation, facilitation, or execution, but the brief must name
+  what the leader still owns. Route to an omission flow when it helps define
+  that responsibility.
+- **Don't skip a plausible motive concern to be agreeable.** Name avoidance as
+  an inference rather than a fact, then proceed with the user's context.
 - **Don't lecture the framework before the user has shared their situation.** Ask the intake question first and let the answer pull the principle out.
 - **Don't invent material facts in an artifact.** For a direct draft, state reasonable assumptions and ask only for blanks that change the recommendation or make it unsafe to share.
 - **Don't accept adjective-level answers** ("make it better," "more polished," "have a talk with them"). Push for the concrete next move and the observable standard.

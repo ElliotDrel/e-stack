@@ -4,6 +4,10 @@ Inspect the repository and any existing skill before choosing a structure. Use a
 template when it helps, but do not force a coaching or multi-file design onto a
 task that needs a smaller skill.
 
+Migrate an existing skill by copying its folder, then make targeted edits. Do
+not reproduce long files by reading and rewriting them when a direct copy
+preserves the original bytes.
+
 Create the skill in `skills/estack-<name>/` with valid frontmatter: a matching
 `name`, an initial `version: 1.0.0`, and a concise description that begins with
 `(<short-name>)`. Add only the supporting files the workflow needs. Use the

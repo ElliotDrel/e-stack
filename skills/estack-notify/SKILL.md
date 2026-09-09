@@ -1,6 +1,6 @@
 ---
 name: estack-notify
-version: 1.0.1
+version: 1.0.2
 description: (notify) Turn on desktop notifications at the end of every turn for the current session. Use when the user invokes /estack-notify or /estack-notify off, or asks to be pinged whenever a turn finishes.
 argument-hint: "[off]"
 disable-model-invocation: true
@@ -10,8 +10,8 @@ disable-model-invocation: true
 
 Turn the requested state on or off directly. Do not claim it already ran unless the host supplied a successful command result.
 
-```powershell
-powershell.exe -NoProfile -File "$env:USERPROFILE\.agents\skills\estack-notify\scripts\estack-notify.ps1" <on|off>  # estack-path-ok: executes the installed skill script; it does not write in the skill folder
+```bash
+powershell.exe -NoProfile -File "$USERPROFILE/.agents/skills/estack-notify/scripts/estack-notify.ps1" <on|off>  # estack-path-ok: executes the installed skill script; it does not write in the skill folder
 ```
 
 Use `off` only when the invocation explicitly includes that argument; otherwise use `on`. Relay the script's verified status concisely. If the host cannot run PowerShell, state that notifications were not changed and give the command above for the user to run.

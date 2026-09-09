@@ -1,6 +1,6 @@
 ---
 name: estack-doc-review-viewer
-version: 1.0.3
+version: 1.0.4
 description: >-
   (doc-review-viewer) Open a local live-reloading viewer where the user reads
   a markdown document, highlights, and sends threaded comments back to the
@@ -122,13 +122,13 @@ against text the working document no longer has.
 ## The CLI
 
 ```bash
-$R open <file.md> [--slug s] [--no-browser]   host it, snapshot v1, print the watch command
-$R watch --slug <slug>                        the Monitor stream
-$R status | pending | claim | publish | threads | versions   [--slug s] [--json]
-$R reply <threadId> your text here
-$R resolve <threadId> | reopen <threadId>
-$R comment --body "..."                       a general note on the document
-$R ps | stop | close --slug <slug>
+review open <file.md> [--slug s] [--no-browser]   host it, snapshot v1, print the watch command
+review watch --slug <slug>                        the watcher stream
+review status | pending | claim | publish | threads | versions   [--slug s] [--json]
+review reply <threadId> your text here
+review resolve <threadId> | reopen <threadId>
+review comment --body "..."                       a general note on the document
+review ps | stop | close --slug <slug>
 ```
 
 With one document open, `--slug` is optional. With several, the CLI refuses to

@@ -1,7 +1,7 @@
 # Phase 1 — Intake
 
 <primary_outcome>
-By the end of this phase you have: (1) a motive-gate result — the task is genuinely delegable (not one of the five omissions) and any reward-centered motive was named, (2) a specific named task, (3) a named owner (or, in flat teams, owner-selection logic if not yet decided), (4) a timeline, (5) the team mode locked in (hierarchical or flat/peer — this calibrates every downstream phase), (6) a filter decision (Eliminate / Automate / Delegate / hold), and (7) a resistance pattern named if one is present. No fuzz allowed: "marketing stuff" is not a task; "I think Sarah probably" is not an owner; "we kinda all work together" is not a team mode.
+By the end of this phase you have: (1) a motive-gate result — the accountability the leader retains is named, and any avoidance or reward-centered concern was raised as an inference, (2) a specific named task, (3) a named owner (or, in flat teams, owner-selection logic if not yet decided), (4) a timeline, (5) the team mode locked in (hierarchical or flat/peer — this calibrates every downstream phase), (6) a filter decision (Eliminate / Automate / Delegate / hold), and (7) a resistance pattern named if one is present. No fuzz allowed: "marketing stuff" is not a task; "I think Sarah probably" is not an owner; "we kinda all work together" is not a team mode.
 </primary_outcome>
 
 This is the first phase of the pre-delegation flow. Your job here is to understand what is actually being handed off, to whom, and on what timeline — and to catch the cases where the work shouldn't be delegated at all (because it should be eliminated, automated, or kept with the user).
@@ -135,7 +135,7 @@ What makes this case useful for Phase 1 is the *order* Ferriss eventually codifi
 
 ## Phase 1 is complete when
 
-- The motive gate has been run: the task is not one of the five omissions (or, if it was, the session was redirected), and a reward-centered motive, if present, was named
+- The motive gate has been run: the accountability the leader retains is named, and any avoidance or reward-centered concern was raised as an inference
 - The task is specific (deliverable describable in one sentence)
 - The owner is named (or, in flat teams, owner-selection logic is in motion)
 - The timeline is on the table

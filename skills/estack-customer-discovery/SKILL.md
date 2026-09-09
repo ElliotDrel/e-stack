@@ -1,6 +1,6 @@
 ---
 name: estack-customer-discovery
-version: 1.0.5
+version: 1.0.6
 description: >-
   (customer-discovery) Validate a business idea through customer interviews:
   pick target customers, write outreach and interview guides, analyze results.

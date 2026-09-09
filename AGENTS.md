@@ -11,8 +11,9 @@ The same split applies inside this repo, one level down: this repo's own dev-too
 Where skills put their files matters to me. Durable internal skill state goes
 under `~/.e-stack/<skill-folder>/` — one directory I can find, back up, or
 delete, not a dotfile per skill sprayed across my home directory. Requested
-deliverables belong where the user asks, generated skills belong in the skills
-directory, and read-only data owned by another tool remains in that tool's
+deliverables belong where the user asks, and generated skills belong in the
+user's installed skills directory (`~/.agents/skills/`), never this repository's
+`skills/`. Read-only data owned by another tool remains in that tool's
 location. Nothing gets stored under `~/.claude/` as E-Stack skill state. Every
 API key in the pack lives in one shared file, `~/.e-stack/.env`, never one per
 skill — so I set a key once and every skill that needs it can find it. Append to

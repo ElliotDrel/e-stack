@@ -1,6 +1,6 @@
 ---
 name: estack-flight-planner
-version: 1.5.1
+version: 1.5.2
 description: >-
   (flight-planner) Find and rank flights between any two airports. Handles the
   parts worth automating (fetching every route, parsing SerpAPI's nested shape,
@@ -95,14 +95,14 @@ For a relative date, use a date tool. For a city, region, or explicitly flexible
 
 ## Persistent state (not in the skill directory)
 
-- `~/.e-stack/estack-flight-planner/config.json` — User preferences. Created via first-run wizard. Never overwritten by skill installer.
+- `~/.e-stack/estack-flight-planner/config.json` — Optional saved user preferences. Never overwritten by skill installer.
 - `~/.e-stack/estack-flight-planner/flight_history.json` — Append-only log of searches and selections.
 
 `~` expands to `%USERPROFILE%` on Windows and `$HOME` on Mac/Linux.
 
 ## Workflow — four phases
 
-Use the phases that the request needs. A saved configuration applies unless the current request overrides it; use the first-run setup only when no usable configuration exists.
+Use the phases that the request needs. A saved configuration applies unless the current request overrides it; offer setup only when the user wants preferences saved for later searches.
 
 ### Phase 0 — Setup check (deterministic, runs on skill load)
 
@@ -122,15 +122,15 @@ The output reports:
 
 **Decision tree based on output:**
 - **Config exists** → resolve trip details and apply the saved preferences; ask only about a value the request leaves materially ambiguous.
-- **Config missing** → Phase 1 (ask trip details), then Phase 2 in wizard mode (walk through each preference, offer to save at end)
+- **Config missing** → resolve the trip details and run a one-off search with neutral defaults. Offer the compact saved-preference setup afterward when repeat use seems likely; start it only when the user accepts or asks to save preferences.
 - **No `SERPAPI_KEY` in the environment or `~/.e-stack/.env`** → tell the user up front that you'll use the WebSearch fallback in Phase 3 Step 2, with the caveat about coverage
 - **Shuttle configured but zero schedule URLs** → say so now. Pairing cannot run without them, and finding that out in Phase 3 wastes a full search.
 
 Don't repeat back the setup output to the user verbatim — just internalize it and adapt your behavior.
 
-For a first-run setup, collect the needed preference values in a compact batch, clarify only conflicting or incomplete answers, and show the proposed config before writing it. Do not add a separate overview or pacing question.
+When the user asks to save preferences, collect the needed values in a compact batch, clarify only conflicting or incomplete answers, and show the proposed config before writing it. Do not add a separate overview or pacing question.
 
-### Phase 1 — Trip details (one question, then a proposed plan)
+### Phase 1 — Trip details
 
 Use the route and dates already stated. Ask "Where are you going and when?" only when the request does not provide enough information to search.
 
@@ -323,7 +323,7 @@ Wait for the user to pick a specific relaxation, then rerun step 3 with adjusted
 
 Skip this entire step if the user's config has `shuttle_service: null`. Otherwise:
 
-**5a. Use the answer the user gave you in Phase 2** about which ends need a ride. Never re-derive it from which airports happen to have a shuttle configured.
+**5a. Use the legs resolved from the current request, then the matched preset.** Never re-derive them from which airports happen to have a shuttle configured.
 
 - Ride to the airport → fetch the **pre-flight** (`to_airport`) schedule, pass `--legs pre`.
 - Ride from the airport → fetch the **post-flight** (`from_airport`) schedule, pass `--legs post`.
