@@ -23,7 +23,8 @@
 
 ## Paired implementation issues
 
-Issue links will be recorded here after the backup branch is pushed.
+- Track the tutor implementation in [issue #69: saved formula-sheet and visual teaching edits](https://github.com/ElliotDrel/e-stack/issues/69).
+- Track the email implementation in [issue #70: saved local email guidance](https://github.com/ElliotDrel/e-stack/issues/70).
 
 ## Implementation notes
 
