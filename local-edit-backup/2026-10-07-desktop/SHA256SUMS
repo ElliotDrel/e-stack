@@ -1,0 +1,17 @@
+993cc0b7d678271e9385f5ad7fb563f427c7fed096170da8aeb20a121d1904e7  updater-backups/estack-drive-cli-agent/references/claude-headless.md
+7c7de6672c9709d4aa7fdca9134f09993a3b163c3e55b24a2ca2d1fcb974ce6b  updater-backups/estack-drive-cli-agent/references/codex-exec.md
+b1d7fca9b7cb86fa9e67c08ccc991251b6967931d1a03c36f8b190474c06d9e6  updater-backups/estack-drive-cli-agent/SKILL.md
+3298ab7dd0fba7c75b819af04d87f0951e44f24985352c3b9e2cee66bb1e2f38  updater-backups/estack-read-agent-history/references/codex-history.md
+dff82a846d7686429528014e8db44c459a930798b0f626c37541ce5b22b1e160  updater-backups/estack-read-agent-history/references/jsonl-schema.md
+e593b2a7117ac736429e800524ca4ec32b7298ec144a27a292cb8c77833d902b  updater-backups/estack-read-agent-history/references/modes.md
+5c96fef0d604b7c06072d3385c61df146a321d4f0d734083e53693d16f19548f  updater-backups/estack-read-agent-history/references/recipes.md
+0f5bf292f850ad1c0778d9e0e0bdab7e62c210b01c580d3bf30b3460ce1ae54d  updater-backups/estack-read-agent-history/references/writing-your-own.md
+386b521cf9fa260d8fb6f8d330acca0432704344badf6fa5d31d9290ddea8ffc  updater-backups/estack-read-agent-history/scripts/lib/__init__.py
+8352e5c2d644d66e1f79421e5a74e67fb0c58229f78f1fb697f7905eb808eca1  updater-backups/estack-read-agent-history/scripts/lib/codex.py
+b265d62a4a2f7a65b8713e13a58e6e0f63c96fe82165016a282227f1b5032b6e  updater-backups/estack-read-agent-history/scripts/lib/parser.py
+6576efcf6c9733ed895df4c25506578605c36d959fa9919f95319bcbb67bd23a  updater-backups/estack-read-agent-history/scripts/lib/paths.py
+b568880f2948f373be458bbe0668583909bda9e83f597abeae0f0fda6606804c  updater-backups/estack-read-agent-history/scripts/lib/search.py
+9abc9c4f7e139f34d3d91cca056bf81a255efea7c65bba9de8b8aae8a6da8dd2  updater-backups/estack-read-agent-history/scripts/lib/subagents.py
+c322ef600463312685a645b5ccf4e926e26eb432582019dd09cd773ae9464484  updater-backups/estack-read-agent-history/scripts/lib/tools.py
+10cde4f0fd9b142124651b6abbb3e0119fd36ba967ccda2aba975a0584d89743  updater-backups/estack-read-agent-history/scripts/read_transcript.py
+9f995436c85a67d7e6def6f566bb552d6db2bb1aa557bb3351ed9c3ab0deb383  updater-backups/estack-read-agent-history/SKILL.md
