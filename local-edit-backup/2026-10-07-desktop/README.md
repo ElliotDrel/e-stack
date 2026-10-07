@@ -13,4 +13,5 @@
 
 ## Paired tasks
 
-Issue links will be recorded after the snapshot is pushed.
+- Track CLI output guidance in [issue #71](https://github.com/ElliotDrel/e-stack/issues/71).
+- Track history-snapshot review in [issue #72](https://github.com/ElliotDrel/e-stack/issues/72).
