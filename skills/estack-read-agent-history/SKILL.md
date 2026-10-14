@@ -1,6 +1,6 @@
 ---
 name: estack-read-agent-history
-version: 4.1.4
+version: 4.1.5
 description: >-
   (read-agent-history) CLI and Python library over local Claude Code and Codex
   session transcripts. Use for any question about past sessions: what was
@@ -17,7 +17,7 @@ Search, read, recover, and analyze local AI coding-agent session history across 
 1. **A CLI mode fits** → use it. One deterministic command, done. Cross-agent modes read Claude **and** Codex by default (`--agent claude|codex|both`, default `both`).
 2. **A mode almost fits** → run it with `--format json` and post-process the output (a python one-liner, jq, grep). Don't contort the question to fit the flags.
 3. **No mode comes close** → write a one-off Python script in your scratchpad importing the primitives in `scripts/lib/` (`paths`, `parser`, `search`, `subagents`, `tools`, `codex` — the docstrings are the API reference). They encode the correctness traps below; never re-derive them.
-4. **The same gap keeps recurring** → add a small mode or flag to the CLI itself and record it (see "Update this skill" below).
+4. **The same gap keeps recurring** → record the candidate improvement and use the supported one-off route for this task. Add a mode or flag only in an authorized skill-maintenance task (see "Record durable findings" below).
 
 Never use the Read tool on a raw `.jsonl` (Claude **or** Codex), and never hand-roll parsing without `lib.parser` — both schemas have traps (noise entries, tool-result envelopes, UTC timestamps, and Codex's two-layer event/response streams). `lib.parser.parse_lines` auto-detects a Codex rollout and normalizes it into the same shape Claude emits, so every primitive works on both.
 
@@ -26,7 +26,7 @@ Writing your own script is a **normal, supported path**, not a defeat — it's t
 ```python
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path.home() / ".claude/skills/estack-read-agent-history/scripts"))
+sys.path.insert(0, str(Path.home() / ".agents/skills/estack-read-agent-history/scripts"))
 from lib import parser, paths, search, subagents, tools, codex
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # required — see Pitfalls
@@ -63,7 +63,7 @@ The current (Claude Code) session ID is: ${CLAUDE_SESSION_ID}
 ## Quick lookups (CLI)
 
 ```bash
-PY="$HOME/.claude/skills/estack-read-agent-history/scripts/read_transcript.py"
+PY="$HOME/.agents/skills/estack-read-agent-history/scripts/read_transcript.py"
 ```
 
 | Need | Command |
@@ -109,36 +109,28 @@ Every mode takes `--format json` (a `source: "claude"|"codex"` field tags each s
 
 Four roots under `C:\Users\2supe\.claude-backups\` survive transcript-deletion incidents (like the March 2026 auto-update bug, GitHub #41591): `mirror`, `snapshot-24h`, `snapshot-1w`, `snapshot-1mo`. Every CLI mode accepts `--root <name>`; recovery playbook in `references/recipes.md`.
 
-## Update this skill with what you learn
+## Record durable findings
 
-Every hard use is a field test. If a technique worked well, a documented claim misled you, the schema drifted (Claude **or** Codex), or you hit ladder step 4 (a recurring gap worth a deterministic fix), tell the user and update the skill at its source: the e-stack repo (`C:\Users\2supe\All Coding\E-Stack\e-stack`, `skills/estack-read-agent-history/`), via that repo's `manage-e-stack` flow. Techniques go in `references/recipes.md`, Claude schema findings in `references/jsonl-schema.md`, Codex schema findings in `references/codex-history.md`, new modes in the CLI + `references/modes.md`. Don't edit the installed copy under `~/.claude/skills/` — the installer overwrites it. No repo on this machine → offer to file it as a GitHub issue (below).
+When evidence shows a durable schema change, incorrect instruction, or recurring gap, report it to the user. Update the source skill only in an authorized maintenance task, through its `manage-e-stack` flow: techniques go in `references/recipes.md`, Claude schema findings in `references/jsonl-schema.md`, Codex schema findings in `references/codex-history.md`, and new modes in the CLI plus `references/modes.md`. Do not edit an installed copy; the installer overwrites it. If the source repo is unavailable, offer a GitHub issue.
 ---
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-read-agent-history:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-read-agent-history: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-read-agent-history: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

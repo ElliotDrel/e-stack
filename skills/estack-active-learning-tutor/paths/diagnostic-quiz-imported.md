@@ -10,9 +10,7 @@ Path B **preloads** the journal — the quiz defines the concept inventory, and 
 
 ## Step 1 — Import the completed quiz
 
-1. Ask the student to share the practice quiz with their answers. Accept upload, paste, or photo.
-
-   Footer: `=== CONFIRM TO PROCEED ===` "How would you like to share your quiz?"
+1. If the completed practice quiz is not already available, ask the student to share it with their answers. Accept upload, paste, or photo. This request obtains missing source material; do not add a separate readiness checkpoint once it is available.
 
 2. Once shared, read the practice exam file in scope and the student's submission together.
 3. For each question on the quiz, identify which concept(s) it tests. Use the practice exam, slides, and notes as authority — not your assumption about what the question "should" test.
@@ -32,7 +30,7 @@ Status assignment happens in Step 2 (scoring).
    - For each incorrect answer, state the correct answer and the misconception in one sentence each. Quick debrief, not a lesson.
 6. Tell the student which concepts you'll work through together, in foundational → capstone order.
 
-Footer: `=== CONFIRM TO PROCEED ===` "Ready to start active learning on these gaps?"
+Then begin active learning on the first gap in foundational-to-capstone order unless the student asks to pause or defer.
 
 ## Step 3 — Active learning on gaps (Teaching + Scoring cycles)
 

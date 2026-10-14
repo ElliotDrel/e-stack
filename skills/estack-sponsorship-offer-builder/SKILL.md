@@ -1,6 +1,6 @@
 ---
 name: estack-sponsorship-offer-builder
-version: 1.0.1
+version: 1.0.2
 description: >-
   (sponsorship-offer-builder) Define a sponsorship offer and build the packet,
   cold email chain, and meeting script that sell it. Use when the user wants
@@ -15,19 +15,19 @@ Most sponsorship asks fail because there is no actual offer inside them — a lo
 The lens for everything: Hormozi's Value Equation. **Value = (Dream Outcome × Perceived Likelihood of Achievement) ÷ (Time Delay × Effort & Sacrifice).** Every deliverable is judged against those four levers; anything that moves none of them gets cut.
 
 <primary_outcome>
-Every session must produce, at minimum, a written sponsorship offer as a Markdown file: named sponsor profile, asset list mapped to sponsor outcomes, the packaged offer with price, risk reversal, and the reason to act now. A conversation about the offer, a critique without a rewrite, or a list of assets with no packaging does not count. The optional paths (packet, emails, meeting script) come after that file exists, never instead of it.
+For a new or undefined offer, produce a written sponsorship offer: named sponsor profile, asset list mapped to sponsor outcomes, the packaged offer with price, risk reversal, and the reason to act now. For a critique, packet, email chain, or meeting script, deliver the artifact the user asked for and use the existing offer as far as it is defined. Flag gaps that materially weaken it without forcing unrelated work first.
 </primary_outcome>
 
 ## Voice and posture
 
-- **Coach, don't generate.** Build the offer from the user's real answers, one step at a time. When a field is unknown, ask; if the user truly doesn't know, mark it `[assumption — verify]` in the output. Never invent audience numbers, reach stats, or sponsor names.
+- **Build from real information.** Use the user's answers and existing materials. Ask for a missing fact only when it would change the offer materially; otherwise make a clearly marked assumption. Never invent audience numbers, reach stats, or sponsor names.
 - **Confident and specific, never hype.** No fake urgency or false scarcity — every scarcity or urgency claim must be literally true (real cap, real date), because one caught lie costs the relationship.
 - **The sponsor is the hero; the org is the guide.** A sentence that exists to make the org look impressive, rather than to get the sponsor an outcome, gets cut.
 - **Match depth to stakes.** A $500 local ask gets a compressed pass; a $25k flagship sponsor gets the full flow.
 
 ## The flow
 
-Phases 0 and 1 are the core. The three paths are optional and get offered, by name, once the offer file exists. Read the step file AND its reference files before responding in a phase — the frameworks live there, and output written without them comes out generic.
+Phases 0 and 1 are the core. The three paths are optional. Consult the phase file and references needed for the requested artifact. Do not load an entire workflow or make the user complete earlier phases when the available context supports the work.
 
 | Phase | Produces | Step file | Reference files |
 |---|---|---|---|
@@ -42,11 +42,11 @@ Each reference cites its source URLs. `references/start-with-why-sinek-transcrip
 ## Routing
 
 - Starting fresh, or anything shaped like "help us get sponsors" → Phase 0, then Phase 1.
-- Has a packet/deck/proposal to fix or judge → Phase 0 (the critique lives there), Phase 1, then offer Path A.
-- Asks for emails or a script with no defined offer → say plainly that those can only be as good as the offer they carry, run Phase 1 first (compressed if stakes are low), then the path.
+- Has a packet/deck/proposal to fix or judge → deliver the Phase 0 critique directly. Use Phase 1 only when the user asks to rebuild the underlying offer, and use Path A only when they ask for replacement packet copy.
+- Asks for emails or a script with no defined offer → state the important gaps, gather the minimum offer context needed, then create the requested artifact with assumptions clearly marked. Use a compressed Phase 1 only when it is necessary to make the artifact credible.
 - Has a defined offer (can state sponsor profile, assets, price, why it beats alternatives) → go straight to the path they want; check their offer against Phase 1's acceptance bar, flag gaps, respect their call.
 
-After delivering the offer file, offer the paths in one short block ("Path A: the packet. Path B: the cold email chain. Path C: the meeting script.") and let the user pick any, all, or none. Do not start a path unasked.
+After delivering an offer, state the most relevant next artifact when useful. Do not start an additional path unless the user asked for it or already requested the broader package.
 
 ## Companion skills
 
@@ -57,35 +57,27 @@ These ship in the same pack; use them when installed, proceed on the references 
 
 ## Output conventions
 
-Deliverables are files (paths in the table above), written where the user asks; chat carries the decisions and the delta. Ask once at the start of Phase 1 whether brand rules exist (casing, banned punctuation, voice) and apply them to every deliverable.
+Write deliverables where the user asks. When no file is requested, provide the usable draft in chat and offer to save it. Apply stated brand rules. Ask about brand rules only when their absence would materially affect the deliverable.
 
 ---
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-sponsorship-offer-builder:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-sponsorship-offer-builder: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-sponsorship-offer-builder: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

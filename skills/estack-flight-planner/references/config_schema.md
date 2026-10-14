@@ -118,7 +118,7 @@ Each spec is its own SerpAPI call, so a two-entry list doubles the quota a searc
 Never compare on `price` — that is the party total, so a 2-adult search reads as roughly double for the same seat. Compare on `price_per_seat`.
 
 ### `trip_presets`
-- Type: object mapping a short slug to a saved route. **This is the fast path** — when the user names a preset (or says something that clearly matches its `aliases`), the skill skips airport research entirely and goes straight to confirming dates.
+- Type: object mapping a short slug to a saved route. **This is the fast path** — when the user names a preset (or says something that clearly matches its `aliases`), the skill skips airport research, resolves the dates, and states the resulting route context before searching.
 
 ```json
 "trip_presets": {
@@ -146,14 +146,14 @@ Per-preset fields, all optional except `origins`/`destinations`:
 
 | Field | Purpose |
 |---|---|
-| `label` | Human-readable direction, shown when confirming |
+| `label` | Human-readable direction, shown with the resolved route context |
 | `aliases` | Phrases that should match this preset in Phase 1 |
 | `origins` / `destinations` | IATA lists passed straight to `--routes` / `--from` / `--to` |
 | `routes` | Optional explicit `["EWR-IND", "EWR-ORD"]` list, when the full cross-product isn't wanted |
 | `shuttle_legs` | Which end of *this* direction normally needs a ride: `"departure"`, `"arrival"`, `"both"`, or `"none"`. See below. |
 | `party` | Who normally flies *this route*, overriding the top-level `default_party`. See below. |
 | `compare_parties` | Party specs to price side by side on this route, overriding the top-level `compare_parties`. |
-| `notes` | Free text shown to the user during confirmation |
+| `notes` | Free text shown with the resolved route context |
 | Any preference key | Per-preset override of a top-level preference (e.g. a higher `budget_usd` for a long route) |
 
 ### `party` per preset — the route where the party is different
@@ -169,7 +169,7 @@ Resolution order, most specific first:
 
 The same order applies to `compare_parties`. A preset carrying `"compare_parties": ["1a", "2a"]` is saying *on this route the number of seats is genuinely up in the air, so always show me both* — a different statement from `party`, and the two coexist: `party` is what gets booked by default, `compare_parties` is what gets priced.
 
-**Confirm the party out loud every run, the way `shuttle_legs` is confirmed.** A wrong party size produces no error. It produces a correct-looking table for a trip with the wrong number of people in it.
+Resolve the party from the request, matched preset, `default_party`, or `"1a"`, then state the value and per-seat basis with the result. Ask only when those sources conflict or leave the party ambiguous.
 
 ### `shuttle_legs` — a default, never an assumption
 
@@ -186,9 +186,9 @@ A configured shuttle does not mean a needed shuttle. Someone flying out of a hub
 
 Note that it's direction-specific and usually asymmetric. The same person flying NJ → Purdue needs a ride only on arrival; flying Purdue → NJ they need one only on departure. Two presets, two different values.
 
-**The skill must still confirm it out loud every run.** It appears as its own line in the Phase 2 confirmation block, not folded into a general "still your prefs?" yes. A wrong guess here never surfaces as an error — it just quietly ranks every option around a cost that was never going to be paid.
+Resolve `shuttle_legs` from the current request and matching preset. State the resolved value with the result, and ask only when those sources conflict or do not establish whether a ride is needed.
 
-A preset never bypasses confirmation — the skill still shows the resolved plan and waits for a yes. It only removes the research step.
+A request-specific value overrides a preset. A clear preset is sufficient to start the requested search; ask only when the request conflicts with its saved route, party, or shuttle assumptions.
 
 ### `shuttle_service`
 - Type: object or null. If non-null, the skill pairs flights with ground shuttle runs on either end. Full sub-schema in `references/shuttle_schedules.md`.

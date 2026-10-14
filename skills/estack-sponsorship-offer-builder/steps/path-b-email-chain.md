@@ -1,18 +1,18 @@
 # Path B: The Cold Email Chain (1 Opener + 3 Follow-ups)
 
-Read `references/04-outreach-psychology.md` first. Load `estack-cold-message-writer` and `estack-email-writer` if installed — they own first-touch psychology and email craft; this path owns only what's sponsorship-specific. Input: the finalized offer from Phase 1.
+Read `references/04-outreach-psychology.md` first. Load `estack-cold-message-writer` and `estack-email-writer` if installed — they own first-touch psychology and email craft; this path owns only what's sponsorship-specific. Use the finalized offer from Phase 1 when available; a direct chain request can start from the supplied sponsor context and label material gaps.
 
 **Output:** `sponsor-email-chain.md` — four ready-to-send emails, each with subject line, body, send-timing note, and a one-line note naming the psychological mechanism it runs, so the user can adapt the sequence without breaking it.
 
 ## Before drafting
 
-- **Confirm the target.** Write to the named buyer role from the offer, ideally at a real company from the Phase 0 example list. A chain written to "companies" fails; one written to a person generalizes cleanly.
-- **Get a real hook:** something true about this company (they hire this audience, sponsor a comparable property, a post their team wrote). Never fabricate one; if the user has none, help find one or say plainly the opener will be weaker.
+- **Use the best available target.** Write to the named buyer role from the offer, ideally at a real company. If the user wants a reusable template, use a clearly marked company placeholder rather than blocking on target research.
+- **Use a real hook for an external send.** Never fabricate one. If the user has none, draft a reusable hook slot or say plainly that the final opener requires verification.
 - **The chain opens a conversation; it does not sell the package.** No attached packet — cold attachments read as spam (see reference 03). Each email carries at most one offer element as a tease, and the ask is always small: a short call, or "want the audience numbers?"
 
 ## The sequence
 
-Each email: one hook, one mechanism, one ask, under ~90 words. Vary the angle each time — never "just bumping this". Most replies come from follow-ups, so the user should send all four before judging the sequence.
+Each email carries one hook, one mechanism, and one ask. Keep it short enough to earn a read and vary the angle each time — never "just bumping this". Treat the sequence as a starting plan to test, not a guarantee about reply behavior.
 
 1. **Opener — belief + fit.** One line about *them* or one line of belief (why-first, reference 06), one line of what the org is with a concrete proof number, one weightless ask. Mechanism: liking/unity via genuine relevance.
 2. **Follow-up 1 (+3–4 days) — give something.** Honest reciprocity: a real audience insight, a data point, a relevant intro offer. No new ask beyond the same small one restated once.
@@ -33,4 +33,4 @@ Every number, name, and claim is verified by the user or does not ship — a col
 
 ## Done when
 
-Four emails exist with subjects, timing, and mechanism notes; one ask each; the opener's hook is real; nothing contradicts the offer file; and the user has confirmed the sequence against their brand rules.
+An external-ready chain has four emails with subjects, timing, and mechanism notes; one ask each; a verified opener hook; and no contradiction with the offer. A reusable or direct draft may retain clearly marked personalization and offer gaps.

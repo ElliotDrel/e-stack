@@ -1,6 +1,6 @@
 ---
 name: estack-book-extractor
-version: 1.0.1
+version: 1.0.2
 description: >-
   (book-extractor) Turn a book or reference document (PDF, EPUB, DOCX, HTML,
   TXT/MD) into an on-demand skill with per-chapter reference files. Use when
@@ -24,21 +24,21 @@ If the input is a scanned/image-only PDF, `extract_text.py` will detect it and t
 ## Step 1 — Extract text (deterministic, run the script)
 
 ```bash
-python "$HOME/.claude/skills/estack-book-extractor/scripts/extract_text.py" <path1> [path2 ...] --out <scratch_dir>
+python "$HOME/.agents/skills/estack-book-extractor/scripts/extract_text.py" <path1> [path2 ...] --out <scratch_dir>
 ```
 
 Use a scratch directory (e.g. the session scratchpad) for `--out`, not the final skill location — this is intermediate output. The script installs no dependencies automatically; if it exits with `Missing dependency for .X: pip install Y`, run that `pip install` and retry.
 
 This produces `full_text.txt` (all sources concatenated, each marked with `<!-- source: filename -->`) and `metadata.json` (word/char/estimated-token counts per source). Read `metadata.json`, not the full text file, to get the size.
 
-## Step 2 — Pre-flight estimate, then confirm
+## Step 2 — Pre-flight estimate
 
-Before generating anything, tell the user:
+Report:
 - Total estimated tokens (from `metadata.json`)
 - Roughly how many chapter files this will produce (see Step 4)
-- That this is a multi-step synthesis job, not instant
+- Any size constraint that materially affects the requested output
 
-Wait for a go-ahead before continuing. This is the same gate the source project uses — synthesis is the expensive part, not extraction.
+Then continue with the requested skill. Ask only when the source, requested depth, or target would lead to materially different output and the request does not resolve it.
 
 ## Step 2.5 — Large-source handling (>50k estimated tokens)
 
@@ -56,20 +56,21 @@ Locate chapter boundaries via `grep -n`, then pull each chapter's text with `sed
 
 Read (or `sed -n` slice) roughly the first 8,000 characters of `full_text.txt` to identify: title, author, chapter/section list, and 2-3 recurring themes. If the user only wants a structural report (not a full skill), stop here and give them that report — don't generate files they didn't ask for.
 
-## Step 4 — Ask the user two things
+## Step 4 — Resolve depth and name
 
-1. **Purpose**: apply the frameworks in real work / think in the book's mental models / look up specific chapters on demand / all of the above. This sets the depth (see Step 6).
-2. **Skill name**: propose `<author-lastname>-<concept>` (e.g. `cialdini-influence`) or a title-derived slug; let the user override.
+Use the purpose stated in the request. Default to reference depth when it is not stated, and use study depth only when the user asks to learn or be taught from the material. Derive a slug from the author and concept (for example, `cialdini-influence`) or the title. Ask only if the available source makes the name genuinely ambiguous or the user asked for a specific naming convention.
 
 ## Step 5 — Pick the output location
 
-Default target: `~/.agents/skills/<slug>/` (the same root e-stack itself installs into, which every agent — Claude Code, Codex, others — reads from). If `~/.agents/skills/` doesn't exist on this machine, fall back to `~/.claude/skills/<slug>/`.
+Default target: `~/.agents/skills/<slug>/` (the same root e-stack itself installs into, which every agent — Claude Code, Codex, others — reads from). Create that root when needed. Honor a different explicit user-selected target, but do not automatically fall back to a Claude-only path.
 
 **This folder does NOT get the `estack-` prefix and is NOT added to this repo.** It is a standalone skill living in the user's personal skill collection, generated content specific to one book — it has nothing to do with the e-stack pack's own skills, docs, versioning, or publish flow. Never run `manage-e-stack`'s add/edit/publish steps against it.
 
 ```bash
 mkdir -p "<target>/<slug>/chapters"
 ```
+
+If `<target>/<slug>/` already exists, inspect its index and chapter list before writing. Do not overwrite a generated skill on the strength of a matching slug; use a new name or ask the user which existing material may be replaced.
 
 ## Step 6 — Write per-chapter files (LLM synthesis — the core of this skill)
 
@@ -82,7 +83,7 @@ For each chapter/section identified in Step 3, write `<target>/<slug>/chapters/c
 <1-3 sentences — the chapter's central claim>
 
 ## Frameworks Introduced
-- **<Framework Name>**: <exact formulation as the author states it> — when to use it, how it works
+- **<Framework Name>**: <faithful paraphrase of its named steps, when to use it, and how it works>
 
 ## Key Concepts
 <terms and their precise definitions from the text>
@@ -105,7 +106,7 @@ Add `## Worked Example` if the user's Step 4 answer was "study" depth — a walk
 **Quality rules — the whole point of this skill depends on these:**
 1. Extract structure, not summaries. A summary loses the framework; extracting the framework's exact shape preserves it.
 2. Preserve the author's precision. "The 5 Whys" is not "ask why multiple times" — keep the technique's actual name and steps.
-3. Never copy raw book text verbatim into these files — always synthesize in your own words. This keeps output non-infringing and forces genuine understanding over transcription.
+3. Synthesize in your own words. Preserve exact named terms and steps, and use only short, clearly attributed quotations when a precise phrase is necessary.
 4. Budget roughly 800–1,500 tokens per chapter at reference depth, 1,500–3,000 at study depth. Longer isn't better — the goal is fast, targeted loading, not a second copy of the book.
 
 ## Step 7 — Write the cross-chapter files
@@ -118,7 +119,7 @@ Add `## Worked Example` if the user's Step 4 answer was "study" depth — a walk
 
 ## Step 8 — Write the master SKILL.md
 
-`<target>/<slug>/SKILL.md`, kept under ~4,000 tokens and front-loaded (compaction truncates from the end, so put the most load-bearing content first):
+`<target>/<slug>/SKILL.md`, kept focused enough to route a future request to the right chapter without loading the whole source:
 
 ```markdown
 ---
@@ -154,7 +155,7 @@ This generated `SKILL.md` has plain frontmatter (`name`, `description` only) —
 ## Step 9 — Advisory security scan
 
 ```bash
-python "$HOME/.claude/skills/estack-book-extractor/scripts/scan_skill.py" "<target>/<slug>"
+python "$HOME/.agents/skills/estack-book-extractor/scripts/scan_skill.py" "<target>/<slug>"
 ```
 
 This flags hidden/zero-width characters and instruction-like phrases that might have leaked from a compromised source document into the synthesized output. It's advisory — review any findings before reporting success, but don't block on false positives (a chapter that legitimately discusses prompt injection will trip the phrase check).
@@ -178,29 +179,21 @@ If the user wants to share the generated skill via GitHub, that's a decision ent
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-book-extractor:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-book-extractor: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-book-extractor: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

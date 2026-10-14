@@ -8,11 +8,9 @@ The "do not preload" guidance for Path C is about *initialization* (don't seed t
 
 `SUB-ADD` (each newly surfaced concept), `TEACH-TURN`, `ATTEMPT` (clarification answers), `CLARIFY-FAIL`, `MASTERED`, `ESCALATE`.
 
-## Step 1 — Confirm the topic
+## Step 1 — Establish the topic
 
-Confirm with the student exactly which topic, chapter, or section they want to learn. If their initial framing was vague, ask one clarifying question to nail down scope.
-
-Footer: `=== CONFIRM TO PROCEED ===` "Topic confirmed: {topic}. Ready to start?"
+If the student's topic, chapter, or section is clear, record that scope and continue to source grounding in the same turn. If their initial framing is vague, ask one clarifying question to nail down scope. Do not add a separate readiness checkpoint after the topic is already clear.
 
 ## Step 2 — Read the source
 

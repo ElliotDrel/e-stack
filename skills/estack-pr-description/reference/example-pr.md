@@ -1,6 +1,6 @@
-# Canonical example PR: buildpurdue-website, final body
+# Historical example PR: buildpurdue-website, final body
 
-This is the settled description for this example PR, reached after three rounds of feedback from the maintainer (Karthik) and the PR author (Elliot). It is the canonical worked example of the numbered merged "What changed and why" format the skill teaches: bold end-state lines, labeled Key decision / What changed sub-bullets, exact-scope verification with a post-merge checklist, and numbered open calls. Match its shape when writing a real description; the content below is specific to that PR.
+This is the settled description for one BuildPurdue PR after feedback from its maintainer and author. It illustrates a detailed numbered format with decisions, change mechanics, manual testing, and open calls. The content and structure are specific to that PR; use the current user's instructions and repository template to decide whether any of this shape fits a new description.
 
 ---
 
