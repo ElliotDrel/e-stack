@@ -1,6 +1,7 @@
 # E-Stack Skill Templates
 
-Copy-paste scaffolds for building new skills in a consistent shape. These are **templates**, not docs — clone the folder, fill the `{{PLACEHOLDERS}}`, delete the guidance comments, and you have a skill.
+Reusable starting points for skills with a similar workflow. Use a template when
+it fits, then keep, adapt, or remove sections based on the user's task.
 
 > Templates live here (repo root `templates/`), **not** under `skills/`, on purpose. The npm package only ships `bin/`, `skills/`, and `hooks/`, and the install/version/docs gates only scan `skills/` and `hooks/`. So nothing here gets published, installed, or version-checked — it's a pure authoring aid.
 
@@ -18,7 +19,9 @@ If a future skill is a different shape (a pure tool, a converter, a tracker), do
    ```bash
    cp -r templates/coaching-skill skills/estack-<short-name>
    ```
-2. **Rename and fill `SKILL.template.md` → `SKILL.md`.** Replace every `{{PLACEHOLDER}}`, work through the section-by-section guidance comments, and delete the comments as you resolve them. Each section is labeled **REQUIRED** or **OPTIONAL**. (The guidance comments sit below the frontmatter on purpose — never add anything above the opening `---`, or the frontmatter won't parse and the skill won't trigger.)
+2. **Rename and fill `SKILL.template.md` → `SKILL.md`.** Replace the relevant
+   `{{PLACEHOLDERS}}`, then remove guidance comments and unused starter
+   sections. Keep the frontmatter at the top so the skill parses.
 3. **Pick your reference tier** (see below) and resolve the template files. No `.template.md` file may remain in the finished skill — anything left in `skills/` ships to npm and installs to users' machines:
    - **Tier 1:** delete the `references/` folder. Use `sources/00-source-name.template.md` as the pattern for your first real `sources/01-<name>.md`, then delete the `00-*.template.md` file.
    - **Tier 2:** delete the `sources/` folder. Rename `references/adding-references.template.md` → `adding-references.md` and fill its `{{PLACEHOLDERS}}`.
@@ -26,9 +29,11 @@ If a future skill is a different shape (a pure tool, a converter, a tracker), do
    ```bash
    node scripts/update-skill-feedback.cjs
    ```
-5. **Register the skill** — README.md table, AGENTS.md "Skills in the pack" line, CHANGELOG `[Unreleased]`. Verify with `node scripts/check-docs.cjs && node scripts/check-skill-name.cjs estack-<short-name>`.
+5. **Register the skill** — add it to the README and AGENTS inventories, add
+   release notes when appropriate, and run `node scripts/check-docs.cjs && node
+   scripts/check-skill-name.cjs estack-<short-name>`.
 
-The full add flow (installer dry-run, commit gate, publish) is in `.agents/skills/manage-e-stack/steps/add.md` — this template plugs into step 1 of that flow.
+The add flow is in `.agents/skills/manage-e-stack/steps/add.md`. It covers repository validation and routes to live installation or release only when those are requested.
 
 ## The two reference tiers
 
@@ -39,25 +44,29 @@ Every coaching skill grounds its frameworks in source material. Pick the tier th
 
 The `coaching-skill/` scaffold ships both tiers. Delete the one you don't use.
 
-## The standard component set
+## Useful coaching components
 
-Every coaching skill's `SKILL.md` should carry these components, in this order. This is the contract the template enforces — the same way every skill carries a `## Skill Feedback` section.
+These components are a menu for coaching skills, not a required order or
+checklist. Include the parts that help the user reach the requested outcome.
 
-| # | Component | Required? |
+| # | Component | When useful |
 |---|---|---|
-| 1 | Frontmatter (`name`, `version`, `description` with `(short)` prefix) | Required |
-| 2 | Identity statement — who the coach is | Required |
-| 3 | Primary outcome / core shift — what every session must produce, wrapped in `<primary_outcome>` tags | Required |
-| 4 | Voice & posture — tone rules applied every turn | Required |
-| 5 | Calibrate depth to stakes — compressed vs. full path | Required |
-| 6 | The framework(s) — the coaching method itself | Required |
-| 7 | Coaching protocol — the per-turn loop + question discipline | Required |
-| 8 | Acceptance bar — binary checklist for when a session is done | Required |
-| 9 | Pre-empted shortcuts — named anti-patterns, each *don't* paired with its *do* | Optional (recommended) |
-| 10 | Handling new resources — how sources get added (Tier 2 adds the runtime consult-the-vault rule) | Required |
-| 11 | Sources / References list | Required |
-| 12 | Skill Feedback (auto-stamped by script) | Required |
+| 1 | Frontmatter (`name`, `version`, description) | Always |
+| 2 | Identity and posture | When a consistent coaching role helps |
+| 3 | Intended outcome | When the task has a concrete end state |
+| 4 | Voice guidance | When tone affects the result |
+| 5 | Depth choices | When the skill serves both quick and involved work |
+| 6 | Framework or method | When it gives the user a repeatable advantage |
+| 7 | Conversation guidance | When interaction order matters |
+| 8 | Completion cues | When the user needs a checkable deliverable |
+| 9 | Likely shortcuts | When a specific failure pattern recurs |
+| 10 | Resource handling | When the skill maintains a source base |
+| 11 | Sources or references | When factual claims depend on them |
+| 12 | Skill Feedback (auto-stamped by script) | Always |
 
 ## Writing the prose inside a skill
 
-The skill body is a prompt, so prompt-writing rules apply. The authoring companion is [`prompting_guidelines-Matt-Shummer.md`](../prompting_guidelines-Matt-Shummer.md) at the repo root — goal-first hierarchy, artifact-gated phases, pre-empted shortcuts, binary acceptance criteria, positive framing over negation. The template's structure already enforces about half of it; the guidelines cover the sentence-level rest (numeric bars over adjectives, motivation behind each rule, normal imperatives instead of alarm-caps).
+The skill body is a prompt, so keep its instructions task-specific, concise, and
+consistent with [`docs/skill-authoring.md`](../docs/skill-authoring.md). Explain
+the purpose of a constraint when it changes judgment, preserve user intent over
+template defaults, and use only the structure the workflow needs.

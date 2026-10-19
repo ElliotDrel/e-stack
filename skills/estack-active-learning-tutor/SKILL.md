@@ -1,6 +1,6 @@
 ---
 name: estack-active-learning-tutor
-version: 1.0.2
+version: 1.0.3
 description: (active-learning-tutor) Tutors a student through exam preparation using active learning — questioning, gap diagnosis, and concept mastery tracking. Use when the student says they want to study, learn, prep for an exam, be quizzed on a chapter, work through a practice test together, or be taught a topic conceptually rather than lectured.
 disable-model-invocation: true
 ---
@@ -25,13 +25,12 @@ The student fully understands every concept in their chosen scope — well enoug
 
 ---
 
-## Required reading at session start
+## Context to load
 
-Read these in full at every session start, and any time you resume in a new context window. Partial reads cause silent failures.
-
-1. This entire SKILL.md
-2. The one `paths/` file matching the path the student picks
-3. `references/teaching-turn-examples.md` — read once per session before your first teaching segment
+Before teaching, read the path that fits the request and the relevant student materials. Read
+`references/teaching-turn-examples.md` before the first teaching segment when a worked contrast
+will help preserve the concept-general teaching boundary. On resume, recover the active path and
+journal state before continuing; do not restart the orientation.
 
 ---
 
@@ -39,13 +38,14 @@ Read these in full at every session start, and any time you resume in a new cont
 
 ### Step 1 — Locate source materials
 
-Look in the project files for the student's notes (their working document — your primary reference) plus slides, lecture transcripts, and practice exams. Read the notes file in full. For larger source materials, confirm what's available; deep reading happens after routing.
+Look in the project files for the student's notes (their working document — your primary reference) plus slides, lecture transcripts, and practice exams. Read the material needed to ground the chosen scope before teaching. For a diagnostic quiz or a full practice-test walkthrough, read the in-scope source material comprehensively.
 
 If a notes file isn't obvious, ask which file is their notes before continuing.
 
 ### Step 2 — Pick a path
 
-Ask the student which of these four flows fits today. Use a `=== CONFIRM TO PROCEED ===` footer.
+Infer the flow from the student's request when it is clear. If two flows are plausible, ask one
+short routing question. Explain the available paths only when that helps the student choose.
 
 - **A — Diagnostic quiz, AI-generated.** I read all source materials, generate a comprehensive MCQ quiz covering every testable concept, you take it, and we only do active learning on what you miss.
 - **B — Diagnostic quiz, you've already taken one.** You share a completed practice quiz with your answers; I treat it as your diagnostic and run active learning on what you missed.
@@ -54,14 +54,14 @@ Ask the student which of these four flows fits today. Use a `=== CONFIRM TO PROC
 
 ### Step 3 — Read the path file and initialize
 
-Once the student picks, read the matching path file fully:
+Once the path is clear, read the matching path file:
 
 - Path A → `paths/diagnostic-quiz-generated.md`
 - Path B → `paths/diagnostic-quiz-imported.md`
 - Path C → `paths/active-learning.md`
 - Path D → `paths/practice-walkthrough.md`
 
-Initialize `teach_list.md` in the working directory by copying `assets/teach_list_template.md` and filling in the placeholders ({scope}, path letter, start date). The path file tells you whether to preload concepts or build the journal incrementally.
+Initialize `teach_list.md` by copying `assets/teach_list_template.md` and filling in the placeholders ({scope}, path letter, start date). This is the student's learning record: honor their requested output path and otherwise use the working directory. The path file tells you whether to preload concepts or build the journal incrementally.
 
 Then hand off to the path file's flow.
 
@@ -71,7 +71,7 @@ Then hand off to the path file's flow.
 
 If you arrive into a session that's already underway, do not re-route. Identify the path from the prior turns. If `teach_list.md` exists, scan it bottom-up to reconstruct state — the most recent line mentioning any concept defines its current status. If it doesn't exist, write it from the template and replay the conversation as journal entries. Then resume.
 
-If the path is unclear, ask the student to confirm in one CONFIRM TO PROCEED turn, then backfill.
+If the path is unclear, ask one focused routing question, then backfill.
 
 ---
 
@@ -240,9 +240,9 @@ When a conceptual gap surfaces — a wrong answer, shaky reasoning behind a righ
 
 Every turn is one of two types. The student submitting an attempt to an active question flips Teaching → Scoring.
 
-**Teaching turn.** Goal: teach the concept material so the student can bridge to any analogous problem. Success: a peer who never saw the active question could read this turn's body alone and learn the concept fully — every sentence is concept-general. The active question's option labels and correct answer are not load-bearing inputs. Body uses the **Teaching template**; footer is `=== CLARIFICATION QUESTION ===` (concept probe on a dummy scenario) or `=== CONFIRM TO PROCEED ===` (asking if the student is ready to attempt the active question). Append a `TEACH-TURN` line for the sub-concepts taught.
+**Teaching turn.** Goal: teach the concept material so the student can bridge to any analogous problem. Success: a peer who never saw the active question could read this turn's body alone and learn the concept fully — every sentence is concept-general. The active question's option labels and correct answer are not load-bearing inputs. Body uses the **Teaching template**; footer is normally `=== CLARIFICATION QUESTION ===` (concept probe on a dummy scenario). Use `=== CONFIRM TO PROCEED ===` only when the student needs to choose a route, pause, or defer; do not make it a default transition before the next question. Append a `TEACH-TURN` line for the sub-concepts taught.
 
-**Scoring turn.** Goal: evaluate the student's attempt, debrief, and route to the next thing. Look up the answer key just-in-time by reading its original source location (the chat message, project file, or practice exam file where the student first provided it) — do not transcribe it elsewhere. State the verdict, then debrief. Body states verdict and debrief; footer is `=== CONFIRM TO PROCEED ===` (advance), `=== ACTIVE QUESTION ===` (retry), or `=== CLARIFICATION QUESTION ===` (kicking off the gap sub-process). Append an `ATTEMPT` line with correct/incorrect/partial; on correct-with-reasoning also append `MASTERED`.
+**Scoring turn.** Goal: evaluate the student's attempt, debrief, and route to the next thing. Look up the answer key just-in-time by reading its original source location (the chat message, project file, or practice exam file where the student first provided it) — do not transcribe it elsewhere. State the verdict, then debrief. Body states verdict and debrief; footer is normally `=== ACTIVE QUESTION ===` (retry) or `=== CLARIFICATION QUESTION ===` (kicking off the gap sub-process). Use `=== CONFIRM TO PROCEED ===` only for a real learner choice, not as a default advance gate. Append an `ATTEMPT` line with correct/incorrect/partial; on correct-with-reasoning also append `MASTERED`.
 
 **Reasoning:** Keeping the answer key out of Teaching turns and looking it up only at scoring time prevents the answer-shaped gravity well that drags teaching content toward leaking the answer. Concept-general teaching forces the student to do the bridge themselves — which is what makes the concept stick.
 
@@ -261,7 +261,7 @@ A new question footer is introduced only after the prior one resolves. When teac
 ## Footer types
 
 - **`=== CLARIFICATION QUESTION ===`** — the student must produce something you'll evaluate against the source material. Conceptual answers, calculations, worked solutions, teach-backs. Used for both MCQ and open conceptual prompts.
-- **`=== CONFIRM TO PROCEED ===`** — yes/no transition checkpoint. "Ready to start?", "move on to the next concept?", "topic confirmed: {topic}. start now?" Also used for the routing question at session start.
+- **`=== CONFIRM TO PROCEED ===`** — a learner-choice checkpoint, such as choosing between genuinely plausible paths, pausing, or deferring a question. Do not use it after an already clear request merely to begin, advance, retry, or resume.
 - **`=== ACTIVE QUESTION ===`** — Path D only. Verbatim practice exam question. See `paths/practice-walkthrough.md`.
 
 ---
@@ -341,29 +341,21 @@ When in doubt about the shape of a Teaching turn, read `references/teaching-turn
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-active-learning-tutor:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-active-learning-tutor: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-active-learning-tutor: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

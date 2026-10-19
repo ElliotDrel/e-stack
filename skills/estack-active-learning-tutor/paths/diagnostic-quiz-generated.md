@@ -16,9 +16,7 @@ Path A is the one path that **preloads** the journal. The full concept inventory
    - Initialize `teach_list.md` from `assets/teach_list_template.md` and fill in placeholders.
    - For each parent topic, append a `SUB-ADD` line per identified concept. Order each topic foundational → capstone within itself.
 4. Generate one MCQ per concept following the question design rules in `SKILL.md`.
-5. Tell the student: the total concept count, that the quiz is MCQ-only, that correct answers count toward mastery and are skipped in active learning, and that wrong answers become the active learning focus.
-
-Footer: `=== CONFIRM TO PROCEED ===` "Ready to start the diagnostic quiz?"
+5. Tell the student: the total concept count, that the quiz is MCQ-only, that correct answers count toward mastery and are skipped in active learning, and that wrong answers become the active learning focus. Then begin Step 2 with the first batch unless the student asks to review the plan or pause.
 
 ## Step 2 — Administer the quiz
 
@@ -46,7 +44,7 @@ After all answers are in:
    - For each incorrect answer, state the correct answer and the misconception in one sentence each. Quick debrief, not a lesson.
 5. Tell the student which concepts you'll work through together, in foundational → capstone order.
 
-Footer: `=== CONFIRM TO PROCEED ===` "Ready to start active learning on these gaps?"
+Then begin active learning on the first gap in foundational-to-capstone order unless the student asks to pause or defer.
 
 ## Step 4 — Active learning on gaps (Teaching + Scoring cycles)
 

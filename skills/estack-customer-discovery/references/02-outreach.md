@@ -8,7 +8,9 @@ One rule above all: be completely honest about who you are and why you're reachi
 
 A mutual connection asking on your behalf will always outperform cold. Exhaust warm intros before sending a single cold message.
 
-If you're not finding people, it's rarely "I don't know how." It's usually fear of rejection in disguise. Send more messages. Faster.
+One source frames hesitation as fear of rejection and recommends sending more
+messages faster. Treat that as a hypothesis, not a diagnosis: first identify
+what is making outreach hard, then recommend a pace the user can sustain.
 
 ## The 2-sentence formula
 

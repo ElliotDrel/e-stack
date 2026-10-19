@@ -17,7 +17,7 @@ Primary sources:
 |---|---|
 | `--cd, -C <path>` | Workspace root for the run |
 | `--sandbox, -s <read-only\|workspace-write\|danger-full-access>` | Sandbox policy. **Default with no flags: read-only** |
-| `--ask-for-approval, -a <untrusted\|on-request\|never>` | Approval policy. Use `never` headless |
+| `--approve-for-me` | Routes approval requests through automatic review while retaining the `workspace-write` sandbox. Use only when that review path is available for the task. |
 | `--dangerously-bypass-approvals-and-sandbox` (`--yolo`) | Full bypass — "only use inside an isolated runner" |
 | `--full-auto` | Deprecated; use explicit `--sandbox` instead |
 | `-c, --config key=value` | Inline config override, repeatable (e.g. `-c sandbox_workspace_write.network_access=true`) |
@@ -46,10 +46,10 @@ No official exit-code table exists, and Codex has exited **0 on Ctrl+C/SIGINT** 
 ## Sandbox semantics
 
 - `read-only`: no writes. `workspace-write`: writes inside workspace root only, **network blocked by default** — enable per-run with `-c sandbox_workspace_write.network_access=true`. `danger-full-access`: no boundaries.
-- Under `-a never`, a sandbox-blocked action fails back to the model as a tool-call error — no hang, no prompt.
-- Non-zero exit from a tool the model runs can hide that tool's output from the model ([#1367](https://github.com/openai/codex/issues/1367)) — for linters/tests where non-zero means "findings", have the prompt tell Codex to append `|| true`.
+- The local `codex exec --help` checked on 2026-09-07 had no `-a`/`--ask-for-approval` flag. A sandbox-blocked action returns an error to the model; a task that needs automatic approval review can use `--approve-for-me` with `workspace-write`. Check local help before copying this dated observation.
+- A 2026 issue report says a non-zero tool exit can hide output from the model ([#1367](https://github.com/openai/codex/issues/1367)). For diagnostics, capture output separately and preserve the original exit status as evidence. Use `|| true` only when the prompt explicitly records that the status was deliberately suppressed and a separate check still decides success.
 - Sandboxed "build/tests pass" is not trustworthy when the sandbox network posture differs from the real environment (e.g. a build failing at a font fetch before typechecking ever ran).
-- MCP tool calls in exec mode get auto-cancelled (stdin closed → approval prompt reads EOF as reject); only the full bypass flag works around it — avoid designs that need MCP tools inside headless Codex ([#24135](https://github.com/openai/codex/issues/24135)).
+- A 2026 issue report describes MCP calls being cancelled in a particular headless approval flow ([#24135](https://github.com/openai/codex/issues/24135)). Verify the current CLI and required tool path before designing around it; do not use a full sandbox bypass solely on this dated report.
 
 ## Auth (subscription, no API keys)
 
@@ -58,7 +58,7 @@ No official exit-code table exists, and Codex has exited **0 on Ctrl+C/SIGINT** 
 
 ## Timeouts and process management
 
-- **No whole-run timeout, and no per-tool-call timeout inside a turn.** A runaway shell command inside Codex can hang the turn indefinitely and silently drop turn state. Enforce the deadline from the caller: Bash-tool `timeout` foreground, or `run_in_background` for long runs.
+- The caller owns the whole-process deadline. Use the foreground timeout or the host's asynchronous task facility as appropriate; do not assume the CLI's internal tool limits cover the outer run.
 - If a run must be killed: kill the process tree (`taskkill /T /F /PID <pid>` on Windows), then read the session rollout for partial work.
 - Rollouts: `~/.codex/sessions/YYYY/MM/DD/rollout-<local-timestamp>-<uuid>.jsonl`, written incrementally (partial state generally survives a kill; no fsync guarantee documented). `--ephemeral` or `history.persistence = "none"` disables. Resume replays history but does not resurrect an in-flight tool call.
 

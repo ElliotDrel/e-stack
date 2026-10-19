@@ -1,6 +1,6 @@
 # Path A: The Sponsorship Packet
 
-Read `references/03-sponsorship-market.md` (the 6-page template and packet mistakes) and `references/06-messaging.md` first. Input: the finalized offer file — the packet is the offer in document form, so nothing goes in it that isn't consistent with the offer.
+Read `references/03-sponsorship-market.md` (the 6-page template and packet mistakes) and `references/06-messaging.md` first. Use the finalized offer file when it exists. For a direct packet request, draft from the available context, keep it internally consistent, and label material assumptions for verification before external sharing.
 
 **Output:** `sponsorship-packet.md` — complete final copy for every page, each with a one-line layout note, ready to paste into a design tool without writing another sentence.
 
@@ -23,8 +23,8 @@ If the user wants more pages, each extra one must pass the Value Equation test.
 
 ## Working style
 
-Draft page by page, checking in every page or two — the audience and menu pages need the user's real data and shape everything after them. Apply the brand rules from Phase 1. Where proof doesn't exist yet (first-year property), say so honestly in the copy; authority can come from the team and the plan.
+Draft the packet from the offer and available evidence. Ask for real data when it is needed to make a truthful external claim; otherwise continue with a labeled draft gap. Apply any stated brand rules. Where proof does not exist yet (first-year property), say so honestly in the copy; authority can come from the team and the plan.
 
 ## Done when
 
-Every page has layout note + final copy; no unresolved assumption flags; each page ends in one next step; nothing contradicts `sponsorship-offer.md`; the user confirmed page-level copy, not just the outline.
+An external-ready packet has layout notes and final copy for every page, no unresolved factual assumption flags, one clear next step, and no contradiction with the offer. A direct draft may retain clearly labeled verification gaps.

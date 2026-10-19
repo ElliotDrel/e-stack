@@ -32,11 +32,11 @@ If that check passes, the migration script's own warning was a false positive �
 
 **Fix.** The current script copies the sidecar tree automatically when `--session` is set. If you see this symptom, you're running an out-of-date copy of the script. Use the bundled one at `scripts/migrate-claude-history.js`.
 
-**Recovery if it already happened.** Just re-run the migration. The script's "skip if destination exists" check means the already-copied `.jsonl` won't be touched, and the sidecar files will be added on the second pass.
+**Recovery if it already happened.** First compare the target transcript, sidecar tree, and pre-migration backup to prove this is the same incomplete migration. If so, use a recovery run that adds only the missing known sidecars and preserves the validated target transcript. If the target UUID belongs to another migration, has conflicting content, or cannot be matched to the backup, stop and inspect it; do not blindly rerun or combine sidecar trees.
 
 ## Ambiguous UUID lookup
 
-**Symptom.** After migration, `read-claude-session-history --mode lookup --uuid <prefix>` returns:
+**Symptom.** After migration, `estack-read-agent-history` lookup mode returns:
 
 ```
 Ambiguous prefix '<uuid>' matches 2 sessions:
@@ -75,7 +75,7 @@ Never delete before the user confirms. The backup folder is a fallback if the us
 
 **Cause.** The `--old-repo` value's encoded form doesn't match any folder under `~/.claude/projects/`. Most often this is because the user gave a real path that doesn't actually have any sessions yet (the project folder gets created lazily).
 
-**Fix.** Run `ls ~/.claude/projects/` and find the folder name that corresponds to the user's intended source. Reverse-engineer the real path from the folder name and pass that as `--old-repo`. The encoding is: `C--<rest>` becomes `C:\<rest with hyphens turned back into backslashes>`.
+**Fix.** Use `estack-read-agent-history` lookup to locate the source transcript, then read its recorded `cwd` field. Do not reverse-engineer a real path from the hyphenated folder name: a real path can itself contain hyphens, so the encoding is not reversible. If `cwd` is absent or stale, establish the source path from the user's project context before retrying.
 
 ## The migration note was accidentally appended twice
 
@@ -91,6 +91,6 @@ Never delete before the user confirms. The backup folder is a fallback if the us
 
 **Cause.** Without `--session`, the script's default mode migrates **every** session in the source project — that's how the script was originally written, for the rename-a-project use case.
 
-**Fix.** Stop the script (Ctrl-C if still running). Delete the unintended files from the target project dir (compare with the target backup to know what wasn't there before). Re-run with `--session <uuid>` this time.
+**Fix.** Stop the script (Ctrl-C if still running). Compare the target project dir with its backup to identify only the files the mistaken run added. Preserve that evidence and ask the user before removing any of those files; then re-run with `--session <uuid>`.
 
 This is why backing up the **target** dir matters as much as backing up the source — without it, recovering from this mistake is much harder.

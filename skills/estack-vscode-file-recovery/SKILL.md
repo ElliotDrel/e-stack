@@ -1,6 +1,6 @@
 ---
 name: estack-vscode-file-recovery
-version: 1.2.2
+version: 1.2.3
 description: >-
   (vscode-file-recovery) Recover a permanently deleted file from VS Code or
   Cursor Local History snapshots or from Claude session transcripts. Use when
@@ -14,7 +14,7 @@ When a file is deleted outside of git (with `rm`, bash, or any method that bypas
 ## Recovery Sources — Try in Order
 
 1. **Editor Local History** (VS Code or Cursor) — covered below
-2. **Claude session transcript** — if Claude read the file in a prior session, its content may be in the JSONL. Use `/read-transcript` to search session history.
+2. **Claude or Codex session transcript** — if an agent read the file in a prior session, its content may be in the transcript. Use `estack-read-agent-history` to search it.
 3. **Git** — only if the file was ever committed
 4. **Cloud sync** (OneDrive, Dropbox) — check the cloud recycle bin / version history
 
@@ -22,7 +22,7 @@ When a file is deleted outside of git (with `rm`, bash, or any method that bypas
 
 ## How Editor Local History Works
 
-VS Code and Cursor automatically save timestamped snapshots of every file opened in the editor. These live at:
+VS Code Local History stores full-content entries when an eligible local file is saved, subject to its configured excludes, size limit, entry limit, and merge window. On a remote workspace its user data may live on the remote host; VS Code for the Web uses browser storage. Cursor's Local History layout is similar, but inspect its `entries.json` rather than assuming every VS Code setting applies. These desktop locations are the first places to check:
 
 ```
 VS Code  (Windows): C:\Users\[username]\AppData\Roaming\Code\User\History\
@@ -37,7 +37,7 @@ Each file gets a hash-named folder containing:
 - `entries.json` — maps the original file path to snapshot IDs and timestamps
 - `[id].[ext]` — the actual snapshot content (e.g., `dtgz.md`, `F9gm.txt`)
 
-**Critical limitation:** VS Code only snapshots files that were actually *opened as a tab in the editor*. Files visible only in the sidebar Explorer are not captured.
+**Critical limitations:** A file may have no recoverable entry if it was excluded, exceeded the configured size limit, was never saved while Local History was enabled, or its retained entries were pruned. See [VS Code's Local History documentation](https://code.visualstudio.com/updates/v1_66#_local-history) for the `workbench.localHistory.*` controls.
 
 ---
 
@@ -98,7 +98,7 @@ The `entries.json` looks like:
 }
 ```
 
-The **last entry** in the array is the most recent snapshot. Take its `id` field.
+Choose the entry with the greatest `timestamp` value rather than relying on array order, then take its `id` field. If the result is surprising, inspect the preceding timestamped entries before restoring.
 
 ### Step 4: Read the snapshot content
 
@@ -112,17 +112,27 @@ Snapshots are UTF-8 without a BOM, and Windows PowerShell 5.1 decodes BOM-less f
 
 ### Step 5: Restore the file
 
-Write the content back to the original location using the Write tool.
+If the original path already exists, compare it with the selected snapshot and ask before replacing it. Otherwise copy the snapshot exactly; do not regenerate its text with a model:
+
+```powershell
+$snapshot = "C:\Users\[username]\AppData\Roaming\Code\User\History\[hash-folder]\[id]"
+$original = "C:\path\to\recovered-file.md"
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $original) | Out-Null
+Copy-Item -LiteralPath $snapshot -Destination $original -ErrorAction Stop
+if ((Get-FileHash -LiteralPath $snapshot).Hash -ne (Get-FileHash -LiteralPath $original).Hash) {
+  throw "Recovery copy did not match the selected snapshot."
+}
+```
 
 ---
 
 ## When Editor History Won't Help
 
-- **File was never opened as an editor tab** — files only visible in the sidebar Explorer are not snapshotted.
-- **History was cleared** — default retention is 30 days / 50 entries per file.
+- **No eligible saved Local History entry** — the file may have been excluded, too large, unsaved while Local History was enabled, or stored on a remote/web host.
+- **Entries were pruned or cleared** — inspect the configured `workbench.localHistory.maxFileEntries`, `maxFileSize`, `mergeWindow`, and `exclude` settings before concluding history is absent.
 
 If editor history doesn't have the file, fall back to:
-1. **`/read-transcript`** — if Claude read the file in a prior session, the content is in the session JSONL. Use `--mode search --query "filename"` to find it. Note: you need to point it at the right project's sessions — if the file lived in a different project folder, search that project's transcript directory instead.
+1. **`estack-read-agent-history`** — if Claude or Codex read the file in a prior session, search the relevant project's sessions with `--mode search --query "filename"`. Its current session roots and formats are documented by that skill.
 2. **Windows Shadow Copies** (last resort, requires admin) — Windows VSS may have a snapshot of the volume. Check if any exist first:
    ```powershell
    vssadmin list shadows
@@ -155,36 +165,32 @@ Get-ChildItem "$env:APPDATA\Code\User\History" -Recurse |
 # Read snapshot (Read tool preferred; -Encoding UTF8 required if using PowerShell)
 Get-Content "C:\Users\2supe\AppData\Roaming\Code\User\History\-6e228c75\dtgz.md" -Raw -Encoding UTF8
 
-# Restore
-# (Use Write tool to recreate the file at original path)
+# Restore exact bytes and verify the copy
+$snapshot = "C:\Users\2supe\AppData\Roaming\Code\User\History\-6e228c75\dtgz.md"
+$original = "C:\Users\2supe\All Coding\akiflow-mcp\Untitled-1.md"
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $original) | Out-Null
+Copy-Item -LiteralPath $snapshot -Destination $original -ErrorAction Stop
+if ((Get-FileHash -LiteralPath $snapshot).Hash -ne (Get-FileHash -LiteralPath $original).Hash) { throw "Recovery copy did not match the selected snapshot." }
 ```
 ---
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-vscode-file-recovery:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-vscode-file-recovery: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-vscode-file-recovery: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

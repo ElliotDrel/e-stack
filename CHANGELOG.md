@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- All skills: shared feedback now uses the details already provided and drafts an issue before any explicitly authorized posting.
+- `estack-claude-md-optimizer` and `estack-prompt-builder-coach`: replace compulsory onboarding and multi-stage approval loops with focused instruction maintenance and usable work briefs.
+- Coaching skills: narrow cross-skill routing, adapt artifact depth to the request, and preserve source-grounded tutoring and domain frameworks.
+
+### Fixed
+- `estack-pdf-to-md`: setup and conversion use the same credential resolver, including last-assignment precedence; the status check requires no conversion dependencies and never prints keys.
+- Tool skills: clarify current CLI flags and verification, preserve repository caches and migration backups, and keep credential setup private.
+- Review follow-up: align first-run flight routing, shell examples, coaching
+  boundaries, generated-skill paths, and cross-file instructions; restore the
+  concrete release, security-baseline, hook-registration, and manual-publish
+  details needed to execute those workflows safely.
+
 ---
 
 ## [1.1.0] - 2026-10-19

@@ -1,6 +1,6 @@
 ---
 name: estack-purdue-stickers
-version: 1.1.1
+version: 1.1.2
 description: >-
   (purdue-stickers) Design and package print-ready sticker files for the
   Purdue Knowledge Lab's Roland printer. Use when asked to make or print
@@ -47,15 +47,15 @@ Run (path relative to this skill's base directory; needs Pillow + Chrome or Edge
 python <skill-dir>/scripts/render_sticker.py design.svg out.png --inches 2
 ```
 
-Uses headless Chrome (needed for the webfont + data-URI logo; cairosvg/resvg can't). Output: exact-size transparent PNG, 300 DPI stamped, self-verified non-blank. ALWAYS show Elliot the rendered PNG and get approval before packaging — and eyeball it yourself first (font loaded? logo present? nothing clipped?). Note: a fresh render is true-font Barlow Condensed and will NOT visually match the 2026 physical stickers, which were printed from fallback-font 384px PNGs — both looks are approved-in-practice.
+Uses headless Chrome (needed for the webfont + data-URI logo; cairosvg/resvg can't). Output: exact-size transparent PNG, 300 DPI stamped, self-verified non-blank. Inspect the render yourself, then show it to the user. When the request already covers design and packaging, package a render that meets the stated requirements; ask only if the user needs to choose among a material visual issue. Note: a fresh render is true-font Barlow Condensed and will NOT visually match the 2026 physical stickers, which were printed from fallback-font 384px PNGs — both looks are approved-in-practice.
 
 ## Step 3 — Package and submit
 
-Output folder: ask the user where to put it, defaulting to `./purdue-stickers-output/<YYYY-MM-DD-slug>/` in the working directory (create it). These are deliverables, so they go where the user wants them, never into the skill's own storage. Produce:
+Output folder: use the location the user supplied. Otherwise use `./purdue-stickers-output/<YYYY-MM-DD-slug>/` in the working directory (create it) and state that choice with the deliverables. These files never go in the skill's own storage. Produce:
 1. Final PNGs, named `sticker_<slug> - <project>.png`, plus the source SVGs.
 2. `SUBMISSION-NOTES.md`: per-sticker physical size, finish, quantity wanted, and the sender name for the file-naming rule (FirstName_LastName_Sticker).
 
-Then submit — **through the Lab's website; this is the required route**:
+Then submit — **through the Lab's website; this is the required route**. Submitting a booking is an external commitment, so obtain explicit authorization before pressing its final submit control unless the user already requested submission:
 - Open https://calendar.lib.purdue.edu/space/182313 for Elliot (use the Claude-in-Chrome browser tools when available, otherwise give him the link) and walk the form per `references/submission.md`: pick a green slot sized to the material length, upload the prepped PDF AND the original image files, choose the finish, submit, then wait for the approval email.
 - If a prepped PDF is required first, follow `references/illustrator-playbook.md` in Illustrator (Purdue IT lab machines have it) — the PNGs + `assets/RolandVersaWorks.ai` are the inputs. Emailing knowledgelab@purdue.edu (template in `references/submission.md`) is a fallback that has worked, but booking still happens on the site.
 
@@ -69,29 +69,21 @@ Then submit — **through the Lab's website; this is the required route**:
 
 ## Skill Feedback
 
-If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — ask them to describe it in a bit more detail (what they expected, what happened, and any relevant context). Then file the issue using whichever method is available:
+If the user shares feedback about this skill — a bug, something confusing, a missing feature, or a suggestion — capture the useful details: what they expected, what happened, and relevant context. If they already provided enough detail, do not ask them to repeat it.
 
-**If `gh` is installed** (`gh --version` succeeds), create the issue directly:
+Draft a concise issue title prefixed with `estack-purdue-stickers:` and a body. File an
+issue only when the user explicitly asks you to do so. If they have not asked,
+offer the draft and issue page for their review; do not post or open anything
+automatically.
+
+When the user explicitly authorizes filing and `gh` is installed (`gh --version` succeeds), create the issue with structured arguments. Put the reviewed body in a UTF-8 temporary file and pass its literal path with `--body-file`; do not interpolate feedback into shell code.
 
 ```bash
 gh issue create \
   --repo ElliotDrel/e-stack \
-  --title "estack-purdue-stickers: <concise summary>" \
-  --body "<description from user feedback — expected vs. actual behavior and context>"
+  --title "<reviewed title>" \
+  --body-file "<path-to-reviewed-UTF-8-body-file>"
 ```
 
-**If `gh` is not installed**, build a pre-filled URL:
-
-```bash
-python3 -c "
-import urllib.parse
-title = 'estack-purdue-stickers: <concise summary>'
-body = '<description from user feedback — expected vs. actual behavior and context>'
-base = 'https://github.com/ElliotDrel/e-stack/issues/new'
-print(base + '?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body))
-"
-```
-
-Share the printed URL with the user and offer to open it in their browser.
-
-They can also click it directly, review the pre-filled title and body, and click **Submit new issue**.
+If `gh` is unavailable, give the user the reviewed title and body to paste into a
+new issue at `https://github.com/ElliotDrel/e-stack/issues/new`.

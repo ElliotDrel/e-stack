@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-sys.path.insert(0, str(Path.home() / ".claude/skills/estack-read-agent-history/scripts"))
+sys.path.insert(0, str(Path.home() / ".agents/skills/estack-read-agent-history/scripts"))
 from lib import parser, paths, search, subagents, tools, codex
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -53,7 +53,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-sys.path.insert(0, str(Path.home() / ".claude/skills/estack-read-agent-history/scripts"))
+sys.path.insert(0, str(Path.home() / ".agents/skills/estack-read-agent-history/scripts"))
 from lib import parser
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -93,4 +93,4 @@ The session scratchpad, with a full Windows path. Never `/tmp`: Bash writes it t
 
 ## When to stop scripting
 
-If you write the same script twice, it wants to be a CLI mode or flag. Add it, document it in `modes.md`, and say so — that's ladder step 4.
+If you write the same script twice, report it as a candidate CLI mode or flag. Add and document it in `modes.md` only in an authorized skill-maintenance task — that's ladder step 4.
