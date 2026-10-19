@@ -48,8 +48,9 @@ Anything the skill persists for its own use between runs: config, credentials,
 caches, history, registries, cloned repos, internal artifacts. Use the skill's
 full folder name — `estack-doc-review-viewer` owns
 `~/.e-stack/estack-doc-review-viewer/`. The name is deliberately not shortened:
-the installed skill, its frontmatter `name:`, and its state directory all answer
-to one identity, which is also what keeps `check-skill-name.cjs` honest.
+the state directory always uses the packaged `estack-` identity, even when the
+installed folder and frontmatter use the short name. Prefix switches never move
+saved state or credentials.
 
 One folder holds everything every e-stack skill has ever written. The user has a
 single directory to find, back up, inspect, or delete, instead of a dotfile per
@@ -119,8 +120,8 @@ SERPAPI_KEY=def456
 `~/.e-stack/.env`.
 
 The installer follows the same rule for its own settings — `ESTACK_SKILLS_DIR`,
-`ESTACK_HOOKS_DIR`, `ESTACK_BACKUP_DIR`, `ESTACK_NO_STATUSLINE`, and `ESTACK_HOME`
-all live in this file too. It is the pack's single settings file, not just its
+`ESTACK_HOOKS_DIR`, `ESTACK_BACKUP_DIR`, `ESTACK_NO_STATUSLINE`,
+`ESTACK_SKILL_PREFIX`, and `ESTACK_HOME` all live in this file too. It is the pack's single settings file, not just its
 credential file, so a new persistent setting belongs here under an `ESTACK_*`
 name rather than in a new JSON sidecar or marker file. A real environment variable wins so a one-off override works
 without editing the file.
@@ -173,7 +174,7 @@ worked example.
 
 ---
 
-### Doc Listings (README.md + CLAUDE.md)
+### Doc Listings (README.md + AGENTS.md)
 
 Every skill and hook must be listed in two places:
 
@@ -197,6 +198,18 @@ Every skill and hook must be listed in two places:
 Allowed exceptions: mentions inside `references/` docs (prose about the skill's display name) and the `(<short>)` description prefix itself are not flagged as stale.
 
 The publish workflow runs `--all` as a hard gate. Run it locally before tagging if you've renamed a skill or edited its frontmatter.
+
+**Rule 5 is load-bearing, not just tidiness.** `ESTACK_SKILL_PREFIX=none` installs
+skills under their short names, and the installer produces that by rewriting
+`estack-<short>` to `<short>` in every packaged file on its way to disk — the
+`name:` line, cross-skill mentions in prose, slash commands in descriptions, and
+the self-referencing paths some skills use to run their own scripts
+(`~/.claude/skills/estack-book-extractor/scripts/extract_text.py`). One pattern
+finds all of them only because rule 5 guarantees every reference carries the
+prefix. Write a skill reference bare and it survives the rewrite as a name that
+does not exist on that install. The rewrite deliberately leaves
+alone: stable state identifiers, a longer name a shorter one is a prefix of, and a filename like
+`estack-notify.ps1`, which keeps its name inside the renamed folder.
 
 ---
 
@@ -222,3 +235,14 @@ Use this for setup tasks, environment checks, or gathering context that the skil
 
 **Example:**
 - `skills/estack-repo-search/SKILL.md` — clones and indexes a repo on load
+
+### Prefix transformations and stored state
+
+The installer rewrites skill names and explicit `skills/<name>` paths when
+`ESTACK_SKILL_PREFIX=none`. Quoted standalone identifiers in executable code
+stay canonical unless they are a segment immediately following `skills`.
+This preserves storage expressions such as `resolve(ESTACK_ROOT,
+'estack-doc-review-viewer')` and `Path.home() / ".e-stack" /
+"estack-pdf-to-md"`. Keep state paths canonical; never derive storage from the
+installed folder's basename. Run `node scripts/test-prefix-safety.cjs` when
+changing references or state paths.
