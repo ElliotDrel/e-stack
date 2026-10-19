@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
-# Prints the session's current custom title, or a "no title" message.
-# Usage: current-title.sh <session-id>
+# Prints a Claude Code session's current custom title, or a "no title" message.
+# Codex threads are handled by codex-title.js instead; session.sh picks between
+# them. Usage: claude-title.sh <session-id>
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/claude.sh
+. "$SCRIPT_DIR/lib/claude.sh"
 
 SESSION_ID="${1-}"
 
 if [[ -z "$SESSION_ID" ]]; then
-  echo "Error: Usage: current-title.sh <session-id>" >&2
+  echo "Error: Usage: claude-title.sh <session-id>" >&2
   exit 1
 fi
 
-# Find the session JSONL file (same lookup rename.sh uses)
-SESSION_FILE=$(find "$HOME/.claude/projects/" -maxdepth 2 -name "${SESSION_ID}.jsonl" -type f 2>/dev/null | head -1)
+SESSION_FILE="$(estack_claude_session_file "$SESSION_ID")"
 
 LAST_CUSTOM=""
 if [[ -n "$SESSION_FILE" ]]; then

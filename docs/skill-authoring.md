@@ -271,12 +271,14 @@ configuration details belong in the integration that uses them.
 
 ### Auto-run commands
 
-Use `` ```! `` (triple backtick + `!`) code blocks in SKILL.md to run shell commands automatically when the skill is loaded. The output is presented to the model before it processes the rest of the skill.
+Use `` ```! `` (triple backtick + `!`) code blocks in SKILL.md for Claude Code dynamic context injection. The output is presented to the model before it processes the rest of the skill. Other hosts need an explicit instruction to run the command themselves; this supersedes the earlier host-independent auto-run guidance. [Claude Code documents the syntax and failure behavior](https://code.claude.com/docs/en/skills#inject-dynamic-context).
 
 Use this for setup tasks, environment checks, or gathering context that the skill needs upfront.
 
 **Example:**
 - `skills/estack-repo-search/SKILL.md` — clones and indexes a repo on load
+
+For a diagnostic whose failure the agent must explain, preserve the error output and return success from the injected block (for example, `check-command || printf 'CHECK_FAILED: stop and explain the error above.\n'`). Otherwise a nonzero exit aborts skill loading before the agent receives its instructions. Keep the underlying script nonzero on failure for direct callers.
 
 ### Prefix transformations and stored state
 
