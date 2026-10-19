@@ -240,7 +240,8 @@ Use this for setup tasks, environment checks, or gathering context that the skil
 
 The installer rewrites skill names and explicit `skills/<name>` paths when
 `ESTACK_SKILL_PREFIX=none`. Quoted standalone identifiers in executable code
-stay canonical unless they are a segment immediately following `skills`.
+stay canonical unless they are a segment immediately following `skills` or
+assigned to an explicit skill identifier (`SKILL_NAME` or `skillName`).
 This preserves storage expressions such as `resolve(ESTACK_ROOT,
 'estack-doc-review-viewer')` and `Path.home() / ".e-stack" /
 "estack-pdf-to-md"`. Keep state paths canonical; never derive storage from the

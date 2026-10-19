@@ -30,6 +30,12 @@ function snapshot(dir = home) {
 }
 try {
   run(['--install', '--yes', '--no-prefix']);
+  const nudge = JSON.parse(execFileSync(process.execPath, [at('.claude', 'hooks', 'repo-search-nudge.js')], {
+    env, encoding: 'utf8', input: JSON.stringify({ tool_name: 'WebFetch', tool_input: { url: 'https://github.com/example/repo' } }),
+  }));
+  check('executed nudge recommends the installed short name',
+    nudge.hookSpecificOutput.additionalContext.includes('the repo-search skill') &&
+    !nudge.hookSpecificOutput.additionalContext.includes('estack-repo-search'));
   const registry = skill('doc-review-viewer') + '/registry.mjs';
   const output = execFileSync(process.execPath, ['--input-type=module', '-e', `const m = await import(${JSON.stringify(pathToFileURL(registry).href)}); console.log(m.ROOT);`], { env, encoding: 'utf8' }).trim();
   check('executed registry keeps the canonical state directory', output === at('.e-stack', 'estack-doc-review-viewer'));
@@ -92,6 +98,11 @@ try {
   fs.writeFileSync(path.join(legacy, '.env'), 'LEGACY_KEY=fixture\n');
   run(['--install', '--yes']);
   check('legacy real directory credentials survive migration', read(skill(sample) + '/.env') === 'LEGACY_KEY=fixture\n');
+  fresh();
+  const earlyNode = at('without-buffer-isutf8.cjs');
+  fs.writeFileSync(earlyNode, "require('buffer').isUtf8 = undefined;\n");
+  execFileSync(process.execPath, ['--require', earlyNode, installer, '--install', '--yes', '--no-prefix'], { env, encoding: 'utf8' });
+  check('unprefixed install works without buffer.isUtf8', fs.existsSync(skill(short) + '/SKILL.md'));
   // Deprecated short name is not evidence of ownership.
   fresh(); fs.mkdirSync(skill('prompt-builder'), { recursive: true }); fs.writeFileSync(skill('prompt-builder') + '/SKILL.md', 'USER OWNED');
   run(['--install', '--yes', '--no-prefix']);

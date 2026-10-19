@@ -10,11 +10,12 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
+        node: ["18.0.0", "24"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: ${{ matrix.node }}
       - run: node scripts/test-install-edge-cases.cjs
       - run: node scripts/test-prefix-safety.cjs
