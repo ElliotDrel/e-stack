@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.1.1] - 2026-10-19
+
 ### Changed
 - All skills: shared feedback now uses the details already provided and drafts an issue before any explicitly authorized posting.
 - `estack-claude-md-optimizer` and `estack-prompt-builder-coach`: replace compulsory onboarding and multi-stage approval loops with focused instruction maintenance and usable work briefs.
@@ -743,7 +747,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial installer (`bin/install.cjs`) and sync script
 - GitHub Actions publish workflow
 
-[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/ElliotDrel/e-stack/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/ElliotDrel/e-stack/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/ElliotDrel/e-stack/compare/v1.0.77...v1.1.0
 [1.0.77]: https://github.com/ElliotDrel/e-stack/compare/v1.0.76...v1.0.77
 [1.0.76]: https://github.com/ElliotDrel/e-stack/compare/v1.0.74...v1.0.76
