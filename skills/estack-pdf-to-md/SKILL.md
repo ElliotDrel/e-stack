@@ -1,6 +1,6 @@
 ---
 name: estack-pdf-to-md
-version: 1.2.5
+version: 1.2.6
 description: >-
   (pdf-to-md) Convert a PDF to Markdown or plain text with the RunPulse API,
   including OCR of scanned pages. Use when asked to extract text from or
@@ -16,51 +16,7 @@ When the host executes fenced commands on skill load, use its output. Otherwise 
 check before conversion; do not claim the key is available without its result.
 
 ```!
-# One credential file for the whole pack, not one per skill.
-ENV_FILE="$HOME/.e-stack/.env"
-echo "=== PULSE_API_KEY status ==="
-
-# Older installs kept the key per-skill, including inside the installed skill
-# folder that the installer overwrites on every sync. Read those, but write to
-# the shared file.
-LEGACY_FILES=(
-  "$HOME/.e-stack/estack-pdf-to-md/.env"  # estack-path-ok: read-only legacy credential fallback
-  "$HOME/.claude/skills/estack-pdf-to-md/.env"  # estack-path-ok: read-only legacy credential fallback
-  "$HOME/.claude/skills/pdf-to-md/.env"  # estack-path-ok: historical legacy path, read-only fallback
-)  # estack-path-ok: read-only legacy fallbacks
-
-ENV_KEY="${PULSE_API_KEY:-}"
-FOUND_IN="the current process environment"
-if [ -z "$ENV_KEY" ]; then
-  FOUND_IN="$ENV_FILE"
-  for f in "$ENV_FILE" "${LEGACY_FILES[@]}"; do
-    if [ -f "$f" ]; then
-      ENV_KEY=$(grep -E '^PULSE_API_KEY=' "$f" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'" | tr -d '\r' | xargs)
-      if [ -n "$ENV_KEY" ]; then FOUND_IN="$f"; break; fi
-    fi
-  done
-fi
-
-USER_VAR=""
-if command -v powershell.exe >/dev/null 2>&1; then
-  USER_VAR=$(powershell.exe -NoProfile -Command "[System.Environment]::GetEnvironmentVariable('PULSE_API_KEY','User')" 2>/dev/null | tr -d '\r\n')
-fi
-
-if [ -n "$ENV_KEY" ]; then
-  echo "[OK] PULSE_API_KEY is available from $FOUND_IN (an override when it is the current process; the shared home is $ENV_FILE)."
-  if [ "$FOUND_IN" != "the current process environment" ] && [ "$FOUND_IN" != "$ENV_FILE" ]; then
-    echo "     Move it privately to $ENV_FILE when convenient; that is the shared home."
-  fi
-  if [ -n "$USER_VAR" ]; then
-    echo "     A Windows user environment copy also exists. The live process value takes precedence; avoid keeping two persistent copies."
-  fi
-elif [ -n "$USER_VAR" ]; then
-  echo "[MISSING] A Windows user environment copy exists but is unavailable to this process."
-  echo "          Move it privately to $ENV_FILE, then clear the user-environment copy."
-else
-  echo "[MISSING] No PULSE_API_KEY configured."
-  echo "ACTION: Do not run the script yet. Walk the user through 'First-time setup' below."
-fi
+python "$HOME/.agents/skills/estack-pdf-to-md/scripts/pdf_to_md.py" --check-credentials  # estack-path-ok: status-only installed converter entry point
 ```
 
 ## First-time setup (only if the startup check reports [MISSING])
@@ -117,7 +73,7 @@ The script prints exactly which pages it's skipping (e.g. `Skipping 3 page(s): 4
 
 The script auto-loads `PULSE_API_KEY` from these sources, in order:
 1. The current shell's `PULSE_API_KEY` env var — a one-off override for a single run, not a place to store the key.
-2. `~/.e-stack/.env` (the shared credential file for every e-stack skill), which is where it belongs. Older per-skill locations are still read, but the startup check will tell you to move the key.
+2. `~/.e-stack/.env` (the shared credential file for every e-stack skill), which is where it belongs. Older per-skill locations remain read-only fallbacks; keep persistent keys in the shared file.
 
 So in either shell, just invoke directly — no need to pass the key explicitly:
 

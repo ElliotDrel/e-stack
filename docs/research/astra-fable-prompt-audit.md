@@ -101,6 +101,6 @@ Astra or Fable was empirically evaluated on the scenarios.
 - Relative Markdown file links across active skills, templates, and repo docs resolve.
 - PDF credential-check Bash syntax and isolated temporary-home cases passed: missing key, shared-file key, legacy-file key, and process-environment precedence, including paths with spaces. No real credentials or API calls were used.
 - Independent static review findings were corrected in nested coaching paths, executable host paths, tracker analysis/action boundaries, flight presets/history, and migration recovery instructions. The primary reviewer inspected the resulting source and diffs.
-- Runtime scripts, hooks, installer, package version, and release workflow are unchanged; the existing runtime regression results above remain applicable. No live skill installation or package release was performed.
+- At the original audit endpoint, runtime scripts, hooks, installer, package version, and release workflow were unchanged. This historical statement is superseded for the October 19 follow-up: PDF credential status now calls the converter resolver through `--check-credentials`, with regression tests for duplicate assignments, process precedence, legacy fallbacks, and secret-free dependency-free output. The full Python suite passed 198 tests. Live skill installation remains a separate action.
 
 Historical plans, benchmark outputs, transcripts and captured source documents remain historical evidence. The audit does not rewrite the record of earlier behavior or claim their dated facts were re-verified.

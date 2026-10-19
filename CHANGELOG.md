@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coaching skills: narrow cross-skill routing, adapt artifact depth to the request, and preserve source-grounded tutoring and domain frameworks.
 
 ### Fixed
+- `estack-pdf-to-md`: setup and conversion use the same credential resolver, including last-assignment precedence; the status check requires no conversion dependencies and never prints keys.
 - Tool skills: clarify current CLI flags and verification, preserve repository caches and migration backups, and keep credential setup private.
 - Review follow-up: align first-run flight routing, shell examples, coaching
   boundaries, generated-skill paths, and cross-file instructions; restore the

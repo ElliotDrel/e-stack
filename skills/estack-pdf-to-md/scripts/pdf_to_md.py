@@ -6,6 +6,7 @@ Usage:
     python pdf_to_md.py <pdf_path> [options]
 
 Options:
+    --check-credentials  Report key availability only; no PDF, dependencies, or API call
     --batch-size N       Pages per API call (default: 10)
     --output-dir PATH    Where to write the output file (default: same dir as PDF)
     --format md|txt      Output file extension (default: md)
@@ -27,7 +28,7 @@ Options:
 
 Requires:
     pip install requests pypdf
-    PULSE_API_KEY env var (already set in your user environment)
+    PULSE_API_KEY in ~/.e-stack/.env or a process-environment override
 """
 
 import argparse
@@ -38,16 +39,6 @@ import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-
-try:
-    import requests
-except ImportError:
-    sys.exit("Missing dependency: pip install requests")
-
-try:
-    from pypdf import PdfReader, PdfWriter
-except ImportError:
-    sys.exit("Missing dependency: pip install pypdf")
 
 def estack_env(name: str) -> str:
     """Read a credential the e-stack way: environment first, then ~/.e-stack/.env.
@@ -91,6 +82,30 @@ def estack_env(name: str) -> str:
         except Exception:
             pass
     return ""
+
+
+def credential_status() -> str:
+    """Report availability using the conversion resolver without exposing secrets."""
+    if estack_env("PULSE_API_KEY"):
+        return "[OK] PULSE_API_KEY is available. Process environment takes precedence; the shared home is ~/.e-stack/.env. Legacy locations are read-only fallbacks."
+    return "[MISSING] No PULSE_API_KEY configured. Add it privately to ~/.e-stack/.env and rerun this check before conversion."
+
+
+# Check credentials before importing optional conversion dependencies or making requests.
+if __name__ == "__main__" and sys.argv[1:] == ["--check-credentials"]:
+    print(credential_status())
+    sys.exit(0)
+
+
+try:
+    import requests
+except ImportError:
+    sys.exit("Missing dependency: pip install requests")
+
+try:
+    from pypdf import PdfReader, PdfWriter
+except ImportError:
+    sys.exit("Missing dependency: pip install pypdf")
 
 
 API_KEY = estack_env("PULSE_API_KEY")
