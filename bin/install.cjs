@@ -6,6 +6,20 @@ const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
 const readline = require('readline');
+const { isUtf8 } = require('buffer');
+
+const IS_LOCAL = !__dirname.includes('node_modules');
+const DRY_RUN = process.argv.includes('--dry-run') ||
+  (IS_LOCAL && !process.argv.includes('--install'));
+const SILENT = process.argv.includes('--silent') && !DRY_RUN;
+const STARTUP = process.argv.includes('--startup') && !DRY_RUN;
+for (const [positive, negative] of [['--prefix', '--no-prefix'], ['--statusline', '--no-statusline']]) {
+  if (process.argv.includes(positive) && process.argv.includes(negative)) {
+    console.error('Conflicting flags: ' + positive + ' and ' + negative);
+    process.exit(1);
+  }
+}
+
 
 // ── Settings ───────────────────────────────────────────────────────────────
 // The pack already has exactly one place a user configures things:
@@ -69,6 +83,11 @@ function secureEnvFile() {
 }
 
 function writeSetting(name, value) {
+  if (DRY_RUN) {
+    if (value === null) delete ENV_FILE_VALUES[name];
+    else ENV_FILE_VALUES[name] = value;
+    return;
+  }
   fs.mkdirSync(ESTACK_DIR, { recursive: true, mode: 0o700 });
   let lines = [];
   try {
@@ -94,7 +113,7 @@ function writeSetting(name, value) {
 
 // Existing installs created this file before it was owner-only, and most runs
 // never write a setting, so tighten it on every run rather than only on write.
-if (fs.existsSync(ENV_FILE)) secureEnvFile();
+if (!DRY_RUN && fs.existsSync(ENV_FILE)) secureEnvFile();
 
 // Fold the two short-lived predecessors of this file into it.
 (function migrateLegacySettings() {
@@ -103,7 +122,7 @@ if (fs.existsSync(ENV_FILE)) secureEnvFile();
   try {
     if (fs.existsSync(marker)) {
       writeSetting('ESTACK_NO_STATUSLINE', '1');
-      fs.rmSync(marker, { force: true });
+      if (!DRY_RUN) fs.rmSync(marker, { force: true });
     }
     if (fs.existsSync(configFile)) {
       const cfg = JSON.parse(fs.readFileSync(configFile, 'utf8'));
@@ -116,7 +135,7 @@ if (fs.existsSync(ENV_FILE)) secureEnvFile();
         const value = cfg.paths && cfg.paths[key];
         if (value) writeSetting(name, value);
       }
-      fs.rmSync(configFile, { force: true });
+      if (!DRY_RUN) fs.rmSync(configFile, { force: true });
     }
   } catch (_) { /* not worth failing an install over */ }
 })();
@@ -335,15 +354,120 @@ function ensureSymlink(target, linkPath) {
   fs.symlinkSync(target, linkPath, type);
 }
 
-// ── Flags ──────────────────────────────────────────────────────────────────
-const SILENT = process.argv.includes('--silent');
-const STARTUP = process.argv.includes('--startup');
-// When run directly from the repo (not via npx/node_modules), default to dry-run
-// so local testing never silently clobbers the live ~/.claude/skills install.
-// Pass --install to actually write files, or --dry-run to force preview mode.
-const IS_LOCAL = !__dirname.includes('node_modules');
-const DRY_RUN = process.argv.includes('--dry-run') ||
-  (IS_LOCAL && !process.argv.includes('--install'));
+// ── Skill name prefix ──────────────────────────────────────────────────────
+// The package always ships skills prefixed (skills/estack-<short>/), and that
+// is what installs by default. ESTACK_SKILL_PREFIX=none installs them under
+// their short names instead: ~/.agents/skills/notify/, /notify, and every
+// cross-reference inside the skills rewritten to match.
+//
+//   --no-prefix              install short names, and write ESTACK_SKILL_PREFIX=none
+//   --prefix                 install prefixed, and clear the setting
+//   ESTACK_SKILL_PREFIX=none the same, for one run or permanently via the file
+//
+// Read fresh on every run — including the --silent and --startup auto-update
+// paths — so editing ~/.e-stack/.env and starting a new session reconciles an
+// existing install to whichever naming the file now asks for. The rename is
+// not a one-way door: the checksum manifest is keyed by installed name, so the
+// names from the previous mode are migration sources. They are backed up and
+// retired only after the replacement installs successfully.
+const SKILL_PREFIX = 'estack-';
+
+function prefixEnabled() {
+  if (process.argv.includes('--prefix')) return true;
+  if (process.argv.includes('--no-prefix')) return false;
+  return String(setting('ESTACK_SKILL_PREFIX') || '').trim().toLowerCase() !== 'none';
+}
+
+const PREFIXED = prefixEnabled();
+
+// The name a package skill installs under.
+function installedName(packageName) {
+  if (PREFIXED || !packageName.startsWith(SKILL_PREFIX)) return packageName;
+  return packageName.slice(SKILL_PREFIX.length);
+}
+
+// Persists an explicit --no-prefix / --prefix choice so later auto-updates keep
+// it. A bare ESTACK_SKILL_PREFIX in the environment is honored for the run but
+// deliberately not written to the file, matching --no-statusline.
+function persistPrefixChoice(dryRun) {
+  const optOut = process.argv.includes('--no-prefix');
+  const optIn = process.argv.includes('--prefix');
+  if (!optOut && !optIn) return;
+  if (dryRun) return;
+  writeSetting('ESTACK_SKILL_PREFIX', optOut ? 'none' : null);
+}
+
+// Matches a reference to one of this package's skills by its full prefixed
+// name, so unprefixed mode can rewrite `estack-notify` to `notify` everywhere
+// it appears: the `name:` line in frontmatter, cross-skill mentions in prose,
+// slash commands in descriptions, and the self-referencing install paths
+// several skills use to run their own scripts (estack-book-extractor's
+// SKILL.md shells out to ~/.claude/skills/estack-book-extractor/scripts/).
+//
+// Three exclusions keep it off things that are not skill references:
+//   (?<!\.e-stack…)    a state directory under ~/.e-stack/. That folder is
+//                      storage, not a skill reference, and it must not move
+//                      when the install name does — otherwise flipping the
+//                      setting orphans every saved config
+//                      (~/.e-stack/estack-flight-planner/config.json), and the
+//                      statusline stops finding the notify flag the notify
+//                      skill writes. Covers both the path form
+//                      (`~/.e-stack/estack-notify`) and the path.join argument
+//                      form (`'.e-stack', 'estack-notify'`).
+//   (?![-\w])          `estack-notify` inside `estack-notify-lib.ps1`, and any
+//                      longer skill name a shorter one is a prefix of
+//   (?!\.[A-Za-z0-9]+) `estack-notify.ps1`, a real file that keeps its name —
+//                      while still rewriting a sentence that ends
+//                      "...estack-prompt-builder-coach." where the dot is
+//                      punctuation rather than an extension
+//
+// It only has one pattern to find because scripts/check-skill-name.cjs already
+// gates that every mention of a skill inside the pack is written with the
+// prefix. Loosening that check would silently leave stale names behind here.
+let RENAME_PATTERN;
+
+function renamePattern() {
+  if (RENAME_PATTERN !== undefined) return RENAME_PATTERN;
+  let shortNames = [];
+  try {
+    shortNames = fs.readdirSync(PACKAGE_SKILLS_DIR, { withFileTypes: true })
+      .filter((e) => e.isDirectory() && e.name.startsWith(SKILL_PREFIX))
+      .map((e) => e.name.slice(SKILL_PREFIX.length))
+      // Longest first so estack-prompt-builder-coach never matches as
+      // estack-prompt-builder with a stray "-coach" left behind.
+      .sort((a, b) => b.length - a.length);
+  } catch (_) { /* handled by the caller's own missing-skills-dir check */ }
+  RENAME_PATTERN = shortNames.length === 0 ? null : new RegExp(
+    '(?<!\\.e-stack[\'"]?[,/\\\\]\\s*[\'"]?)' +
+    SKILL_PREFIX + '(' + shortNames.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')' +
+    '(?![-\\w])(?!\\.[A-Za-z0-9]+)',
+    'g'
+  );
+  return RENAME_PATTERN;
+}
+
+// Rewrites skill references in one packaged file. A no-op in prefixed mode, so
+// a default install runs byte-for-byte the code path it always has. Binary
+// files are passed through untouched.
+function renameReferences(buffer) {
+  if (PREFIXED) return buffer;
+  const pattern = renamePattern();
+  if (pattern === null) return buffer;
+  if (buffer.includes(0) || !isUtf8(buffer)) return buffer;
+  const text = buffer.toString('utf8');
+  const renamed = text.replace(pattern, (match, short, offset) => {
+    const before = text.slice(0, offset);
+    const after = text.slice(offset + match.length);
+    // Quoted bare names in executable code are storage keys or identifiers.
+    // Rewrite only when the preceding path segment explicitly names skills.
+    if (/['"]$/.test(before) && /^['"]/.test(after) &&
+        !/skills['"]?\s*(?:,|\/)\s*['"]$/.test(before)) return match;
+    // Variable-based state paths ($ESTACK_ROOT/estack-...) also stay stable.
+    if (/[A-Za-z0-9_$}.][\\/]$/.test(before) && !/skills[\\/]$/.test(before)) return match;
+    return short;
+  });
+  return renamed === text ? buffer : Buffer.from(renamed, 'utf8');
+}
 
 // ── Deprecated skills ──────────────────────────────────────────────────────
 // Skills that were renamed or removed. The installer removes these on every
@@ -378,17 +502,23 @@ function walkDir(dir, base) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       if (!HASH_IGNORE_DIRS.has(entry.name)) files.push(...walkDir(full, base));
-    } else if (!HASH_IGNORE_EXTS.has(path.extname(entry.name))) {
+    } else if (!USER_DATA_FILENAMES.has(entry.name) && !HASH_IGNORE_EXTS.has(path.extname(entry.name))) {
       files.push(path.relative(base, full));
     }
   }
   return files;
 }
 
-function computeFileHash(filePath) {
+// `fromPackage` hashes what the file will look like once installed rather than
+// as it sits in the package, so an unprefixed install's on-disk content still
+// matches its stored checksum and does not read as locally modified forever.
+// Installed files are hashed as-is: a user who hand-wrote a prefixed name back
+// into an unprefixed skill has modified it, and should be told so.
+function computeFileHash(filePath, fromPackage) {
   if (!fs.existsSync(filePath)) return null;
   const hash = crypto.createHash('sha256');
-  const raw = fs.readFileSync(filePath);
+  let raw = fs.readFileSync(filePath);
+  if (fromPackage) raw = renameReferences(raw);
   hash.update(Buffer.from(raw.toString('utf8').replace(/\r\n/g, '\n')));
   return hash.digest('hex');
 }
@@ -402,7 +532,7 @@ function syncStartupHookSources(dryRun) {
     const source = path.join(PACKAGE_HOOKS_DIR, filename);
     const destination = path.join(AGENTS_HOOKS_DIR, filename);
     if (!fs.existsSync(source)) continue;
-    const sourceHash = computeFileHash(source);
+    const sourceHash = computeFileHash(source, true);
     const destinationHash = computeFileHash(destination);
     if (sourceHash === destinationHash) continue;
     if (!dryRun) {
@@ -412,14 +542,14 @@ function syncStartupHookSources(dryRun) {
         fs.mkdirSync(path.dirname(backupDestination), { recursive: true });
         fs.copyFileSync(destination, backupDestination);
       }
-      fs.copyFileSync(source, destination);
+      copyPackageFile(source, destination);
     }
     updated.push(filename);
   }
   return updated;
 }
 
-function computeSkillHash(skillDir) {
+function computeSkillHash(skillDir, fromPackage) {
   // statSync (not lstat) so symlinked dirs hash their contents; plain files → null
   try {
     if (!fs.statSync(skillDir).isDirectory()) return null;
@@ -430,7 +560,8 @@ function computeSkillHash(skillDir) {
   const files = walkDir(skillDir, skillDir);
   for (const relPath of files) {
     const fullPath = path.join(skillDir, relPath);
-    const raw = fs.readFileSync(fullPath);
+    let raw = fs.readFileSync(fullPath);
+    if (fromPackage) raw = renameReferences(raw);
     hash.update(relPath.replace(/\\/g, '/'));
     hash.update(Buffer.from(raw.toString('utf8').replace(/\r\n/g, '\n')));
   }
@@ -444,12 +575,50 @@ function copyDir(src, dest) {
   fs.cpSync(src, dest, { recursive: true });
 }
 
+// Copies one packaged file, rewriting skill references on the way through.
+// The mode is carried over by hand because the content is rewritten rather
+// than copied, and several skills ship executable .sh scripts.
+function copyPackageFile(src, dest) {
+  if (PREFIXED) {
+    fs.copyFileSync(src, dest);
+    return;
+  }
+  fs.writeFileSync(dest, renameReferences(fs.readFileSync(src)));
+  try { fs.chmodSync(dest, fs.statSync(src).mode); } catch (_) {}
+}
+
+// copyDir for a packaged skill. In prefixed mode this is copyDir exactly.
+function copyPackageDir(src, dest) {
+  if (PREFIXED) {
+    copyDir(src, dest);
+    return;
+  }
+  if (fs.existsSync(dest)) {
+    fs.rmSync(dest, { recursive: true, force: true });
+  }
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const from = path.join(src, entry.name);
+    const to = path.join(dest, entry.name);
+    if (entry.isDirectory()) copyPackageDir(from, to);
+    else copyPackageFile(from, to);
+  }
+}
+
+// Takes an installed name — the backup mirrors what is actually on disk.
 function backupSkill(name) {
-  const agentsDir = path.join(AGENTS_DIR, name);
-  const installedDir = fs.existsSync(agentsDir) ? agentsDir : path.join(SKILLS_DIR, name);
-  if (!fs.existsSync(installedDir)) return;
-  fs.mkdirSync(BACKUP_DIR, { recursive: true });
-  copyDir(installedDir, path.join(BACKUP_DIR, name));
+  const seen = new Set();
+  for (const root of [AGENTS_DIR, SKILLS_DIR]) {
+    const installedDir = path.join(root, name);
+    if (!fs.existsSync(installedDir)) continue;
+    const real = fs.realpathSync(installedDir);
+    if (seen.has(real)) continue;
+    seen.add(real);
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    const base = path.join(BACKUP_DIR, name);
+    const destination = fs.existsSync(base) ? base + '-' + crypto.randomUUID() : base;
+    fs.cpSync(installedDir, destination, { recursive: true, dereference: true });
+  }
 }
 
 function backupHook(filename) {
@@ -527,6 +696,7 @@ function getSkillVersion(skillDir) {
 
 // Version of the currently installed copy of a skill (agents dir, falling
 // back to the legacy skills dir for pre-migration installs).
+// Takes an installed name.
 function getInstalledSkillVersion(name) {
   const agentsDir = path.join(AGENTS_DIR, name);
   if (fs.existsSync(agentsDir)) return getSkillVersion(agentsDir);
@@ -569,20 +739,55 @@ function collectUserDataFiles(dir) {
 // Copies a skill to ~/.agents/skills/<name> and creates/updates the symlink at ~/.claude/skills/<name>.
 // If a real (non-symlink) directory already exists at the skills path, it is removed first.
 // User-owned files (e.g. .env) present in the installed copy are preserved across the update.
+const prefixMigrations = new Map();
+const installedThisRun = new Set();
+let manifestBeforeInstall = {};
+
 function installSkillFiles(name) {
-  const agentsSkillDir = path.join(AGENTS_DIR, name);
-  const skillsLinkDir = path.join(SKILLS_DIR, name);
+  const installed = installedName(name);
+  const agentsSkillDir = path.join(AGENTS_DIR, installed);
+  const skillsLinkDir = path.join(SKILLS_DIR, installed);
+  const migration = prefixMigrations.get(installed);
+  const sourceDir = migration && migration.directory;
+  const legacyDir = isRealDir(skillsLinkDir) ? skillsLinkDir : null;
+  const userDataFiles = collectUserDataFiles(sourceDir || agentsSkillDir);
+  const oldLegacyDir = migration && path.join(SKILLS_DIR, migration.oldName);
+  for (const dir of [oldLegacyDir, legacyDir, agentsSkillDir]) {
+    if (!dir || !isRealDir(dir)) continue;
+    for (const [rel, content] of collectUserDataFiles(dir)) {
+      if (userDataFiles.has(rel) && !userDataFiles.get(rel).equals(content)) {
+        throw new Error('Conflicting user data at ' + rel + '; both skill copies were preserved');
+      }
+      userDataFiles.set(rel, content);
+    }
+  }
+  if (migration) backupSkill(migration.oldName);
+  if (claimsForeignName(name, manifestBeforeInstall)) backupSkill(installed);
   if (!isSymlink(skillsLinkDir) && fs.existsSync(skillsLinkDir)) {
     fs.rmSync(skillsLinkDir, { recursive: true, force: true });
   }
-  const userDataFiles = collectUserDataFiles(agentsSkillDir);
-  copyDir(path.join(PACKAGE_SKILLS_DIR, name), agentsSkillDir);
+  copyPackageDir(path.join(PACKAGE_SKILLS_DIR, name), agentsSkillDir);
   for (const [rel, content] of userDataFiles) {
     const dest = path.join(agentsSkillDir, rel);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.writeFileSync(dest, content);
   }
   ensureSymlink(agentsSkillDir, skillsLinkDir);
+  installedThisRun.add(installed);
+}
+
+// Unprefixed mode claims short names — `notify`, `repo-search`, `better-title`
+// — that a user may already be using for a skill of their own. The manifest
+// records only what this installer put on disk, so an existing directory with
+// no entry in it belongs to somebody else. It is copied into the backup dir
+// before being replaced, and the name is returned so the caller can say out
+// loud whose skill just got taken over.
+function claimsForeignName(name, storedChecksums) {
+  const installed = installedName(name);
+  if (storedChecksums[installed]) return null;    // ours already
+  const target = path.join(AGENTS_DIR, installed);
+  if (!isRealDir(target) && !isRealDir(path.join(SKILLS_DIR, installed))) return null;
+  return installed;
 }
 
 // ── Hook setup ─────────────────────────────────────────────────────────────
@@ -773,7 +978,10 @@ function setupRepoSearchNudgeHook(dryRun) {
 // (it is PowerShell, and hooks/ is flat .js only), so it is wired from the
 // skill's installed location rather than from HOOKS_DIR.
 function setupNotifyStopHook(dryRun) {
-  const script = path.join(AGENTS_DIR, 'estack-notify', 'scripts', 'estack-notify-stop.ps1')
+  // The script's own filename never changes; only the skill folder around it
+  // does, when ESTACK_SKILL_PREFIX=none. Flipping the setting repoints this
+  // entry in place via the mentionsScript match below.
+  const script = path.join(AGENTS_DIR, installedName('estack-notify'), 'scripts', 'estack-notify-stop.ps1')
     .replace(/\\/g, '/');
   // The args form avoids quoting a Windows path inside a command string, and it
   // is the shape Claude Code writes itself.
@@ -898,10 +1106,19 @@ async function main() {
       ? (() => { try { return JSON.parse(fs.readFileSync(CHECKSUMS_FILE, 'utf8')); } catch (_) { return {}; } })()
       : {};
     let changed = false;
+    // Both spellings: an install that has been flipped to unprefixed carries
+    // these under their short names.
+    const deprecated = [];
     for (const name of DEPRECATED_SKILLS) {
+      deprecated.push(name);
+      const short = installedName(name);
+      if (short !== name && newChecksums0[short]) deprecated.push(short);
+    }
+    for (const name of deprecated) {
       const agentsDir = path.join(AGENTS_DIR, name);
       const skillsDir = path.join(SKILLS_DIR, name);
       let found = false;
+      if (!DRY_RUN && (fs.existsSync(agentsDir) || isRealDir(skillsDir))) backupSkill(name);
       if (fs.existsSync(agentsDir)) {
         if (!DRY_RUN) fs.rmSync(agentsDir, { recursive: true, force: true });
         found = true;
@@ -947,14 +1164,21 @@ async function main() {
     process.exit(0);
   }
 
-  // 2. Compute hashes for package skills
+  // The name each skill installs under. Everything past this point that
+  // touches disk or the checksum manifest goes through installedName(); only
+  // reads from PACKAGE_SKILLS_DIR use the package name.
+  const installNames = skillNames.map(installedName);
+
+  // 2. Compute hashes for package skills — of the installed form, so an
+  // unprefixed install's on-disk content matches its stored checksum.
   const packageHashes = {};
   for (const name of skillNames) {
-    packageHashes[name] = computeSkillHash(path.join(PACKAGE_SKILLS_DIR, name));
+    packageHashes[name] = computeSkillHash(path.join(PACKAGE_SKILLS_DIR, name), true);
   }
 
   // 2b. Scan package hooks
   persistStatuslineChoice(DRY_RUN);
+  persistPrefixChoice(DRY_RUN);
   const skipStatusline = statuslineOptedOut();
   const hookFilenames = (fs.existsSync(PACKAGE_HOOKS_DIR)
     ? fs.readdirSync(PACKAGE_HOOKS_DIR).filter((f) => f.endsWith('.js')).sort()
@@ -969,7 +1193,7 @@ async function main() {
 
   const packageHookHashes = {};
   for (const filename of hookFilenames) {
-    packageHookHashes[filename] = computeFileHash(path.join(PACKAGE_HOOKS_DIR, filename));
+    packageHookHashes[filename] = computeFileHash(path.join(PACKAGE_HOOKS_DIR, filename), true);
   }
 
   const startupSourcesUpdated = syncStartupHookSources(DRY_RUN);
@@ -1003,28 +1227,80 @@ async function main() {
     ? fs.readdirSync(PACKAGE_HOOKS_DIR)
         .filter((f) => f.endsWith('.js') && !STARTUP_HOOK_FILENAMES.includes(f))
     : [];
+  //
+  // This is also what reconciles a change to ESTACK_SKILL_PREFIX. The manifest
+  // is keyed by installed name, so after a flip the 24 entries from the old
+  // naming become migration sources. Installation carries their user data and
+  // backs them up; finishPrefixMigrations retires them only after a successful
+  // replacement. Silent updates defer migrations that require user review.
   const orphans = Object.keys(storedChecksums).filter((key) => (
     key.startsWith('hook:')
       ? !packagedHooks.includes(key.slice(5))
-      : !skillNames.includes(key)
+      : !installNames.includes(key)
   ));
 
+  // A skill leaves the manifest for two very different reasons, and saying
+  // "no longer in the package" for both is a lie the user acts on. If the same
+  // skill is being reinstalled under the other naming, name where it went —
+  // 24 lines of "no longer in the package" reads like the pack was gutted.
+  const renamedTo = (key) => {
+    const counterpart = key.startsWith(SKILL_PREFIX)
+      ? key.slice(SKILL_PREFIX.length)
+      : SKILL_PREFIX + key;
+    return installNames.includes(counterpart) ? counterpart : null;
+  };
+
+  manifestBeforeInstall = Object.assign({}, storedChecksums);
+  const foreignNames = skillNames.map((name) => claimsForeignName(name, storedChecksums)).filter(Boolean);
+  for (const key of orphans) {
+    const next = key.startsWith('hook:') ? null : renamedTo(key);
+    if (!next) continue;
+    const directory = fs.existsSync(path.join(AGENTS_DIR, key))
+      ? path.join(AGENTS_DIR, key) : path.join(SKILLS_DIR, key);
+    prefixMigrations.set(next, { oldName: key, directory });
+  }
+
+  // Commit the rename only after the destination has been installed successfully.
+  function finishPrefixMigrations(checksums) {
+    for (const [next, migration] of prefixMigrations) {
+      if (!installedThisRun.has(next)) continue;
+      for (const root of [SKILLS_DIR, AGENTS_DIR]) {
+        const target = path.join(root, migration.oldName);
+        if (isSymlink(target)) fs.unlinkSync(target);
+        else if (fs.existsSync(target)) fs.rmSync(target, { recursive: true, force: true });
+      }
+      delete checksums[migration.oldName];
+    }
+  }
+
+  let renamedCount = 0;
   for (const key of orphans) {
     const isHook = key.startsWith('hook:');
     const targets = isHook
       ? [path.join(HOOKS_DIR, key.slice(5))]
       : [path.join(AGENTS_DIR, key), path.join(SKILLS_DIR, key)];
-    if (!DRY_RUN) {
+    const moving = !isHook && renamedTo(key);
+    if (!DRY_RUN && !moving) {
+      if (!isHook) backupSkill(key);
       for (const target of targets) {
         if (!fs.existsSync(target) && !isSymlink(target)) continue;
         try { fs.rmSync(target, { recursive: true, force: true }); } catch (_) {}
       }
       delete storedChecksums[key];
     }
+    const newName = isHook ? null : renamedTo(key);
+    if (newName) renamedCount++;
     if (!SILENT && !STARTUP) {
-      console.log((DRY_RUN ? '  [dry run] Would retire: ' : '  Retired: ') +
-        (isHook ? 'hook ' + key.slice(5) : key) + ' (no longer in the package)');
+      console.log((newName ? (DRY_RUN ? '  [dry run] Would retire after replacement: ' : '  Pending retirement after replacement: ')
+        : (DRY_RUN ? '  [dry run] Would retire: ' : '  Retired: ')) +
+        (isHook ? 'hook ' + key.slice(5) : key) +
+        (newName ? ' (reinstalling as ' + newName + ')' : ' (no longer in the package)'));
     }
+  }
+  if (renamedCount > 0 && !SILENT && !STARTUP) {
+    console.log('\n  ESTACK_SKILL_PREFIX is ' + (PREFIXED ? "'" + SKILL_PREFIX + "'" : 'none') +
+      ', so ' + renamedCount + ' skill' + (renamedCount !== 1 ? 's are' : ' is') +
+      ' moving to ' + (PREFIXED ? 'prefixed' : 'short') + ' names. Nothing was removed from the pack.\n');
   }
   if (orphans.length > 0 && !DRY_RUN) {
     fs.mkdirSync(CLAUDE_DIR, { recursive: true });
@@ -1036,12 +1312,13 @@ async function main() {
   const modifiedSkills = [];
   const needsUpdate = [];
   for (const name of skillNames) {
-    const agentsSkillDir = path.join(AGENTS_DIR, name);
+    const installed = installedName(name);
+    const agentsSkillDir = path.join(AGENTS_DIR, installed);
     let installedDir = null;
     if (fs.existsSync(agentsSkillDir)) {
       installedDir = agentsSkillDir;
     } else {
-      const legacyDir = path.join(SKILLS_DIR, name);
+      const legacyDir = path.join(SKILLS_DIR, installed);
       if (isRealDir(legacyDir)) {
         installedDir = legacyDir; // old-style install, will be migrated on next write
       }
@@ -1050,15 +1327,19 @@ async function main() {
       needsUpdate.push(name);
       continue;
     }
+    if (foreignNames.includes(installed)) {
+      needsUpdate.push(name);
+      continue;
+    }
     const currentHash = computeSkillHash(installedDir);
-    if (!storedChecksums[name]) {
+    if (!storedChecksums[installed]) {
       // No stored checksum — skill exists but wasn't installed by us.
       // Treat as locally modified if it differs from the package version.
       if (currentHash !== packageHashes[name]) {
         modifiedSkills.push(name);
         needsUpdate.push(name);
       }
-    } else if (currentHash !== storedChecksums[name]) {
+    } else if (currentHash !== storedChecksums[installed]) {
       // Stored checksum exists but current doesn't match — user modified it
       modifiedSkills.push(name);
       if (currentHash !== packageHashes[name]) {
@@ -1107,18 +1388,30 @@ async function main() {
     fs.mkdirSync(SKILLS_DIR, { recursive: true });
     const newChecksums = Object.assign({}, storedChecksums);
     for (const name of skillNames) {
+      const installed = installedName(name);
+      const migration = prefixMigrations.get(installed);
+      if (foreignNames.includes(installed) || (migration &&
+          computeSkillHash(migration.directory) !== storedChecksums[migration.oldName])) {
+        console.error('estack: kept ' + (migration ? migration.oldName : installed) +
+          '; run the installer without --silent to review local changes or a name collision at ' + installed);
+        continue;
+      }
       if (modifiedSkills.includes(name)) continue;
-      if (!needsUpdate.includes(name) && fs.existsSync(path.join(AGENTS_DIR, name))) continue;
+      if (!needsUpdate.includes(name) && fs.existsSync(path.join(AGENTS_DIR, installedName(name)))) continue;
       installSkillFiles(name);
-      newChecksums[name] = packageHashes[name];
+      newChecksums[installedName(name)] = packageHashes[name];
     }
     fs.mkdirSync(HOOKS_DIR, { recursive: true });
     for (const filename of hookFilenames) {
       if (modifiedHooks.includes(filename)) continue;
       if (!hooksNeedingUpdate.includes(filename) && fs.existsSync(path.join(HOOKS_DIR, filename))) continue;
-      fs.copyFileSync(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
+      copyPackageFile(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
       newChecksums['hook:' + filename] = packageHookHashes[filename];
     }
+    finishPrefixMigrations(newChecksums);
+    setupRepoSearchNudgeHook();
+    setupNotifyStopHook();
+    setupStatuslineHook();
     fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums, null, 2));
     process.exit(0);
   }
@@ -1139,22 +1432,29 @@ async function main() {
     const mergeNeededLabels = [];  // display labels with version transitions
 
     for (const name of skillNames) {
+      const installed = installedName(name);
       const newV = getSkillVersion(path.join(PACKAGE_SKILLS_DIR, name));
+      const migration = prefixMigrations.get(installed);
+      if (migration && computeSkillHash(migration.directory) !== storedChecksums[migration.oldName]) {
+        mergeNeeded.push(installed);
+        mergeNeededLabels.push(migration.oldName + ' → ' + installed);
+      }
+
       if (modifiedSkills.includes(name)) {
         // Backup local version, install new version
-        const oldV = getInstalledSkillVersion(name);
-        backupSkill(name);
+        const oldV = getInstalledSkillVersion(installed);
+        backupSkill(installed);
         installSkillFiles(name);
-        newChecksums[name] = packageHashes[name];
-        mergeNeeded.push(name);
-        mergeNeededLabels.push(withVersion(name, oldV, newV));
+        newChecksums[installed] = packageHashes[name];
+        mergeNeeded.push(installed);
+        mergeNeededLabels.push(withVersion(installed, oldV, newV));
         continue;
       }
-      if (!needsUpdate.includes(name) && fs.existsSync(path.join(AGENTS_DIR, name))) continue;
-      const oldV = getInstalledSkillVersion(name);
+      if (!needsUpdate.includes(name) && fs.existsSync(path.join(AGENTS_DIR, installed))) continue;
+      const oldV = getInstalledSkillVersion(installed);
       installSkillFiles(name);
-      newChecksums[name] = packageHashes[name];
-      updated.push(withVersion(name, oldV, newV));
+      newChecksums[installed] = packageHashes[name];
+      updated.push(withVersion(installed, oldV, newV));
     }
 
     // Install hooks
@@ -1168,7 +1468,7 @@ async function main() {
       if (modifiedHooks.includes(filename)) {
         const oldV = getHookVersion(path.join(HOOKS_DIR, filename));
         backupHook(filename);
-        fs.copyFileSync(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
+        copyPackageFile(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
         newChecksums['hook:' + filename] = packageHookHashes[filename];
         mergeNeededHooks.push(filename);
         mergeNeededHookLabels.push(withVersion(filename, oldV, newV));
@@ -1176,7 +1476,7 @@ async function main() {
       }
       if (!hooksNeedingUpdate.includes(filename) && fs.existsSync(path.join(HOOKS_DIR, filename))) continue;
       const oldV = getHookVersion(path.join(HOOKS_DIR, filename));
-      fs.copyFileSync(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
+      copyPackageFile(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
       newChecksums['hook:' + filename] = packageHookHashes[filename];
       updatedHooks.push(withVersion(filename, oldV, newV));
     }
@@ -1185,11 +1485,17 @@ async function main() {
     setupNotifyStopHook();
     setupStatuslineHook();
 
+    finishPrefixMigrations(newChecksums);
     fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums, null, 2));
 
     // Build output for Claude Code
     const output = {};
     const msgParts = [];
+    if (foreignNames.length) msgParts.push('estack: foreign skills backed up and replaced: ' + foreignNames.join(', '));
+    for (const [next, migration] of prefixMigrations) {
+      if (installedThisRun.has(next)) msgParts.push('estack: renamed ' + migration.oldName + ' to ' + next +
+        '; previous files backed up under ' + BACKUP_DIR);
+    }
 
     if (updated.length > 0) {
       msgParts.push('estack: updated ' + updated.join(', '));
@@ -1244,12 +1550,24 @@ async function main() {
   // 7. Interactive mode — prompt if modifications detected
   let modifiedAction = null; // 'overwrite', 'skip', or 'merge'
 
+  // Unprefixed mode installs over short names. Anything already sitting on one
+  // of them that this installer did not put there is somebody else's skill, so
+  // say whose name is being taken rather than folding it silently into the
+  // "modified locally" list. It is still backed up and replaced from here.
+  if (foreignNames.length > 0) {
+    console.log('\nWARNING — ESTACK_SKILL_PREFIX=none installs these skills under names');
+    console.log('that already exist and were not installed by estack:');
+    for (const name of foreignNames) console.log('    - ' + name);
+    console.log('They will be backed up to ' + BACKUP_DIR.replace(HOME, '~') +
+      ' and replaced. Re-run with --prefix to keep the estack- names instead.');
+  }
+
   if (modifiedSkills.length > 0 || modifiedHooks.length > 0) {
     console.log('\nThe following items have been modified locally:');
     if (modifiedSkills.length > 0) {
       console.log('  Skills:');
       for (const name of modifiedSkills) {
-        console.log('    - ' + name);
+        console.log('    - ' + installedName(name));
       }
     }
     if (modifiedHooks.length > 0) {
@@ -1307,32 +1625,47 @@ async function main() {
   const mergedSkills = [];
 
   for (const name of skillNames) {
-    if (modifiedSkills.includes(name)) {
-      if (modifiedAction === 'skip') {
-        console.log('  Skipped ' + name + ' (local modifications preserved)');
-        const currentHash = computeSkillHash(path.join(AGENTS_DIR, name)) ||
-                            computeSkillHash(path.join(SKILLS_DIR, name));
-        if (currentHash) newChecksums[name] = currentHash;
-        continue;
-      }
-      if (modifiedAction === 'merge') {
-        if (!DRY_RUN) backupSkill(name);
-        mergedSkills.push(name);
-        console.log((DRY_RUN ? '  [dry run] Would back up ' : '  Backed up ') + name + ' → ~/.estack-backup/' + name);
-      }
-      // overwrite or merge — fall through to install
-    } else if (!needsUpdate.includes(name) && fs.existsSync(path.join(AGENTS_DIR, name))) {
-      // Already installed and up-to-date
-      if (DRY_RUN) console.log('  [dry run] Up to date (no change): ' + name);
+    const installed = installedName(name);
+    const isForeign = foreignNames.includes(installed);
+    const pending = prefixMigrations.get(installed);
+    if (pending && NON_INTERACTIVE_ACTION === 'skip' && process.argv.includes('--skip-modified') &&
+        computeSkillHash(pending.directory) !== storedChecksums[pending.oldName]) {
+      console.log('  Skipped ' + pending.oldName + ' (local modifications preserved; prefix switch pending)');
       continue;
     }
-    const isUpdate = fs.existsSync(path.join(AGENTS_DIR, name)) ||
-                     isRealDir(path.join(SKILLS_DIR, name));
-    const label = withVersion(name,
-      isUpdate ? getInstalledSkillVersion(name) : null,
+
+    if (modifiedSkills.includes(name)) {
+      if (modifiedAction === 'skip') {
+        console.log('  Skipped ' + installed + ' (local modifications preserved)');
+        const currentHash = computeSkillHash(path.join(AGENTS_DIR, installed)) ||
+                            computeSkillHash(path.join(SKILLS_DIR, installed));
+        if (currentHash && !isForeign) newChecksums[installed] = currentHash;
+        continue;
+      }
+      // A name claimed from someone else is backed up whichever action was
+      // chosen — "overwrite" is a choice about estack's own skills, and it
+      // should not be what silently destroys a skill estack never installed.
+      if (modifiedAction === 'merge' || isForeign) {
+        if (!DRY_RUN) backupSkill(installed);
+        mergedSkills.push(installed);
+        console.log((DRY_RUN ? '  [dry run] Would back up ' : '  Backed up ') + installed + ' → ~/.estack-backup/' + installed);
+      }
+      // overwrite or merge — fall through to install
+    } else if (!needsUpdate.includes(name) && fs.existsSync(path.join(AGENTS_DIR, installed))) {
+      // Already installed and up-to-date
+      if (DRY_RUN) console.log('  [dry run] Up to date (no change): ' + installed);
+      continue;
+    }
+    const migration = prefixMigrations.get(installed);
+    if (migration) console.log((DRY_RUN ? '  [dry run] Would back up ' : '  Backed up ') + migration.oldName +
+      ' before switching to ' + installed);
+    const isUpdate = fs.existsSync(path.join(AGENTS_DIR, installed)) ||
+                     isRealDir(path.join(SKILLS_DIR, installed));
+    const label = withVersion(installed,
+      isUpdate ? getInstalledSkillVersion(installed) : null,
       getSkillVersion(path.join(PACKAGE_SKILLS_DIR, name)));
     if (!DRY_RUN) installSkillFiles(name);
-    newChecksums[name] = packageHashes[name];
+    newChecksums[installed] = packageHashes[name];
     installedCount++;
     if (DRY_RUN) {
       console.log('  [dry run] Would ' + (isUpdate ? 'update ' : 'install ') + label);
@@ -1369,7 +1702,7 @@ async function main() {
     const hookLabel = withVersion(filename,
       isHookUpdate ? getHookVersion(path.join(HOOKS_DIR, filename)) : null,
       getHookVersion(path.join(PACKAGE_HOOKS_DIR, filename)));
-    if (!DRY_RUN) fs.copyFileSync(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
+    if (!DRY_RUN) copyPackageFile(path.join(PACKAGE_HOOKS_DIR, filename), path.join(HOOKS_DIR, filename));
     newChecksums['hook:' + filename] = packageHookHashes[filename];
     installedHookCount++;
     if (DRY_RUN) {
@@ -1380,7 +1713,10 @@ async function main() {
   }
 
   // 9. Write checksums
-  if (!DRY_RUN) fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums, null, 2));
+  if (!DRY_RUN) {
+    finishPrefixMigrations(newChecksums);
+    fs.writeFileSync(CHECKSUMS_FILE, JSON.stringify(newChecksums, null, 2));
+  }
 
   // 10. Setup Claude and Codex startup hooks plus the Claude repo-search nudge.
   // In dry-run these inspect settings.json read-only and report would-be action.
@@ -1416,7 +1752,11 @@ async function main() {
   for (const name of skillNames) {
     const desc = getSkillDescription(path.join(PACKAGE_SKILLS_DIR, name));
     const ver = getSkillVersion(path.join(PACKAGE_SKILLS_DIR, name));
-    console.log('  /' + name + (ver ? ' v' + ver : '') + (desc ? ' — ' + desc : ''));
+    // The description names neighbouring skills, so it gets the same rewrite
+    // the installed copy did — otherwise the listing advertises /estack-notify
+    // on an install where the command is /notify.
+    const shown = PREFIXED ? desc : renameReferences(Buffer.from(desc, 'utf8')).toString('utf8');
+    console.log('  /' + installedName(name) + (ver ? ' v' + ver : '') + (shown ? ' — ' + shown : ''));
   }
 
   if (mergedSkills.length > 0) {

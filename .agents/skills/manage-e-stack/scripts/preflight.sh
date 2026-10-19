@@ -2,51 +2,10 @@
 # Pre-flight diagnostics for e-stack publishing
 # Read-only — does not modify anything
 
-# Real skill files live in ~/.agents/skills/ (symlinked from ~/.claude/skills/).
-# Fall back to ~/.claude/skills/ for pre-migration installs.
-INSTALL_ROOT="$HOME/.agents/skills"
-[ -d "$INSTALL_ROOT" ] || INSTALL_ROOT="$HOME/.claude/skills"
-
-echo "=== Current installed skills (in $INSTALL_ROOT) ==="
-for skill in "$INSTALL_ROOT"/estack-*/; do
-  [ -d "$skill" ] || continue
-  echo "$(basename "$skill"): $(find "$skill" -type f | wc -l) files"
-done
-
-echo ""
-echo "=== Repo skills ==="
-for skill in skills/estack-*/; do
-  echo "$(basename "$skill")"
-done
-
-echo ""
-echo "=== Diffs between repo and installed ==="
-diffs=0
-for skill in skills/estack-*/; do
-  name=$(basename "$skill")
-  if [ ! -d "$INSTALL_ROOT/$name" ]; then
-    echo "NEW: $name (not yet installed)"
-    diffs=$((diffs + 1))
-  else
-    diff_output=$(diff -rq "$skill" "$INSTALL_ROOT/$name" 2>&1)
-    if [ -n "$diff_output" ]; then
-      echo "CHANGED: $name"
-      echo "$diff_output"
-      diffs=$((diffs + 1))
-    fi
-  fi
-done
-for skill in "$INSTALL_ROOT"/estack-*/; do
-  [ -d "$skill" ] || continue
-  name=$(basename "$skill")
-  if [ ! -d "skills/$name" ]; then
-    echo "STALE: $name (installed but not in repo)"
-    diffs=$((diffs + 1))
-  fi
-done
-if [ "$diffs" -eq 0 ]; then
-  echo "(all match)"
-fi
+# The installer resolves custom roots and prefix settings and compares the
+# transformed package hashes, so unprefixed installs get accurate diagnostics.
+echo "=== Installed skills and pending changes ==="
+node bin/install.cjs --dry-run
 
 echo ""
 echo "=== Current installed hooks ==="
@@ -142,7 +101,7 @@ echo "=== Version bump check (vs last release tag) ==="
 node scripts/check-versions.cjs || true
 
 echo ""
-echo "=== Docs sync check (README.md / CLAUDE.md lists) ==="
+echo "=== Docs sync check (README.md / AGENTS.md lists) ==="
 node scripts/check-docs.cjs || true
 
 echo ""

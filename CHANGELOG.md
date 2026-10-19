@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Skill names can drop the `estack-` prefix. `ESTACK_SKILL_PREFIX=none` in `~/.e-stack/.env`, or installing with `--no-prefix`, installs every skill under its short name: `/email-writer` instead of `/estack-email-writer`. Prefixed stays the default and `--prefix` puts it back. The installer rewrites `estack-<short>` to `<short>` in every file as it copies, so the folder name, the `name:` line, cross-skill references in descriptions and bodies, and the self-referencing paths some skills use to run their own scripts all move together. Filenames inside a skill keep their own names — `estack-notify.ps1` still lives in `skills/notify/scripts/`.
+- The setting is read on every install, including the `--silent` and `--startup` auto-updates. Change it in `~/.e-stack/.env` and the next session start reconciles an existing install to it: the names from the old setting are retired from `~/.agents/skills/` and `~/.claude/skills/`, the same skills are reinstalled under the new ones, and the `estack-notify` Stop hook in `settings.json` is repointed. Each completed switch backs up the old files and preserves credentials; silent mode defers switches requiring review.
+- Short names like `notify` and `repo-search` are ordinary enough that a user may already have a skill on one. Installing unprefixed over a directory the installer never put there names it in a warning and copies it to `~/.estack-backup/` before replacing it, during manual or startup installs; silent updates preserve the collision for review.
+- State directories keep their prefixed names whichever way the setting is set: a skill installed at `~/.agents/skills/flight-planner/` still reads and writes `~/.e-stack/estack-flight-planner/config.json`. `~/.e-stack/` is storage rather than a skill reference, so saved configs, caches, and credentials survive changing the setting, and the statusline keeps finding the flag file the notify skill writes.
+- The installer distinguishes a skill leaving the pack from a skill changing its name. Retiring 24 skills to rename them now reads `Retired: estack-notify (reinstalling as notify)` followed by a line saying the prefix setting is what moved them, instead of 24 lines of `(no longer in the package)`.
+
+### Fixed
+- Prefix switches preserve saved-state paths, back up the old skill without replacing earlier backups, and carry per-skill `.env` files forward. Old names remain available until the replacement installs successfully.
+- Silent updates defer conflicting or locally edited prefix switches; startup updates identify foreign skill takeovers explicitly. Unowned deprecated short names are left alone.
+- Dry runs no longer migrate legacy settings or change permissions. Conflicting prefix/statusline flags fail before writing anything.
+
 ---
 
 ## [1.0.77] - 2026-09-05

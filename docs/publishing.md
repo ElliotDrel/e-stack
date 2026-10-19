@@ -4,7 +4,7 @@ e-stack publishes to npm via GitHub Actions when a git tag matching `v*` is push
 
 The shared startup updater is the exception to the Claude-only hook location: its core and Claude/Codex adapters install to `~/.agents/hooks/`, while `bin/install.cjs` registers the appropriate adapter in `~/.claude/settings.json` and `~/.codex/hooks.json`. Neither host auto-discovers hooks from `~/.agents/`; the explicit host registrations remain required.
 
-The package ships both `skills/` and `hooks/` (whitelisted in `package.json`'s `files` field). Skills install to `~/.agents/skills/estack-*/` (symlinked from `~/.claude/skills/estack-*/`). Any agent that reads `~/.agents/skills/` — including OpenClaw, Codex, ChatGPT, and Cursor — will pick up skills automatically with no extra config. Hooks are Claude Code-only: they install to `~/.claude/hooks/` and get registered in `~/.claude/settings.json` by `bin/install.cjs`. Do not try to route hooks through `~/.agents/`.
+The package ships both `skills/` and `hooks/` (whitelisted in `package.json`'s `files` field). Skills install to `~/.agents/skills/<installed-name>/` (symlinked from `~/.claude/skills/<installed-name>/`), prefixed by default or short names when `ESTACK_SKILL_PREFIX=none`. Any agent that reads `~/.agents/skills/` — including OpenClaw, Codex, ChatGPT, and Cursor — will pick up skills automatically with no extra config. Hooks are Claude Code-only: they install to `~/.claude/hooks/` and get registered in `~/.claude/settings.json` by `bin/install.cjs`. Do not try to route hooks through `~/.agents/`.
 
 ### How to publish
 
@@ -84,3 +84,5 @@ These are the settings that make the model above hold. If something here drifts,
 - Re-enabling Actions does not replay missed tag events. If tags were pushed while Actions was disabled, delete and re-push only the latest tag after re-enabling: `git push origin :refs/tags/vX.Y.Z && git push origin refs/tags/vX.Y.Z`
 - Fastest Actions health check: run `gh workflow run publish.yml --repo ElliotDrel/e-stack`. HTTP 422 = disabled at account level. A run appearing = Actions is working.
 - **Manual CLI publish (when Actions are disabled):** there is a full fallback flow for publishing directly from your machine with `npm publish`. It requires temporarily enabling a package setting and creating a 2FA-bypass token, both of which are reverted after each release. See `docs/manual-publish.md`.
+
+Installer regressions run on Windows and Ubuntu for every PR (`installer.yml`). Both `node scripts/test-install-edge-cases.cjs` and `node scripts/test-prefix-safety.cjs` also gate the tag-triggered publish workflow.

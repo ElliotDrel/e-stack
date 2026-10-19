@@ -46,7 +46,7 @@ jobs:
       - name: Verify every skill's feedback section matches the template
         run: node scripts/update-skill-feedback.cjs --check
 
-      - name: Verify README and CLAUDE.md list every skill and hook
+      - name: Verify README and AGENTS.md list every skill and hook
         run: node scripts/check-docs.cjs
 
       - name: Verify skill names are converted correctly (estack- prefix, description, self-references)
@@ -54,6 +54,11 @@ jobs:
 
       - name: Verify skills store state in ~/.e-stack and credentials in the shared .env
         run: node scripts/check-paths.cjs
+
+      - name: Verify installer regressions
+        run: |
+          node scripts/test-install-edge-cases.cjs
+          node scripts/test-prefix-safety.cjs
 
       - name: Setup Python
         uses: actions/setup-python@v6

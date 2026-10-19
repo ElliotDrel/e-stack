@@ -24,7 +24,7 @@ function freshSandbox() {
 function runInstaller(args) {
   return execFileSync('node', [INSTALLER, ...args], {
     encoding: 'utf8',
-    env: Object.assign({}, process.env, { USERPROFILE: SANDBOX, HOME: SANDBOX }),
+    env: Object.assign(Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^ESTACK_/.test(key))), { USERPROFILE: SANDBOX, HOME: SANDBOX }),
     stdio: ['pipe', 'pipe', 'pipe'],
   });
 }
@@ -161,6 +161,88 @@ runInstaller(['--install']);
 const backupCore = path.join(SANDBOX, '.estack-backup', 'hooks', 'estack-startup-update-core.js');
 check('local shared-adapter edit backed up', fs.existsSync(backupCore) && fs.readFileSync(backupCore, 'utf8').includes('// local change'));
 check('shared adapter restored from the package', !fs.readFileSync(sharedCore, 'utf8').includes('// local change'));
+
+// ── Scenario L: ESTACK_SKILL_PREFIX=none installs short names ────────────────
+console.log('\nScenario L: unprefixed install');
+freshSandbox();
+runInstaller(['--install', '--yes', '--no-prefix']);
+const SHORT = SAMPLE.replace(/^estack-/, '');
+check('short name is the real dir', isRealDir(agentsSkill(SHORT)));
+check('prefixed name is absent', !fs.existsSync(agentsSkill(SAMPLE)));
+check('symlink uses the short name', isLink(claudeSkill(SHORT)));
+check('choice persisted to ~/.e-stack/.env',
+  /^ESTACK_SKILL_PREFIX=none$/m.test(fs.readFileSync(path.join(SANDBOX, '.e-stack', '.env'), 'utf8')));
+
+const notifyMd = fs.readFileSync(path.join(SANDBOX, '.agents', 'skills', 'notify', 'SKILL.md'), 'utf8');
+check('frontmatter name rewritten', /^name: notify$/m.test(notifyMd));
+// Scoped to the description line: elsewhere in the file `/estack-notify`
+// legitimately appears as part of the scripts/estack-notify.ps1 filename.
+const notifyDesc = (notifyMd.match(/^description:.*$/m) || [''])[0];
+check('slash commands in the description rewritten',
+  notifyDesc.includes('/notify ') && !notifyDesc.includes('/estack-notify'));
+check('skill folder in a self-referencing path rewritten', notifyMd.includes('.agents/skills/notify/scripts/'));
+// estack-notify.ps1 is a real filename inside the skill, not a skill reference.
+check('script filenames left alone', notifyMd.includes('scripts/estack-notify.ps1') &&
+  fs.existsSync(path.join(SANDBOX, '.agents', 'skills', 'notify', 'scripts', 'estack-notify-lib.ps1')));
+
+const bookMd = fs.readFileSync(path.join(SANDBOX, '.agents', 'skills', 'pdf-to-md', 'SKILL.md'), 'utf8');
+check('cross-skill install paths rewritten', !/skills\/estack-pdf-to-md/.test(bookMd));
+
+// State under ~/.e-stack/ is storage, not a skill reference. Renaming it would
+// orphan every saved config the moment the setting is flipped, and would split
+// the statusline from the notify flag file it reads.
+const plannerMd = fs.readFileSync(path.join(SANDBOX, '.agents', 'skills', 'flight-planner', 'SKILL.md'), 'utf8');
+check('state dir under ~/.e-stack keeps its prefixed name',
+  plannerMd.includes('.e-stack/estack-flight-planner') && !/\.e-stack\/flight-planner/.test(plannerMd));
+const statusline = fs.readFileSync(path.join(SANDBOX, '.claude', 'hooks', 'estack-statusline.js'), 'utf8');
+check('statusline still reads the prefixed notify flag dir',
+  statusline.includes("'.e-stack', 'estack-notify'"));
+const notifyLib = fs.readFileSync(path.join(SANDBOX, '.agents', 'skills', 'notify', 'scripts', 'estack-notify-lib.ps1'), 'utf8');
+check('notify writes the flag where the statusline reads it',
+  notifyLib.includes('estack-notify') && !/\.e-stack[\\/]notify\b/.test(notifyLib));
+
+const notifyStop = JSON.parse(fs.readFileSync(path.join(SANDBOX, '.claude', 'settings.json'), 'utf8'))
+  .hooks.Stop[0].hooks[0].args[2];
+check('notify Stop hook points at the short folder',
+  notifyStop.includes('/notify/scripts/estack-notify-stop.ps1'));
+
+// ── Scenario M: an unprefixed install is stable across runs ──────────────────
+// The package hash has to be computed on the rewritten content, or every skill
+// reads as locally modified on the very next session start.
+console.log('\nScenario M: unprefixed install is idempotent');
+const secondRun = runInstaller(['--install', '--yes']);
+check('nothing reinstalls', /0 skills installed/.test(secondRun));
+check('nothing reads as locally modified', !/modified locally/.test(secondRun));
+
+// ── Scenario N: editing the .env flips an existing install on next update ────
+console.log('\nScenario N: flip back to prefixed by editing ~/.e-stack/.env');
+const envFile = path.join(SANDBOX, '.e-stack', '.env');
+fs.writeFileSync(envFile, fs.readFileSync(envFile, 'utf8').replace(/^ESTACK_SKILL_PREFIX=none$/m, 'ESTACK_SKILL_PREFIX=estack-'));
+runInstaller(['--install', '--startup']);           // the auto-update path
+check('prefixed name installed', isRealDir(agentsSkill(SAMPLE)));
+check('short name retired from ~/.agents/skills/', !fs.existsSync(agentsSkill(SHORT)));
+check('short symlink retired from ~/.claude/skills/', !fs.existsSync(claudeSkill(SHORT)) && !isLink(claudeSkill(SHORT)));
+const manifest = JSON.parse(fs.readFileSync(path.join(SANDBOX, '.claude', '.estack-checksums.json'), 'utf8'));
+check('manifest carries no stale short-name entries', manifest[SAMPLE] && !manifest[SHORT]);
+check('notify Stop hook repointed at the prefixed folder',
+  JSON.parse(fs.readFileSync(path.join(SANDBOX, '.claude', 'settings.json'), 'utf8'))
+    .hooks.Stop[0].hooks[0].args[2].includes('/estack-notify/scripts/'));
+check('flip settles', /0 skills installed/.test(runInstaller(['--install', '--yes'])));
+
+// ── Scenario O: claiming a short name someone else is using ──────────────────
+// Overwriting is the chosen behavior, but never without a copy and a warning.
+console.log('\nScenario O: unprefixed install over a foreign skill of the same name');
+const foreign = path.join(SANDBOX, '.agents', 'skills', 'notify');
+fs.rmSync(foreign, { recursive: true, force: true });
+fs.mkdirSync(foreign, { recursive: true });
+fs.writeFileSync(path.join(foreign, 'SKILL.md'), '---\nname: notify\n---\nnot ours\n');
+const claimed = runInstaller(['--install', '--yes', '--no-prefix']);
+check('collision is called out by name', /WARNING/.test(claimed) && /\n    - notify\n/.test(claimed));
+const foreignBackups = fs.readdirSync(path.join(SANDBOX, '.estack-backup')).filter(n => n === 'notify' || n.startsWith('notify-')).map(n => path.join(SANDBOX, '.estack-backup', n, 'SKILL.md'));
+check('foreign skill backed up before replacement',
+  foreignBackups.some(file => fs.existsSync(file) && fs.readFileSync(file, 'utf8').includes('not ours')));
+check('estack skill now occupies the name',
+  fs.readFileSync(path.join(foreign, 'SKILL.md'), 'utf8').includes('desktop notifications'));
 
 // ── Cleanup ──────────────────────────────────────────────────────────────────
 fs.rmSync(SANDBOX, { recursive: true, force: true });
