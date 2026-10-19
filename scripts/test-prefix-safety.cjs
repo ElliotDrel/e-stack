@@ -64,6 +64,7 @@ try {
   run(['--install', '--silent', '--no-prefix']);
   check('silent collision preserves old install', fs.existsSync(skill(sample)));
   check('silent collision preserves foreign skill', read(skill(short) + '/SKILL.md') === 'FOREIGN SKILL');
+  check('silent deferral keeps notify hook on original skill', JSON.parse(read(at('.claude', 'settings.json'))).hooks.Stop[0].hooks[0].args[2].includes('/estack-notify/scripts/'));
   const startup = JSON.parse(run(['--install', '--startup']));
   check('startup identifies foreign takeover', startup.systemMessage.includes('foreign skills backed up and replaced: ' + short));
   check('startup does not call foreign skill a local modification', !(startup.additionalContext || '').includes(short));
@@ -81,8 +82,10 @@ try {
   check('failed replacement preserves original manifest entry', JSON.parse(read(at('.claude', '.estack-checksums.json')))[sample]);
   // Skip means a modified source stays available until the user reviews it.
   fresh(); run(['--install', '--yes']); fs.appendFileSync(skill(sample) + '/SKILL.md', '\nLOCAL KEEP\n');
+  fs.appendFileSync(skill('estack-notify') + '/SKILL.md', '\nLOCAL NOTIFY KEEP\n');
   run(['--install', '--skip-modified', '--no-prefix']);
   check('skip-modified retains edited source across a flip', read(skill(sample) + '/SKILL.md').includes('LOCAL KEEP') && !fs.existsSync(skill(short)));
+  check('skipped notify keeps a valid Stop hook', JSON.parse(read(at('.claude', 'settings.json'))).hooks.Stop[0].hooks[0].args[2].includes('/estack-notify/scripts/'));
   // Credentials in old real Claude directories must be collected before unlink.
   fresh(); const legacy = at('.claude', 'skills', sample);
   fs.cpSync(path.resolve(path.dirname(installer), '../skills', sample), legacy, { recursive: true });
