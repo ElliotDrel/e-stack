@@ -6,6 +6,7 @@ const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const { pathToFileURL } = require('url');
+const { Script } = require('vm');
 const installer = process.env.PREFIX_TEST_INSTALLER || path.resolve(__dirname, '../bin/install.cjs');
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'estack-prefix-safety-'));
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^ESTACK_/.test(key)));
@@ -81,11 +82,17 @@ try {
   // Failed replacement must leave the old skill and ownership record usable.
   fresh(); run(['--install', '--yes']);
   const injector = at('fail-write.cjs');
-  fs.writeFileSync(injector, `const fs = require('fs'); const write = fs.writeFileSync; fs.writeFileSync = function(file, ...args) { if (String(file).replace(/\\/g, '/').endsWith('/skills/better-title/SKILL.md')) throw new Error('injected destination failure'); return write.call(this, file, ...args); };`);
+  const originalSkill = read(skill(sample) + '/SKILL.md');
+  const injectorSource = String.raw`const fs = require('fs'); const write = fs.writeFileSync; fs.writeFileSync = function(file, ...args) { if (String(file).replace(/\\/g, '/').endsWith('/skills/better-title/SKILL.md')) throw new Error('injected destination failure'); return write.call(this, file, ...args); };`;
+  new Script(injectorSource, { filename: injector });
+  fs.writeFileSync(injector, injectorSource);
   let rejected = false;
-  try { execFileSync(process.execPath, ['--require', injector, installer, '--install', '--yes', '--no-prefix'], { env, encoding: 'utf8', stdio: 'pipe' }); } catch (_) { rejected = true; }
-  check('failed replacement preserves original skill', rejected && fs.existsSync(skill(sample) + '/SKILL.md'));
-  check('failed replacement preserves original manifest entry', JSON.parse(read(at('.claude', '.estack-checksums.json')))[sample]);
+  try { execFileSync(process.execPath, ['--require', injector, installer, '--install', '--yes', '--no-prefix'], { env, encoding: 'utf8', stdio: 'pipe' }); } catch (error) {
+    rejected = error.status !== 0 && /^Error during installation: injected destination failure\r?$/m.test(String(error.stderr));
+  }
+  check('installer reaches the intended destination write failure', rejected);
+  check('failed replacement preserves original skill unchanged', rejected && read(skill(sample) + '/SKILL.md') === originalSkill);
+  check('failed replacement preserves original manifest entry', rejected && JSON.parse(read(at('.claude', '.estack-checksums.json')))[sample]);
   // Skip means a modified source stays available until the user reviews it.
   fresh(); run(['--install', '--yes']); fs.appendFileSync(skill(sample) + '/SKILL.md', '\nLOCAL KEEP\n');
   fs.appendFileSync(skill('estack-notify') + '/SKILL.md', '\nLOCAL NOTIFY KEEP\n');
