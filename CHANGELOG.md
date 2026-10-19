@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `estack-better-title` skill (2.0.1) — detects Claude Code or Codex at startup and routes title reads and renames through one entry point. Codex uses its app-server API; Claude retains append-only transcript updates. Hosts without a choice tool use numbered title options in chat.
+
+### Fixed
+- `estack-better-title` skill — recognizes Claude Agent SDK session ids and explains unknown hosts, nested hosts, missing or conflicting ids, and backend read failures. Host overrides retain the safeguard against renaming another session.
+- `estack-better-title` skill — preserves Unicode and literal title whitespace, keeps startup errors visible to the agent, and configures explicit invocation for Codex.
+
 ---
 
 ## [1.1.1] - 2026-10-19

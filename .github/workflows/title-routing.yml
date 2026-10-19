@@ -1,0 +1,27 @@
+name: Title routing
+
+on:
+  pull_request:
+    paths:
+      - "skills/estack-better-title/**"
+      - "tests/estack-better-title/**"
+      - ".github/workflows/title-routing.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - run: node --test tests/estack-better-title/test-routing.cjs

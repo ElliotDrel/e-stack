@@ -49,10 +49,13 @@ const ALLOWED_PREFIXES = [
   '~/.claude/settings',    // Claude's own config (read)
   '~/.claude/hooks',       // hook install location
   '~/.claude-backups',     // Claude's backups (read)
-  '~/.codex',              // Codex's data, read-only for us — no skill writes here,
-                           // so the whole subtree is allowed. ~/.claude is not:
-                           // it gets named subpaths only, because state has been
-                           // parked there before.
+  '~/.codex',              // Codex's data, read-only for us — no skill writes to
+                           // this path, so the whole subtree is allowed. ~/.claude
+                           // is not: it gets named subpaths only, because state has
+                           // been parked there before. estack-better-title does
+                           // change a Codex thread's name, but through the
+                           // `codex app-server` JSON-RPC API rather than by writing
+                           // Codex's state database behind its back.
   '~/.config/Code',        // VS Code history (read)
   '~/.config/Cursor',      // Cursor history (read)
   '~/Library/Application', // macOS app support (read)

@@ -1,11 +1,13 @@
 ---
 name: estack-better-title
-version: 1.3.1
-description: (better-title) Suggest better chat session titles and rename the session
+version: 2.0.1
+description: >-
+  (better-title) Suggest better chat session titles and rename the session, in
+  Claude Code or Codex.
 disable-model-invocation: true
 allowed-tools:
+  - Bash(bash */scripts/session.sh*)
   - Bash(bash */scripts/rename.sh*)
-  - Bash(bash */scripts/current-title.sh*)
   - Bash(gh --version)
   - Bash(gh issue create *)
   - Bash(python3 -c *)
@@ -14,25 +16,35 @@ allowed-tools:
 
 # Better Title
 
-The current session ID is: ${CLAUDE_SESSION_ID}
+## Start here
 
-## Current title
+This skill requires Bash and Node.js and runs in both Claude Code and Codex. Which one it is decides where the
+session id comes from and how the title gets written, so the first step is
+always this command. It reports the host, the session id, the title the session
+has now, and the exact rename command to use later.
 
 ```!
-SID="${CLAUDE_SESSION_ID}"
-[ -n "$SID" ] || SID="$CLAUDE_CODE_SESSION_ID"
 DIR="${CLAUDE_SKILL_DIR}"
-[ -n "$DIR" ] || DIR="$HOME/.claude/skills/estack-better-title"
-bash "$DIR/scripts/current-title.sh" "$SID"
+[ -f "$DIR/scripts/session.sh" ] || DIR="$HOME/.agents/skills/estack-better-title"
+[ -f "$DIR/scripts/session.sh" ] || DIR="$HOME/.claude/skills/estack-better-title"
+bash "$DIR/scripts/session.sh" || printf '\nSESSION_CHECK_FAILED: stop and follow the diagnostic above.\n'
 ```
 
-If the output above shows a current title, follow **Re-titling an existing session** below — it has the decision procedure for what to keep and what to replace. If it says no title is set, draft from scratch.
+If you are reading this in a host that does not run that block automatically,
+run it yourself now, before anything else. Nothing below works without it.
 
-If you need to re-check the title later — e.g. the user paused mid-flow and asked you to finish the rename on a later turn — run the same lookup manually (it's pre-approved in this skill's `allowed-tools`):
+**If it reports an error or `SESSION_CHECK_FAILED`, stop and follow the message
+it printed.** Each failure mode says what it checked and what to work out before
+telling the user anything. Do not invent a session id and do not try to rename
+anything until it reports a host.
 
-```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/current-title.sh" "${CLAUDE_SESSION_ID}"
-```
+If it reported a current title, follow **Re-titling an existing session** below —
+it has the decision procedure for what to keep and what to replace. If it says
+no title is set, draft from scratch.
+
+Re-run the same command whenever you need the id or the title again, for example
+when the user paused mid-flow and asked you to finish the rename a turn later.
+The host's tool permissions still apply.
 
 ## Your task
 
@@ -142,35 +154,53 @@ When `AskUserQuestion` is available, present the 3 options with a single-select 
 - Each option's `description` is the **full title**, all zones, exactly as it will be written. The user picks on the subject and confirms on the whole string.
 - The user can also select "Other" (provided automatically) to give feedback
 
-Because the label is only zone 1, two options whose subjects are near-identical look like the same choice. Make the three subjects meaningfully different from each other, not three phrasings of one idea.
+**If you don't**, write the three options in chat as a numbered list. Each entry shows the subject on its own line and the full title underneath, then ask the user to reply with a number, or with feedback. Same information, same choice — just typed instead of picked.
 
-When that tool is unavailable, list the three full titles in chat and let the user reply with a number or an exact title. Do not make a user who already supplied an exact title choose again.
+Either way, because the user chooses on zone 1, two options whose subjects are near-identical look like the same choice. Make the three subjects meaningfully different from each other, not three phrasings of one idea.
+
+Do not make a user who already supplied an exact title choose again.
 
 ## Interaction loop
 
-- If the user selects one of the 3 titles, use that title.
-- If the user selects "Other" and provides feedback (e.g. "shorter", "more specific", "mention X"), generate 3 new suggestions incorporating their feedback and present again via `AskUserQuestion`.
-- Keep iterating until the user selects a title or gives you an exact title.
+- If the user picks one of the 3 titles, use that title.
+- If the user gives feedback instead (e.g. "shorter", "more specific", "mention X"), generate 3 new suggestions incorporating it and present again the same way.
+- Keep iterating until the user picks a title or gives you an exact title.
 
 ## Renaming
 
-Once the user has chosen a title, run the rename script using a quoted heredoc to pass the title safely:
+Once the user has chosen a title, run the rename command **exactly as the start-here
+command printed it**, with `<chosen title>` replaced by the actual title. It already
+has the right script path and the right session id filled in for this host. Keep
+the quoted heredoc (`<<'__ESTACK_TITLE__'`): it stops the shell from interpreting
+anything in the title, so quotes, apostrophes, dollar signs, and backticks all pass
+through literally. After running, confirm the rename succeeded.
 
-```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/rename.sh" "${CLAUDE_SESSION_ID}" <<'__CLAUDE_TITLE__'
-<chosen title>
-__CLAUDE_TITLE__
-```
+`rename.sh` refuses to run if the id you pass is not this session's id, so a stale
+id from an earlier turn fails loudly instead of renaming the wrong session. If
+that happens, re-run the start-here command and use the id it prints.
 
-Replace `<chosen title>` with the actual chosen title. The quoted heredoc (`<<'__CLAUDE_TITLE__'`) prevents the shell from interpreting any special characters in the title — quotes, apostrophes, dollar signs, backticks, etc. are all passed through literally. After running, confirm the rename succeeded.
+**When the new title shows up** depends on the host:
 
-**Important:** The live UI border won't update until the next session resume — the persisted title will show in the session list and on next `/resume`.
+- **Claude Code** — the live UI border won't update until the next session resume. The persisted title shows in the session list and on the next `/resume`.
+- **Codex** — the rename goes through the app-server. If the daemon serving the live session is reachable, the UI picks it up right away; otherwise it lands in Codex's thread store and shows once the thread list is reloaded.
 
-### If the append fails or is blocked
+### If the rename fails or is blocked
 
-`rename.sh` already retries a locked append with exponential backoff (Windows can hold a transient exclusive lock on the session file it's actively writing to — the retry window runs up to ~16 seconds to reliably outlast it, since the live CLI writes to that same file on nearly every turn). If it still fails after all retries, or a permission prompt interrupts this exact command, do NOT go inspect, open, or probe the session `.jsonl` directly to figure out why — that departs from this skill's single sanctioned append operation and is far more likely to need manual approval or get blocked outright than the retry itself. Just tell the user the rename didn't go through and suggest running it again in a few seconds.
+Both host paths already handle their own retries: on Claude Code, the append
+retries a locked write with exponential backoff (Windows can hold a transient
+exclusive lock on the session file it's actively writing to — the retry window
+runs up to ~16 seconds to reliably outlast it, since the live CLI writes to that
+same file on nearly every turn). On Codex it goes through the app-server daemon
+when one is running and a private stdio app-server otherwise.
 
-This skill's `allowed-tools` frontmatter pre-approves the rename command (and the feedback-section commands), so on the turn that invoked the skill it runs without a permission prompt. That grant clears when the user sends their next chat message — so if the title is chosen on a later turn (e.g. the user replied in chat instead of picking an `AskUserQuestion` option), the rename may prompt. If that's a recurring annoyance, the user can add a persistent allow rule scoped to just this invocation to `settings.json`:
+If it still fails, or a permission prompt interrupts this exact command, do NOT
+go inspect, open, or probe the host's session store directly to figure out why —
+not the Claude `.jsonl` transcript, not Codex's state database. That departs from
+this skill's sanctioned operations and is far more likely to need manual approval
+or get blocked outright than the retry itself. Just tell the user the rename
+didn't go through and suggest running it again in a few seconds.
+
+Tool permissions depend on the host and its configuration; `allowed-tools` is not a cross-host permission grant. On Claude Code, the user can add a persistent allow rule scoped to this invocation in `settings.json` if repeated prompts are a problem:
 
 ```json
 {
