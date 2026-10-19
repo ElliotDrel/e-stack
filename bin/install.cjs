@@ -6,7 +6,11 @@ const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
 const readline = require('readline');
-const { isUtf8 } = require('buffer');
+const { TextDecoder } = require('util');
+const UTF8_DECODER = new TextDecoder('utf-8', { fatal: true });
+function isUtf8(buffer) {
+  try { UTF8_DECODER.decode(buffer); return true; } catch (_) { return false; }
+}
 
 const IS_LOCAL = !__dirname.includes('node_modules');
 const DRY_RUN = process.argv.includes('--dry-run') ||
@@ -459,8 +463,9 @@ function renameReferences(buffer) {
     const before = text.slice(0, offset);
     const after = text.slice(offset + match.length);
     // Quoted bare names in executable code are storage keys or identifiers.
-    // Rewrite only when the preceding path segment explicitly names skills.
-    if (/['"]$/.test(before) && /^['"]/.test(after) &&
+    // Explicit skill-name constants are references; storage keys stay canonical.
+    const skillConstant = /\b(?:SKILL_NAME|skillName)\s*=\s*['"]$/.test(before);
+    if (/['"]$/.test(before) && /^['"]/.test(after) && !skillConstant &&
         !/skills['"]?\s*(?:,|\/)\s*['"]$/.test(before)) return match;
     // Variable-based state paths ($ESTACK_ROOT/estack-...) also stay stable.
     if (/[A-Za-z0-9_$}.][\\/]$/.test(before) && !/skills[\\/]$/.test(before)) return match;
