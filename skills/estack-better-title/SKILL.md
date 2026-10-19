@@ -1,6 +1,6 @@
 ---
 name: estack-better-title
-version: 2.0.1
+version: 2.0.2
 description: >-
   (better-title) Suggest better chat session titles and rename the session, in
   Claude Code or Codex.
@@ -45,6 +45,23 @@ no title is set, draft from scratch.
 Re-run the same command whenever you need the id or the title again, for example
 when the user paused mid-flow and asked you to finish the rename a turn later.
 The host's tool permissions still apply.
+
+## Codex sandbox access
+
+Before running the startup command in Codex, check the tool sandbox's writable
+roots. A private `codex app-server` starts under the same sandbox and can write
+startup/state files in `CODEX_HOME` (normally `~/.codex`) even for `thread/read`.
+If that directory is outside the writable roots, request the required access
+through the host tool's approval/escalation mechanism for the startup command
+and again for the later rename command. On a Codex shell tool that exposes it,
+use `sandbox_permissions: "require_escalated"` with a justification naming the
+session-title operation. The skill cannot grant this permission itself.
+
+If startup or rename reports `APPROVAL_REQUIRED`, stop drafting and rerun the
+same operation using that approval mechanism. Keep `CODEX_HOME` and the session
+id unchanged. If approval is denied or unavailable, explain the limitation and
+stop. Never disable the sandbox, redirect to another home, or write the state
+database directly to get around the denial.
 
 ## Your task
 

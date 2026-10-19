@@ -6,6 +6,7 @@ const mode = process.env.TITLE_TEST_MODE;
 const proxy = process.argv.includes('proxy');
 fs.appendFileSync(process.env.TITLE_TEST_LOG, JSON.stringify({ start: true, proxy }) + '\n');
 if (mode === 'fallback' && proxy) process.exit(2);
+if (mode === 'permission-denied') { process.stderr.write('startup maintenance: attempt to write a readonly database\n'); process.exit(1); }
 readline.createInterface({ input: process.stdin }).on('line', (line) => {
   const msg = JSON.parse(line);
   fs.appendFileSync(process.env.TITLE_TEST_LOG, line + '\n');

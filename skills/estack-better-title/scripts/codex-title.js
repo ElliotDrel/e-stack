@@ -152,6 +152,14 @@ async function connect(run) {
     try {
       return await withAppServer(command, run);
     } catch (err) {
+      if (/readonly database|read-only|permission denied|operation not permitted|access is denied|EACCES|EPERM/i.test(err.message)) {
+        fail(
+          'APPROVAL_REQUIRED: Codex app-server startup needs access to CODEX_HOME, even for a title read.\n' +
+          'Agent: rerun this same operation through the host tool approval/escalation mechanism.\n' +
+          'Keep the current CODEX_HOME and session id; do not disable sandbox protections or edit the database.\n' +
+          'If approval is unavailable or denied, explain the limitation and stop.\n' + err.message,
+        );
+      }
       if (!(err instanceof TransportError)) fail(err.message);
       errors.push(`${command}: ${err.message}`);
     }

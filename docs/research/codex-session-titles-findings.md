@@ -1,6 +1,6 @@
 # Codex session titles — how the rename actually works
 
-The research record behind `estack-better-title` 2.0.1, which adds Codex support.
+The research record behind `estack-better-title` 2.0.2, which adds Codex support.
 The original observations below came from codex-cli 0.153.4 on Windows
 (2026-09-06). They are historical unless explicitly reverified below.
 
@@ -43,6 +43,23 @@ Current official docs were fetched on 2026-10-19:
   documents `agents/openai.yaml` with `policy.allow_implicit_invocation: false`.
   This supplies the Codex equivalent of the Claude-only
   `disable-model-invocation` setting.
+
+## Sandbox approval boundary
+
+The real-app-server round trip above was run through an approved escalated shell
+with a disposable home. It did not establish that a private server can start
+inside a workspace-only sandbox with the user's ordinary `CODEX_HOME`.
+[Codex issue 52759](https://github.com/openai/codex/issues/52759), fetched during
+the PR review on 2026-10-19, reports readonly startup database and operation-not-
+permitted failures from a nested CLI. It corroborates this limitation rather
+than a title-specific reproduction.
+
+The skill now instructs the agent to request host-tool approval before startup
+and rename when `CODEX_HOME` is outside writable roots. Permission-denied server
+output produces `APPROVAL_REQUIRED`; it does not fall through to another
+transport. The script cannot grant approval itself. A regression fixture
+verifies this diagnostic and stop behavior; a denied real user home was not
+modified to manufacture a reproduction.
 
 ## Host detection
 

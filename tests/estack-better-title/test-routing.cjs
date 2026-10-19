@@ -122,3 +122,11 @@ test('startup block preserves detection errors for the agent', (t) => {
   const r = spawnSync(bash, ['-c', block], { env, encoding: 'utf8', timeout: 15000 });
   success(r); assert.match(r.stdout, /SESSION_CHECK_FAILED/); assert.match(r.stderr, /could not tell which agent/); assert.doesNotMatch(r.stdout, /Rename with/);
 });
+
+test('sandbox denial requests host approval without retrying another transport', (t) => {
+  const box = mock(t, 'permission-denied', true);
+  const r = shell(box.env, 'session.sh');
+  assert.equal(r.status, 1); assert.match(r.stderr, /APPROVAL_REQUIRED/);
+  assert.match(r.stderr, /approval\/escalation/); assert.match(r.stderr, /Keep the current CODEX_HOME and session id/);
+  assert.doesNotMatch(r.stdout, /Rename with/); assert.equal(box.log().filter(x => x.start).length, 1);
+});
