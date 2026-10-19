@@ -24,7 +24,7 @@ workflow.
 
 ## Installation architecture
 
-Packaged skills install under `~/.agents/skills/estack-*/`; Claude may consume
+Packaged skills install under `~/.agents/skills/<installed-name>/`; Claude may consume
 them through its linked skill location. Most hooks are Claude Code integrations
 registered through `~/.claude/settings.json`. The shared startup updater uses
 host-specific adapters and registrations, including the Codex adapter. Follow
@@ -95,3 +95,5 @@ the local checks and the remote publication result separate in the report. For a
 manual publish only when Actions are unavailable, read
 [`manual-publish.md`](manual-publish.md); it has additional authorization and
 cleanup requirements.
+
+Skills use prefixed names by default or short names with `ESTACK_SKILL_PREFIX=none`. Installer regressions run on Windows and Ubuntu for every PR (`installer.yml`). Both `node scripts/test-install-edge-cases.cjs` and `node scripts/test-prefix-safety.cjs` also gate the tag-triggered publish workflow.

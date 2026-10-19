@@ -1,6 +1,6 @@
 ---
 name: manage-e-stack
-version: 1.0.1
+version: 1.1.1
 description: >-
   (manage-e-stack) Manage changes to E-Stack skills, hooks, installation, and
   releases. Use for work in `skills/`, `hooks/`, or the matching release flow.
@@ -59,3 +59,9 @@ The prep route does not publish.
 Commit and push only as the requested delivery path requires. Preserve unrelated
 work and verify the intended files, branch, and remote state before a publication
 step.
+
+## Installed skill names
+
+- **Skill name prefix:** skills always ship prefixed in `skills/`, and prefixed is the default install. `ESTACK_SKILL_PREFIX=none` makes the installer rewrite `estack-<short>` to `<short>` in every packaged file as it copies, so the folder, the `name:` line, cross-skill references, and self-referencing install paths all move together. The setting is read on every run including `--silent`/`--startup`, so changing it in `~/.e-stack/.env` reconciles an existing install at the next session start. That works because the checksum manifest is keyed by *installed* name — anything touching the destination or the manifest goes through `installedName()`, and only reads from `PACKAGE_SKILLS_DIR` use the package name. A prefix switch backs up old files and carries per-skill `.env` files, then retires the old name only after successful installation. Silent mode defers edited sources and foreign destinations; manual/startup installs back up foreign skills before replacement. Existing backup directories are retained with unique suffixes for new copies. Quoted standalone storage identifiers and variable-based state paths remain canonical. Package-side hashes are computed on the rewritten content (`computeSkillHash(dir, true)`), or every skill reads as locally modified forever. `scripts/check-skill-name.cjs` rule 5 is what makes the rewrite complete; do not loosen it.
+
+Skills install under `~/.agents/skills/<installed-name>/`, prefixed by default. Use `--no-prefix` or `ESTACK_SKILL_PREFIX=none` for short names and `--prefix` to restore the prefix. Store this setting in the shared `~/.e-stack/.env`; state paths retain the canonical packaged identity.
