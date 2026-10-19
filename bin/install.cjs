@@ -981,7 +981,10 @@ function setupNotifyStopHook(dryRun) {
   // The script's own filename never changes; only the skill folder around it
   // does, when ESTACK_SKILL_PREFIX=none. Flipping the setting repoints this
   // entry in place via the mentionsScript match below.
-  const script = path.join(AGENTS_DIR, installedName('estack-notify'), 'scripts', 'estack-notify-stop.ps1')
+  const requested = installedName('estack-notify');
+  const pending = prefixMigrations.get(requested);
+  const active = pending && !installedThisRun.has(requested) && !dryRun ? pending.oldName : requested;
+  const script = path.join(AGENTS_DIR, active, 'scripts', 'estack-notify-stop.ps1')
     .replace(/\\/g, '/');
   // The args form avoids quoting a Windows path inside a command string, and it
   // is the shape Claude Code writes itself.
@@ -1379,6 +1382,13 @@ async function main() {
 
   // 5. Silent mode — no output at all
   if (SILENT) {
+    const blocked = [...prefixMigrations].filter(([next, migration]) =>
+      foreignNames.includes(next) || computeSkillHash(migration.directory) !== storedChecksums[migration.oldName]);
+    if (blocked.length) {
+      console.error('estack: prefix switch deferred; original skills and hooks kept. Run the manual installer to review: ' +
+        blocked.map(([next]) => next).join(', '));
+      process.exit(0);
+    }
     if (needsUpdate.length === 0 && modifiedSkills.length === 0 &&
         hooksNeedingUpdate.length === 0 && modifiedHooks.length === 0 &&
         startupSourcesUpdated.length === 0) {
